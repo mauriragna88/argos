@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  windows:
+    name: Tests (Windows PowerShell 5.1)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm ci
+      - name: Full test suite (unit TS + PS + parser + secrets + smoke)
+        run: npm test
+
+  linux:
+    name: Tests (Ubuntu + pwsh)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install PowerShell Core + Python
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y powershell python3 python-is-python3
+      - name: Install dependencies
+        run: npm ci
+      - name: TypeScript unit tests
+        run: npm run test:unit
+      - name: PowerShell tests (funcionales + politica + parser + secretos)
+        run: pwsh -NoProfile -ExecutionPolicy Bypass -File tests/run-all.ps1 -SkipSmoke

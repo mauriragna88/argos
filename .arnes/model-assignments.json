@@ -1,0 +1,21 @@
+﻿{
+    "timestamp":  "2026-08-14T18:46:28.1927834-06:00",
+    "quest_type":  "trivial",
+    "platform":  "opencode",
+    "assignments":  {
+                        "varys":  "deepseek-v4-flash",
+                        "amarant":  "deepseek-v4-flash",
+                        "eremez":  "deepseek-v4-flash",
+                        "kuja":  "deepseek-v4-flash",
+                        "atlas":  "deepseek-v4-flash",
+                        "quina":  "deepseek-v4-flash",
+                        "tywin":  "deepseek-v4-flash",
+                        "eiko":  "deepseek-v4-flash",
+                        "sam":  "deepseek-v4-flash",
+                        "ansem":  "deepseek-v4-flash",
+                        "vivi":  "deepseek-v4-flash",
+                        "bran":  "deepseek-v4-flash",
+                        "auron":  "deepseek-v4-flash"
+                    },
+    "tier":  "pro"
+}

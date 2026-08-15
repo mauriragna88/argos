@@ -1,0 +1,22 @@
+﻿{
+    "version":  "1.0",
+    "quest_gate":  "auto",
+    "mode":  "mixto",
+    "updated_at":  "2026-08-05 23:48:22",
+    "auto":  {
+                 "report_interval":  "final",
+                 "n_quests":  5,
+                 "requires_permission":  false,
+                 "grant_read":  false,
+                 "grant_write":  false
+             },
+    "educativo":  {
+                      "explain_concepts":  true,
+                      "answer_questions":  true,
+                      "plan_from_chat":  true
+                  },
+    "mixto":  {
+                  "feedback_per_quest":  true,
+                  "detailed_only_on_ask":  true
+              }
+}

@@ -1,0 +1,24 @@
+version: "3.9"
+
+services:
+  arnes:
+    build: .
+    image: arnes-argos:latest
+    container_name: arnes-argos
+    stdin_open: true   # mantener TTY abierto para el menu interactivo
+    tty: true
+    environment:
+      - TERM=xterm-256color
+    volumes:
+      # Config GLOBAL de la maquina (conexiones + modelos, UNA vez por computadora)
+      - ~/.config/arnes:/root/.config/arnes
+      # Config de OpenCode (agentes sincronizados + auth + skills)
+      - ~/.config/opencode:/root/.config/opencode
+      # Sesiones y estado de OpenCode
+      - ~/.opencode:/root/.opencode
+      # Tu carpeta de trabajo real (donde inicializas proyectos)
+      - .:/workspace
+    working_dir: /workspace
+    # Entrada: argos (el entorno). Para otros comandos: docker compose run --rm arnes connect|configure|status
+    entrypoint: ["pwsh", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "/opt/arnes/cli/argos.ps1"]
+    command: []

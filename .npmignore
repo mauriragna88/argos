@@ -1,0 +1,22 @@
+# Cache de Python (se empaqueta por error)
+__pycache__/
+*.pyc
+
+# Tests locales
+tests/
+
+# Estado y memoria local (no van al paquete npm)
+.arnes/
+.git/
+.github/
+
+# Backups locales
+backups/
+*.bak
+
+# Dependencias
+node_modules/
+
+# Temporales
+*.tmp
+*.log

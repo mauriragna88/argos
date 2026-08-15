@@ -1,0 +1,47 @@
+{
+  "agent": "bran",
+  "name": "Bran",
+  "class": "Seer",
+  "tree": [
+    {
+      "skill": "foresight",
+      "level": 1,
+      "cost_mp": 300,
+      "description": "Calcula % de completion del quest actual vs total del proyecto.",
+      "cast": "git diff --stat | compare con change spec | output % XX/100",
+      "unlock_at": 0
+    },
+    {
+      "skill": "weirwood-vision",
+      "level": 2,
+      "cost_mp": 600,
+      "description": "Identifica dead code, exports no-usados, archivos huérfanos en el diff.",
+      "cast": "rg --unused-exports | ts-prune | reporta archivos/líneas eliminables",
+      "unlock_at": 150
+    },
+    {
+      "skill": "greenseer",
+      "level": 3,
+      "cost_mp": 1000,
+      "description": "Analiza improvement opportunities en todo el repo afectado.",
+      "cast": "scan patrones锅 | suggest refactor | prioriza por impacto",
+      "unlock_at": 400
+    },
+    {
+      "skill": "past-sight",
+      "level": 4,
+      "cost_mp": 1400,
+      "description": "Compara con estado anterior (git blame) y detecta regresiones lógicas.",
+      "cast": "git log --follow | detecta cambios regresivos en API contract",
+      "unlock_at": 700
+    },
+    {
+      "skill": "prophecy",
+      "level": 5,
+      "cost_mp": 1800,
+      "description": "Predice tech debt future. Genera reporte roadmap de refactor.",
+      "cast": "analyse coupling | detecta círculos | output prophecy.md",
+      "unlock_at": 1100
+    }
+  ]
+}

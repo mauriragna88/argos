@@ -1,0 +1,50 @@
+{
+  "name": "arnes-argos",
+  "version": "0.1.0",
+  "description": "ARNES ARGOS - Harness RPG de IA con 16 agentes: memoria propia (SQLite+FTS5), SDD/FDD/ADR propios, conexiones y modelos configurados una vez por maquina. El entorno de los 100 ojos.",
+  "keywords": [
+    "arnes",
+    "atlas",
+    "rpg",
+    "harness",
+    "agents",
+    "opencode",
+    "sdd",
+    "fdd",
+    "sqlite"
+  ],
+  "license": "MIT",
+  "author": "Mauri Ragna <mauri.ragna88@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mauriragna88/arnes.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mauriragna88/arnes/issues"
+  },
+  "homepage": "https://github.com/mauriragna88/arnes#readme",
+  "bin": {
+    "argos": "bin/argos.js",
+    "atlas": "bin/argos.js"
+  },
+  "files": [
+    "bin",
+    "cli",
+    "core",
+    "docs",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "postinstall": "node bin/postinstall.js",
+    "prepublishOnly": "npm test",
+    "test": "node bin/run-tests.js",
+    "test:unit": "node --import tsx --test tests/unit/*.test.ts",
+    "test:ps": "powershell -NoProfile -ExecutionPolicy Bypass -File tests/run-all.ps1 -SkipSmoke"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.12"
+  }
+}

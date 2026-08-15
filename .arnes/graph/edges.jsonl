@@ -1,0 +1,20 @@
+{"source": "cli/argos.ps1", "target": "cli/argos-xp.ps1", "relation": "dispatches", "agent": "sisyphus", "created_at": "2026-08-10"}
+{"source": "cli/argos.ps1", "target": "cli/argos-stats.ps1", "relation": "dispatches", "agent": "sisyphus", "created_at": "2026-08-10"}
+{"source": "cli/argos.ps1", "target": "cli/argos-opencode.ps1", "relation": "dispatches", "agent": "sisyphus", "created_at": "2026-08-10"}
+{"source": "cli/argos-opencode.ps1", "target": "cli/atlas.ps1", "relation": "syncs", "agent": "sisyphus", "created_at": "2026-08-10"}
+{"source": "cli/atlas.ps1", "target": "cli/argos-models-apply.ps1", "relation": "applies", "agent": "sisyphus", "created_at": "2026-08-10"}
+{"source": "cli/argos-models-apply.ps1", "target": "~/.config/opencode/agents", "relation": "writes", "agent": "sisyphus", "created_at": "2026-08-10"}
+{"source": "cli/argos-xp.ps1", "target": ".arnes/quest-ledger.json", "relation": "reads", "agent": "sisyphus", "created_at": "2026-08-10"}
+{"source": "cli/argos-stats.ps1", "target": ".arnes/quest-ledger.json", "relation": "reads", "agent": "sisyphus", "created_at": "2026-08-10"}
+{"source": "cli/arnes-graph.ps1", "target": "cli/arnes_brain.py", "relation": "uses", "agent": "sisyphus", "created_at": "2026-08-10"}
+{"source": "cli/arnes-memory.ps1", "target": "cli/arnes_brain.py", "relation": "uses", "agent": "sisyphus", "created_at": "2026-08-10"}
+{"source": "cli/arnes_brain.py", "target": ".arnes/arnes.db", "relation": "uses", "agent": "sisyphus", "created_at": "2026-08-10"}
+{"source": "tests/run-all.ps1", "target": "tests/scan-secrets.ps1", "relation": "invokes", "agent": "sisyphus", "created_at": "2026-08-10"}
+{"source": "experience_cues", "target": "experience_links", "relation": "reinforced_by", "agent": "ansem", "quest_id": "Q-OSMA-V7-EPISODE", "created_at": "2026-08-13"}
+{"source": "osma-cue-search", "target": "experiences", "relation": "reactivates", "agent": "ansem", "quest_id": "Q-OSMA-V7-EPISODE", "created_at": "2026-08-13"}
+{"source": "osma-episode", "target": "experiences", "relation": "reconstructs", "agent": "ansem", "quest_id": "Q-OSMA-V7-EPISODE", "created_at": "2026-08-13"}
+{"source": "osma-cue-search", "target": "experience_links", "relation": "increments_coactivation", "agent": "ansem", "quest_id": "Q-OSMA-V7-AUDIT-TYWIN", "created_at": "2026-08-13"}
+{"source": "osma-cue-search", "target": "observations_fts", "relation": "falls_back_to", "agent": "ansem", "quest_id": "Q-OSMA-V7-AUDIT-TYWIN", "created_at": "2026-08-13"}
+{"source": "cli/quest-detector.ps1", "target": "cli/atlas-orchestrator.ps1", "relation": "recommends", "agent": "ansem", "quest_id": "Q-GATE", "created_at": "2026-08-13"}
+{"source": "cli/atlas-orchestrator.ps1", "target": ".arnes/preferences.json", "relation": "reads_gate_from", "agent": "ansem", "quest_id": "Q-GATE", "created_at": "2026-08-13"}
+{"source": "cli/atlas-orchestrator.ps1", "target": "cli/quest-detector.ps1", "relation": "gates_with", "agent": "ansem", "quest_id": "Q-GATE", "created_at": "2026-08-13"}

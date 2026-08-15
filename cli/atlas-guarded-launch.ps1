@@ -1,0 +1,3 @@
+﻿#Requires -Version 5.1
+$ErrorActionPreference='Stop'
+$root=Resolve-Path (Join-Path $PSScriptRoot '..');$fail=Join-Path $PSScriptRoot 'atlas-failover.ps1';$cfg=Join-Path $root '.arnes\config.json';$model=& $fail next;if(-not $model){throw 'No hay modelo elegible.'};$c=Get-Content $cfg -Raw|ConvertFrom-Json;if(-not $c.player.PSObject.Properties['model']){$c.player|Add-Member NoteProperty model $model}else{$c.player.model=$model};$c|ConvertTo-Json -Depth 12|Set-Content $cfg -Encoding UTF8;Write-Host "ATLAS FF usa: $model" -ForegroundColor Green;& (Join-Path $PSScriptRoot 'atlas.ps1') @args;$code=$LASTEXITCODE;if($code -ne 0){& $fail record-failure -Message 'internal server';exit $code}& $fail record-success

@@ -1,0 +1,134 @@
+{
+  "$schema": "https://arnes.dev/schemas/model-routing-policy-v2.json",
+  "version": "2.0.0",
+  "purpose": "Politica declarativa de preferencia, fallback y consumo por agente. NVIDIA GLM/MiniMax se usan PRIMERO (free tier por rate limit), y al agotarse o fallar se brinca a DeepSeek V4 Flash de OpenCode Go. Luna se distribuye 60/40 (OpenCode Go 60%, OpenAI 40%).",
+  "resolution_mode": "catalog_backed_aliases",
+  "updated": "2026-08-08",
+  "provider_tiers": {
+    "nvidia": {
+      "role": "free_tier_primary",
+      "base_url": "https://integrate.api.nvidia.com/v1",
+      "limit_type": "rate_limit_per_model",
+      "known_limits": {
+        "note": "NVIDIA ya NO usa creditos. Usa rate limits por modelo (RPM) NO publicados. Comunidad reporta ~40 RPM por modelo como referencia, pero cada modelo difiere. La unica forma real de detectar el limite es recibir HTTP 429/401 del endpoint.",
+        "community_estimate_rpm": 40,
+        "detection_method": "http_429_or_401"
+      },
+      "models": {
+        "glm-5.2": {
+          "full_id": "nvidia/z-ai/glm-5.2",
+          "capability": "reasoning_coding",
+          "tested": true,
+          "test_result": "200 OK - pong"
+        },
+        "minimax-m3": {
+          "full_id": "nvidia/minimaxai/minimax-m3",
+          "capability": "efficient_execution",
+          "tested": true,
+          "test_result": "200 OK - pong"
+        }
+      }
+    },
+    "opencode-go": {
+      "role": "workhorse_fallback",
+      "models": {
+        "deepseek-v4-flash": {
+          "full_id": "opencode-go/deepseek-v4-flash",
+          "capability": "volume_execution",
+          "tested": true,
+          "test_result": "200 OK - HOLA DEEPSEEK FLASH OPENCODE GO OK"
+        },
+        "gpt-5.6-luna": {
+          "full_id": "opencode-go/gpt-5.6-luna",
+          "capability": "reasoning_value",
+          "tested": true
+        },
+        "mimo-v2.5-pro": {
+          "full_id": "opencode-go/mimo-v2.5-pro",
+          "capability": "design"
+        }
+      }
+    },
+    "openai": {
+      "role": "reasoning_40pct",
+      "models": {
+        "gpt-5.6-luna": {
+          "full_id": "openai/gpt-5.6-luna",
+          "capability": "reasoning_value",
+          "tested": true,
+          "test_result": "200 OK - HOLA GPT LUNA OPENAI OK"
+        }
+      }
+    }
+  },
+  "provider_budget_defaults": {
+    "strategy": "nvidia_free_then_fallback",
+    "note": "Usar NVIDIA GLM/MiniMax SIEMPRE que respondan (free tier). Al recibir 429/401 (rate limit/cuota agotada) o 3 fallos en ventana de 60 min, brincar al fallback opencode-go/deepseek-v4-flash. Luna 60/40 OpenCode Go / OpenAI.",
+    "nvidia_usage_rule": {
+      "use_while": "responde 200 OK",
+      "limit_detection": "http_429_rate_limit | http_401_no_quota | http_410_eol",
+      "on_limit": "switch_to_fallback"
+    },
+    "fallback_chain": [
+      "nvidia/z-ai/glm-5.2",
+      "nvidia/minimaxai/minimax-m3",
+      "opencode-go/deepseek-v4-flash"
+    ],
+    "luna_split": {
+      "opencode_go_pct": 60,
+      "openai_pct": 40
+    },
+    "caps_percent_by_provider": {
+      "nvidia": 100,
+      "opencode-go": 60,
+      "openai": 40
+    },
+    "on_cap_reached": "switch_to_fallback"
+  },
+  "agents": {
+    "atlas-player": { "preference_order": ["openai/gpt-5.6-luna", "opencode-go/gpt-5.6-luna", "opencode-go/deepseek-v4-flash"] },
+    "atlas": { "preference_order": ["opencode-go/gpt-5.6-luna", "openai/gpt-5.6-luna", "opencode-go/deepseek-v4-flash"] },
+    "tywin": { "preference_order": ["opencode-go/gpt-5.6-luna", "openai/gpt-5.6-luna", "opencode-go/deepseek-v4-flash"] },
+    "sam": { "preference_order": ["opencode-go/gpt-5.6-luna", "openai/gpt-5.6-luna", "opencode-go/deepseek-v4-flash"] },
+    "amarant": { "preference_order": ["nvidia/z-ai/glm-5.2", "nvidia/minimaxai/minimax-m3", "opencode-go/deepseek-v4-flash"] },
+    "bran": { "preference_order": ["nvidia/z-ai/glm-5.2", "nvidia/minimaxai/minimax-m3", "opencode-go/deepseek-v4-flash"] },
+    "auron": { "preference_order": ["nvidia/z-ai/glm-5.2", "nvidia/minimaxai/minimax-m3", "opencode-go/deepseek-v4-flash"] },
+    "varys": { "preference_order": ["nvidia/z-ai/glm-5.2", "nvidia/minimaxai/minimax-m3", "opencode-go/deepseek-v4-flash"] },
+    "momus": { "preference_order": ["nvidia/z-ai/glm-5.2", "nvidia/minimaxai/minimax-m3", "opencode-go/deepseek-v4-flash"] },
+    "oracle": { "preference_order": ["nvidia/z-ai/glm-5.2", "nvidia/minimaxai/minimax-m3", "opencode-go/deepseek-v4-flash"] },
+    "eremez": { "preference_order": ["nvidia/minimaxai/minimax-m3", "nvidia/z-ai/glm-5.2", "opencode-go/deepseek-v4-flash"] },
+    "maestro": { "preference_order": ["nvidia/minimaxai/minimax-m3", "nvidia/z-ai/glm-5.2", "opencode-go/deepseek-v4-flash"] },
+    "sisyphus": { "preference_order": ["nvidia/minimaxai/minimax-m3", "nvidia/z-ai/glm-5.2", "opencode-go/deepseek-v4-flash"] },
+    "kimi": { "preference_order": ["nvidia/minimaxai/minimax-m3", "nvidia/z-ai/glm-5.2", "opencode-go/deepseek-v4-flash"] },
+    "vivi": { "preference_order": ["opencode-go/deepseek-v4-flash", "nvidia/z-ai/glm-5.2", "nvidia/minimaxai/minimax-m3"] },
+    "ansem": { "preference_order": ["opencode-go/deepseek-v4-flash", "nvidia/z-ai/glm-5.2", "nvidia/minimaxai/minimax-m3"] },
+    "kuja": { "preference_order": ["opencode-go/deepseek-v4-flash", "nvidia/z-ai/glm-5.2", "nvidia/minimaxai/minimax-m3"] },
+    "eiko": { "preference_order": ["opencode-go/deepseek-v4-flash", "nvidia/z-ai/glm-5.2", "nvidia/minimaxai/minimax-m3"] },
+    "quina": { "preference_order": ["opencode-go/deepseek-v4-flash", "nvidia/z-ai/glm-5.2", "nvidia/minimaxai/minimax-m3"] },
+    "bard": { "preference_order": ["opencode-go/deepseek-v4-flash", "nvidia/z-ai/glm-5.2", "nvidia/minimaxai/minimax-m3"] },
+    "tidus": { "preference_order": ["opencode-go/deepseek-v4-flash", "nvidia/z-ai/glm-5.2", "nvidia/minimaxai/minimax-m3"] },
+    "ragnarok": { "preference_order": ["opencode-go/deepseek-v4-flash", "nvidia/z-ai/glm-5.2", "nvidia/minimaxai/minimax-m3"] },
+    "hephaestus": { "preference_order": ["opencode-go/deepseek-v4-flash", "nvidia/z-ai/glm-5.2", "nvidia/minimaxai/minimax-m3"] },
+    "deep_worker": { "preference_order": ["opencode-go/deepseek-v4-flash", "nvidia/z-ai/glm-5.2", "nvidia/minimaxai/minimax-m3"] },
+    "explore": { "preference_order": ["opencode-go/deepseek-v4-flash", "nvidia/z-ai/glm-5.2", "nvidia/minimaxai/minimax-m3"] },
+    "librarian": { "preference_order": ["opencode-go/deepseek-v4-flash", "nvidia/z-ai/glm-5.2", "nvidia/minimaxai/minimax-m3"] },
+    "metis": { "preference_order": ["opencode-go/deepseek-v4-flash", "nvidia/z-ai/glm-5.2", "nvidia/minimaxai/minimax-m3"] },
+    "plan": { "preference_order": ["opencode-go/deepseek-v4-flash", "nvidia/z-ai/glm-5.2", "nvidia/minimaxai/minimax-m3"] },
+    "gentleman": { "preference_order": ["opencode-go/deepseek-v4-flash", "nvidia/z-ai/glm-5.2", "nvidia/minimaxai/minimax-m3"] },
+    "prometheus": { "preference_order": ["opencode-go/mimo-v2.5-pro", "opencode-go/deepseek-v4-flash", "nvidia/z-ai/glm-5.2"] }
+  },
+  "stuck_agent_rule": {
+    "trigger": "agente no avanza / se estanca / error repetido",
+    "timeout_per_agent_min": 5,
+    "on_timeout": "switch_to_next_preference",
+    "on_error_429_401_410": "switch_to_next_preference_inmediato",
+    "max_failures_before_switch": 3,
+    "window_minutes": 60,
+    "cooldown_minutes": 30,
+    "note": "Si un agente se estanca mas de 5 min o falla 3 veces, Atlas brinca al siguiente modelo en preference_order. NVIDIA se agota -> DeepSeek OpenCode Go."
+  },
+  "validation": {
+    "required_agents": ["atlas-player", "atlas", "tywin", "sam", "amarant", "bran", "auron", "varys", "momus", "oracle", "eremez", "maestro", "sisyphus", "kimi", "vivi", "ansem", "kuja", "eiko", "quina", "bard", "tidus", "ragnarok", "hephaestus", "deep_worker", "explore", "librarian", "metis", "plan", "gentleman", "prometheus"],
+    "legacy_files": "read_only; esta politica es la fuente de verdad para routing. model-chain.json y model-assignments.json quedan como referencia historica."
+  }
+}

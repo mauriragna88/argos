@@ -1,0 +1,67 @@
+{
+  "class": "Ranger",
+  "character": "[PERSONAJE]",
+  "description": "Skill tree del Ranger, Research. Busca docs, compara librerias, rastrea codebase.",
+  "skills": [
+    {
+      "name": "mark",
+      "level": 1,
+      "damage": 10,
+      "mp_cost_tokens": 500,
+      "prerequisites": [],
+      "unlock_uses": 0,
+      "trigger": "library docs lookup",
+      "description": "Busca docs de una libreria via Context7 o web search.",
+      "inherits_skills": ["context7"],
+      "xp_per_use": 2
+    },
+    {
+      "name": "tracker",
+      "level": 1,
+      "damage": 15,
+      "mp_cost_tokens": 1000,
+      "prerequisites": [],
+      "unlock_uses": 0,
+      "trigger": "codebase pattern search",
+      "description": "Busca patrones en el codebase actual: greop, glob, lsp_symbols.",
+      "inherits_skills": ["explore"],
+      "xp_per_use": 3
+    },
+    {
+      "name": "scout",
+      "level": 2,
+      "damage": 20,
+      "mp_cost_tokens": 1500,
+      "prerequisites": ["mark"],
+      "unlock_uses": 2,
+      "trigger": "compare libraries/approaches",
+      "description": "Compara 2-3 librerias con pros/cons y recomendacion final.",
+      "inherits_skills": ["context7", "librarian"],
+      "xp_per_use": 8
+    },
+    {
+      "name": "swarm",
+      "level": 2,
+      "damage": 35,
+      "mp_cost_tokens": 3000,
+      "prerequisites": ["mark", "tracker"],
+      "unlock_uses": 3,
+      "trigger": "multi-source parallel research",
+      "description": "Lanza 3+ busquedas en paralelo: docs + github + web + codebase.",
+      "inherits_skills": ["context7", "librarian", "explore"],
+      "xp_per_use": 15
+    },
+    {
+      "name": "wide-net",
+      "level": 4,
+      "damage": 55,
+      "mp_cost_tokens": 5000,
+      "prerequisites": ["swarm"],
+      "unlock_uses": 2,
+      "trigger": "full competitive analysis",
+      "description": "Analisis competitivo completo: features, pricing, performance de 5+ alternativas.",
+      "inherits_skills": ["context7", "librarian"],
+      "xp_per_use": 25
+    }
+  ]
+}

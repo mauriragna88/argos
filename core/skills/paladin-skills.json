@@ -1,0 +1,67 @@
+{
+  "class": "Paladin",
+  "character": "[PERSONAJE]",
+  "description": "Skill tree del Paladin, Backend Tank. APIs, Supabase, security.",
+  "skills": [
+    {
+      "name": "smite",
+      "level": 1,
+      "damage": 30,
+      "mp_cost_tokens": 3000,
+      "prerequisites": [],
+      "unlock_uses": 0,
+      "trigger": "crear API route o server action",
+      "description": "Crea endpoint con validacion Zod, error handling explicit, TypeScript strict.",
+      "inherits_skills": ["api-design", "typescript", "validation-pipeline"],
+      "xp_per_use": 5
+    },
+    {
+      "name": "divine-shield",
+      "level": 2,
+      "damage": 35,
+      "mp_cost_tokens": 4000,
+      "prerequisites": ["smite"],
+      "unlock_uses": 3,
+      "trigger": "security hardening, RLS policies",
+      "description": "Configura RLS en Supabase, auth patterns, authorization middleware.",
+      "inherits_skills": ["security", "owasp", "auth-patterns"],
+      "xp_per_use": 10
+    },
+    {
+      "name": "judgment",
+      "level": 2,
+      "damage": 35,
+      "mp_cost_tokens": 3000,
+      "prerequisites": ["smite"],
+      "unlock_uses": 3,
+      "trigger": "refactor backend code",
+      "description": "Refactor de modulos backend: clean code, remueve code muerto, mejora tipos.",
+      "inherits_skills": ["clean-code", "clean-architecture", "typescript"],
+      "xp_per_use": 10
+    },
+    {
+      "name": "holy-ground",
+      "level": 3,
+      "damage": 50,
+      "mp_cost_tokens": 6000,
+      "prerequisites": ["smite", "divine-shield"],
+      "unlock_uses": 5,
+      "trigger": "diseno de schema DB completo",
+      "description": "Disena schema completo: tablas, relaciones, indices, RLS, migraciones.",
+      "inherits_skills": ["schema-design", "postgresql", "prisma"],
+      "xp_per_use": 20
+    },
+    {
+      "name": "bulwark",
+      "level": 3,
+      "damage": 45,
+      "mp_cost_tokens": 5000,
+      "prerequisites": ["divine-shield"],
+      "unlock_uses": 2,
+      "trigger": "full security audit (auth + RLS + encryption)",
+      "description": "Auditoria completa: auth flow, RLS policies, encrypt en transito y at-rest, OWASP top 10.",
+      "inherits_skills": ["security", "owasp", "encryption", "auth-patterns"],
+      "xp_per_use": 30
+    }
+  ]
+}

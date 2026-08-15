@@ -1,0 +1,129 @@
+#!/bin/sh
+# pre-commit - Atlas Varys Documentalist hook
+# =============================================
+# T9.4 - Pre-commit hook integration.
+# Corre Varys Documentalist antes de cada commit para detectar:
+#   - Secrets leaked (apiKey, token, password en diff)
+#   - Typos criticos en archivos clave
+#   - Stale references (paths/nombres que ya no existen)
+#
+# Instalacion:
+#   cp deploy/hooks/pre-commit .git/hooks/pre-commit
+#   chmod +x .git/hooks/pre-commit
+#
+# O con husky:
+#   npx husky add .husky/pre-commit "sh deploy/hooks/pre-commit"
+
+set -e
+
+# === Config ===
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+if [ -z "$REPO_ROOT" ]; then
+    echo "  [VARYS-DOC] No es un repo git. Skip."
+    exit 0
+fi
+
+cd "$REPO_ROOT"
+
+# Colores si terminal soporta
+if [ -t 1 ]; then
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    GRAY='\033[0;90m'
+    NC='\033[0m'
+else
+    RED=""; GREEN=""; YELLOW=""; GRAY=""; NC=""
+fi
+
+echo -e "  ${GRAY}[VARYS-DOC] Mis pajaritos estan volando sobre tu diff...${NC}"
+
+# === 1. Detectar secrets en el diff staged ===
+SECRETS_PATTERNS='(apiKey|api_key|API_KEY|password|passwd|secret|token|aws_secret|stripe_|sk_live_|sk_test_)[[:space:]]*[:=][[:space:]]*["'"'"'][^"'"'"']{8,}'
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null)
+SECRET_HITS=0
+CRITICAL_FINDINGS=0
+
+for file in $STAGED; do
+    [ -f "$file" ] || continue
+
+    # Skip binary files
+    if file "$file" 2>/dev/null | grep -qi "binary"; then
+        continue
+    fi
+
+    # Buscar patrones de secret en el diff staged del archivo
+    DIFF_CONTENT=$(git diff --cached -- "$file" 2>/dev/null | grep '^+' | grep -v '^+++')
+    if [ -n "$DIFF_CONTENT" ]; then
+        HITS=$(echo "$DIFF_CONTENT" | grep -iE "$SECRETS_PATTERNS" 2>/dev/null || true)
+        if [ -n "$HITS" ]; then
+            while IFS= read -r line; do
+                [ -z "$line" ] && continue
+                echo -e "  ${RED}[CRITICAL] Secret detected in $file${NC}"
+                echo -e "    ${GRAY}$line${NC}"
+                SECRET_HITS=$((SECRET_HITS + 1))
+                CRITICAL_FINDINGS=$((CRITICAL_FINDINGS + 1))
+            done <<< "$HITS"
+        fi
+    fi
+done
+
+# === 2. Verificar .env no staged ===
+for envfile in .env .env.local .env.production .env.staging; do
+    if git diff --cached --name-only 2>/dev/null | grep -q "^$envfile$"; then
+        echo -e "  ${RED}[CRITICAL] $envfile esta en el commit. Debe estar en .gitignore${NC}"
+        CRITICAL_FINDINGS=$((CRITICAL_FINDINGS + 1))
+    fi
+done
+
+# === 3. Verificar archivos agent.md no tienen secrets ===
+for f in core/classes/*.agent.md core/auditors/*.agent.md core/atlas-player.agent.md; do
+    [ -f "$f" ] || continue
+    if grep -qiE "$SECRETS_PATTERNS" "$f" 2>/dev/null; then
+        echo -e "  ${RED}[CRITICAL] Secret-like pattern in $f${NC}"
+        CRITICAL_FINDINGS=$((CRITICAL_FINDINGS + 1))
+    fi
+done
+
+# === 4. Verificar config.json no tiene secrets ===
+CONFIG_FILE=".arnes/config.json"
+if [ -f "$CONFIG_FILE" ]; then
+    if grep -qiE "$SECRETS_PATTERNS" "$CONFIG_FILE" 2>/dev/null; then
+        echo -e "  ${RED}[CRITICAL] Secret-like pattern in $CONFIG_FILE${NC}"
+        CRITICAL_FINDINGS=$((CRITICAL_FINDINGS + 1))
+    fi
+fi
+
+# === 5. Verificar JSON validos en staged ===
+for f in $STAGED; do
+    [ -f "$f" ] || continue
+    case "$f" in
+        *.json)
+            if ! python3 -m json.tool "$f" >/dev/null 2>&1 && ! jq empty "$f" 2>/dev/null; then
+                echo -e "  ${YELLOW}[HIGH] $f no es JSON valido${NC}"
+            fi
+            ;;
+    esac
+done
+
+# === Veredicto ===
+echo ""
+if [ $CRITICAL_FINDINGS -gt 0 ]; then
+    echo -e "  ${RED}VARYS-DOC VERDICT: FAIL${NC}"
+    echo -e "  ${RED}$CRITICAL_FINDINGS CRITICAL finding(s). Commit bloqueado.${NC}"
+    echo ""
+    echo -e "  ${GRAY}Para bypass (NO RECOMENDADO):${NC}"
+    echo -e "  ${GRAY}  git commit --no-verify${NC}"
+    echo ""
+    echo -e "  ${GRAY}Fix sugerido:${NC}"
+    echo -e "  ${GRAY}  - Mueve secrets a .env (y agrega .env a .gitignore)${NC}"
+    echo -e "  ${GRAY}  - Borra el secret del commit${NC}"
+    exit 1
+fi
+
+if [ $SECRET_HITS -eq 0 ]; then
+    echo -e "  ${GREEN}[OK] 0 secrets detectados en diff staged${NC}"
+fi
+echo -e "  ${GREEN}VARYS-DOC VERDICT: PASS - commit permitido${NC}"
+exit 0

@@ -1,0 +1,28 @@
+{
+  "_comment": "Codex config para Atlas RPG. Copiar como .codexrc.json en el project root.",
+  "model": {
+    "default": "gpt-5.5",
+    "reasoning_level": "medium",
+    "reasoning_level_by_quest": {
+      "trivial": "low",
+      "simple": "medium",
+      "complex": "high",
+      "boss": "high"
+    }
+  },
+  "agents": {
+    "atlas": { "model": "gpt-5.5", "system_prompt_file": "core/atlas-player.agent.md" },
+    "vivi": { "model": "gpt-5.5", "category": "visual-engineering", "system_prompt_file": "core/classes/vivi.agent.md" },
+    "paladin": { "model": "gpt-5.5", "category": "deep", "system_prompt_file": "core/classes/paladin.agent.md" },
+    "rogue": { "model": "gpt-5.5", "category": "deep", "system_prompt_file": "core/classes/rogue.agent.md" },
+    "eiko": { "model": "gpt-4o", "category": "unspecified-high", "system_prompt_file": "core/classes/eiko.agent.md" },
+    "monk": { "model": "gpt-5.5", "category": "ultrabrain", "system_prompt_file": "core/classes/monk.agent.md" },
+    "ranger": { "model": "gpt-4o-mini", "category": "quick", "system_prompt_file": "core/classes/ranger.agent.md" }
+  },
+  "auto_loop": true,
+  "circuit_breaker": {
+    "threshold": 3,
+    "window_minutes": 60,
+    "cooldown_minutes": 30
+  }
+}

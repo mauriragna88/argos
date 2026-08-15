@@ -1,0 +1,79 @@
+{
+  "class": "Mage",
+  "character": "Vivi",
+  "description": "Spell tree de Vivi, Mage Frontend. Genera componentes React con diseno de alto impacto.",
+  "spells": [
+    {
+      "name": "fireball",
+      "level": 1,
+      "damage": 25,
+      "mp_cost_tokens": 2000,
+      "prerequisites": [],
+      "unlock_uses": 0,
+      "trigger": "crear componente React/TSX",
+      "description": "Genera 1 componente React con TypeScript strict, Tailwind responsive, Server Component by default, loading+error+empty states, ARIA roles.",
+      "inherits_skills": ["react", "tailwind", "design-systems", "accessibility"],
+      "xp_per_use": 5
+    },
+    {
+      "name": "flare",
+      "level": 1,
+      "damage": 20,
+      "mp_cost_tokens": 1500,
+      "prerequisites": [],
+      "unlock_uses": 0,
+      "trigger": "ajustar/refinar UI existente",
+      "description": "Refactor de un componente: mejora accesibilidad, responsive, o estilo.",
+      "inherits_skills": ["react", "tailwind", "atomic-design"],
+      "xp_per_use": 3
+    },
+    {
+      "name": "responsive-aoe",
+      "level": 2,
+      "damage": 30,
+      "mp_cost_tokens": 3000,
+      "prerequisites": ["fireball"],
+      "unlock_uses": 3,
+      "trigger": "layout responsive completo (mobile+tablet+desktop)",
+      "description": "Layout responsive con Tailwind container queries, grid, breakpoints mobile-first.",
+      "inherits_skills": ["tailwind", "react"],
+      "xp_per_use": 8
+    },
+    {
+      "name": "inferno",
+      "level": 3,
+      "damage": 65,
+      "mp_cost_tokens": 8000,
+      "prerequisites": ["fireball", "flare"],
+      "unlock_uses": 5,
+      "trigger": "feature frontend completa (3-8 componentes)",
+      "description": "Feature frontend completa con composicion, design tokens, dark mode, animaciones sutiles, WCAG AA compliance.",
+      "inherits_skills": ["react", "tailwind", "design-systems", "accessibility", "atomic-design"],
+      "xp_per_use": 20
+    },
+    {
+      "name": "design-mastery",
+      "level": 4,
+      "damage": 40,
+      "mp_cost_tokens": 5000,
+      "prerequisites": ["inferno"],
+      "unlock_uses": 2,
+      "trigger": "design system corporativo",
+      "description": "Crea un design system completo: tokens, componentes base, theme, dark mode, docs.",
+      "inherits_skills": ["design-systems", "tailwind", "atomic-design"],
+      "xp_per_use": 25
+    },
+    {
+      "name": "meteor-shower",
+      "level": 5,
+      "damage": 100,
+      "mp_cost_tokens": 15000,
+      "prerequisites": ["inferno", "design-mastery"],
+      "unlock_uses": 2,
+      "trigger": "redesign completo de aplicacion (boss-tier)",
+      "description": "Redesign de toda una app: design system + components + pages + animations + dark mode. Ultimate boss-tier spell.",
+      "inherits_skills": ["react", "tailwind", "design-systems", "accessibility", "atomic-design"],
+      "xp_per_use": 50
+    }
+  ]
+}

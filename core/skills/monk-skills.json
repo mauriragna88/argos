@@ -1,0 +1,67 @@
+{
+  "class": "Monk",
+  "character": "[PERSONAJE]",
+  "description": "Skill tree del Monk, Arquitecto. Planifica, disena sistemas, medita antes de actuar.",
+  "skills": [
+    {
+      "name": "foresight",
+      "level": 1,
+      "damage": 15,
+      "mp_cost_tokens": 2000,
+      "prerequisites": [],
+      "unlock_uses": 0,
+      "trigger": "feature planning, project structure",
+      "description": "Planifica una feature: scope, archivos, dependencias, riesgos.",
+      "inherits_skills": ["project-structure", "clean-architecture"],
+      "xp_per_use": 5
+    },
+    {
+      "name": "inner-peace",
+      "level": 2,
+      "damage": 25,
+      "mp_cost_tokens": 3000,
+      "prerequisites": ["foresight"],
+      "unlock_uses": 2,
+      "trigger": "architecture audit",
+      "description": "Audita la arquitectura actual, identifica deuda tecnica, propone mejoras.",
+      "inherits_skills": ["sdd-explore", "clean-architecture"],
+      "xp_per_use": 10
+    },
+    {
+      "name": "mantra",
+      "level": 2,
+      "damage": 30,
+      "mp_cost_tokens": 4000,
+      "prerequisites": ["foresight"],
+      "unlock_uses": 3,
+      "trigger": "module refactor, monorepo restructure",
+      "description": "Redisenar modulos, restructure monorepo, dependency inversion.",
+      "inherits_skills": ["clean-architecture", "monorepo"],
+      "xp_per_use": 15
+    },
+    {
+      "name": "meditation",
+      "level": 3,
+      "damage": 40,
+      "mp_cost_tokens": 10000,
+      "prerequisites": ["inner-peace"],
+      "unlock_uses": 2,
+      "trigger": "SDD full cycle (explore-spec-design-tasks)",
+      "description": "SDD completo: explore → spec → design → tasks. Para features complejas.",
+      "inherits_skills": ["sdd-propose", "sdd-spec", "sdd-design", "sdd-tasks"],
+      "xp_per_use": 30
+    },
+    {
+      "name": "zen-architecture",
+      "level": 5,
+      "damage": 80,
+      "mp_cost_tokens": 12000,
+      "prerequisites": ["meditation"],
+      "unlock_uses": 2,
+      "trigger": "complete system design (boss-tier)",
+      "description": "Diseno completo de sistema: arquitectura, modulos, data flow, ADRs, diagramas.",
+      "inherits_skills": ["clean-architecture", "project-structure", "monorepo", "sdd-design"],
+      "xp_per_use": 50
+    }
+  ]
+}

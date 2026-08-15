@@ -1,0 +1,110 @@
+﻿{
+    "schema":  "1.0",
+    "generated_at":  "2026-08-04T14:00:00-06:00",
+    "generated_after_quest":  "Q-022",
+    "atlas_read_before_quest":  "Q-023",
+    "top_recommendations":  [
+                                {
+                                    "priority":  1,
+                                    "recommendation":  "Vivi+Eiko continues at 0.975 trust (frontend, 31 quests, 0.972 success). Safe default.",
+                                    "based_on":  [
+                                                     "party_config_history",
+                                                     "trust_scores:vivi"
+                                                 ],
+                                    "expires_after_quest":  null,
+                                    "severity":  "info"
+                                },
+                                {
+                                    "priority":  2,
+                                    "recommendation":  "Pattern discovered in Q-023: container queries for responsive grids. Reuse for future dashboard quests.",
+                                    "based_on":  [
+                                                     "pat-1"
+                                                 ],
+                                    "expires_after_quest":  null,
+                                    "severity":  "info"
+                                },
+                                {
+                                    "priority":  3,
+                                    "recommendation":  "Ansem remains at 0.5 trust (circuit breaker Q-002). Pair with Auron or Eiko for any backend quest.",
+                                    "based_on":  [
+                                                     "trust_scores:ansem"
+                                                 ],
+                                    "expires_after_quest":  null,
+                                    "severity":  "medium"
+                                }
+                            ],
+    "agent_trust_scores":  {
+                               "vivi":  {
+                                            "score":  0.975,
+                                            "trend":  "stable"
+                                        },
+                               "eiko":  {
+                                            "score":  1,
+                                            "trend":  "stable"
+                                        },
+                               "ansem":  {
+                                             "score":  0.5,
+                                             "trend":  "falling"
+                                         },
+                               "kuja":  {
+                                            "score":  1,
+                                            "trend":  "stable"
+                                        },
+                               "amarant":  {
+                                               "score":  1,
+                                               "trend":  "n/a"
+                                           },
+                               "eremez":  {
+                                              "score":  1,
+                                              "trend":  "n/a"
+                                          },
+"auron":  {
+                                              "score":  1,
+                                              "trend":  "n/a"
+                                          },
+                                "bran":  {
+                                             "score":  1.0,
+                                             "trend":  "n/a"
+                                         },
+                                "varys":  {
+                                              "score":  1.0,
+                                              "trend":  "n/a"
+                                          },
+                                "tywin":  {
+                                              "score":  1.0,
+                                              "trend":  "n/a"
+                                          },
+                                "sam":  {
+                                            "score":  1.0,
+                                            "trend":  "n/a"
+                                        },
+                                "quina":  {
+                                              "score":  1.0,
+                                              "trend":  "n/a"
+                                          }
+                            },
+    "risk_alerts":  [
+                        {
+                            "alert":  "Ansem still at 0.5 trust. Do not assign solo backend.",
+                            "severity":  "medium",
+                            "agent":  "ansem",
+                            "action":  "pair with Auron or Eiko"
+                        }
+                    ],
+    "lessons_from_last_quest":  [
+                                    "Q-023 PASS by Vivi. Tokens: 1200. Pattern discovered: container queries for responsive grids.",
+                                    "Trust score vivi: 31 quests total, 31 since last fail."
+                                ],
+    "party_config_recommendation":  {
+                                        "for_quest_type":  "frontend",
+                                        "recommended_party":  [
+                                                                  "vivi",
+                                                                  "eiko"
+                                                              ],
+                                        "rationale":  "0.972 success rate over 31 quests. Default safe config.",
+                                        "historical_success_rate":  0.972
+                                    },
+    "anti_repetition_warnings":  [
+
+                                 ]
+}

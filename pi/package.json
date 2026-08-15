@@ -1,0 +1,38 @@
+{
+  "name": "argos-superpowers",
+  "version": "0.1.0",
+  "description": "Fusión nativa ARNES ARGOS + Pi + Superpowers. ARGOS = cerebro, Pi = runtime, Superpowers = habilidades.",
+  "keywords": [
+    "pi-package",
+    "argos",
+    "arnes",
+    "superpowers"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "main": "extensions/argos-core.ts",
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^7.0.2"
+  },
+  "scripts": {
+    "test": "tsx --test ../tests/unit/*.test.ts",
+    "gen:skills": "node scripts/gen-role-skills.mjs"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions"
+    ],
+    "skills": [
+      "./skills"
+    ],
+    "prompts": [
+      "./prompts"
+    ]
+  }
+}

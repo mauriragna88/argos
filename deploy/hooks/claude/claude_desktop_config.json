@@ -1,0 +1,62 @@
+{
+  "_comment": "Claude desktop config para Atlas RPG. Mergear con claude_desktop_config.json existente.",
+  "mcpServers": {
+    "atlas-rpg": {
+      "command": "node",
+      "args": ["./cli/arnes-mcp-bridge.js"],
+      "env": {
+        "HARNESS_RPG_MODE": "true",
+        "HARNESS_PARTY_FILE": ".arnes/config.json"
+      }
+    }
+  },
+  "agents": {
+    "atlas": {
+      "model": "claude-opus-4",
+      "system_prompt_file": "core/atlas-player.agent.md",
+      "role": "primary"
+    },
+    "vivi": {
+      "model": "claude-opus-4",
+      "system_prompt_file": "core/classes/vivi.agent.md",
+      "role": "subagent",
+      "category": "visual-engineering"
+    },
+    "paladin": {
+      "model": "claude-sonnet-4",
+      "system_prompt_file": "core/classes/paladin.agent.md",
+      "role": "subagent",
+      "category": "backend"
+    },
+    "rogue": {
+      "model": "claude-sonnet-4",
+      "system_prompt_file": "core/classes/rogue.agent.md",
+      "role": "subagent",
+      "category": "qa"
+    },
+    "eiko": {
+      "model": "claude-sonnet-4",
+      "system_prompt_file": "core/classes/eiko.agent.md",
+      "role": "subagent",
+      "category": "devops"
+    },
+    "monk": {
+      "model": "claude-opus-4",
+      "system_prompt_file": "core/classes/monk.agent.md",
+      "role": "subagent",
+      "category": "architecture"
+    },
+    "ranger": {
+      "model": "claude-haiku-4",
+      "system_prompt_file": "core/classes/ranger.agent.md",
+      "role": "subagent",
+      "category": "research"
+    }
+  },
+  "auto_loop": true,
+  "circuit_breaker": {
+    "threshold": 3,
+    "window_minutes": 60,
+    "cooldown_minutes": 30
+  }
+}

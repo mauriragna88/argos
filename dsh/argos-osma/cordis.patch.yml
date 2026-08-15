@@ -1,0 +1,7 @@
+# ARGOS/OSMA bundle patch: inserts the shared-memory bridge into the dsh profile.
+# Applied as a profile layer over the dsh-base tree. The plugin registers
+# argos_* tools and a per-turn learning hook that write to <project>/.arnes/arnes.db
+# — the SAME brain opencode/pi/claude/codex already use (memoria per-proyecto).
+- insert:
+    - id: argos-osma
+      name: '@arnes/dsh-argos-osma'

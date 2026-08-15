@@ -1,0 +1,79 @@
+{
+  "class": "Cleric",
+  "character": "Eiko",
+  "description": "Healing tree de Eiko, Healer/DevOps. Cura builds, arregla pipelines, hace deploys.",
+  "heals": [
+    {
+      "name": "mend",
+      "level": 1,
+      "damage_heal": 30,
+      "mp_cost_tokens": 1000,
+      "prerequisites": [],
+      "unlock_uses": 0,
+      "trigger": "build roto, lint error, typecheck fail",
+      "description": "Diagnostica error, identifica root cause, aplica fix minimal, re-corre pipeline.",
+      "inherits_skills": ["feedback-loop", "validation-pipeline"],
+      "xp_per_use": 5
+    },
+    {
+      "name": "esuna",
+      "level": 1,
+      "damage_heal": 20,
+      "mp_cost_tokens": 500,
+      "prerequisites": [],
+      "unlock_uses": 0,
+      "trigger": "merge conflict, git issue",
+      "description": "Resuelve merge conflicts, arregla git history, cleanup branches.",
+      "inherits_skills": ["git-discipline"],
+      "xp_per_use": 3
+    },
+    {
+      "name": "cura",
+      "level": 2,
+      "damage_heal": 50,
+      "mp_cost_tokens": 3000,
+      "prerequisites": ["mend"],
+      "unlock_uses": 3,
+      "trigger": "CI/CD pipeline repair",
+      "description": "Repara GitHub Actions completa: steps, secrets, matrix builds, caching.",
+      "inherits_skills": ["ci-cd", "git-discipline"],
+      "xp_per_use": 12
+    },
+    {
+      "name": "protect",
+      "level": 2,
+      "damage_heal": 40,
+      "mp_cost_tokens": 3000,
+      "prerequisites": ["mend"],
+      "unlock_uses": 2,
+      "trigger": "docker/container security",
+      "description": "Audit de container: Dockerfile multi-stage, non-root user, no secrets, healthcheck.",
+      "inherits_skills": ["docker", "docker-compose"],
+      "xp_per_use": 15
+    },
+    {
+      "name": "shell",
+      "level": 2,
+      "damage_heal": 35,
+      "mp_cost_tokens": 2000,
+      "prerequisites": ["mend"],
+      "unlock_uses": 2,
+      "trigger": "pre-deploy safety check",
+      "description": "Pre-deploy checklist: env vars, build, tests, rollback plan, health endpoints.",
+      "inherits_skills": ["deploy", "vercel-deploy"],
+      "xp_per_use": 10
+    },
+    {
+      "name": "mass-heal",
+      "level": 3,
+      "damage_heal": 80,
+      "mp_cost_tokens": 5000,
+      "prerequisites": ["cura"],
+      "unlock_uses": 2,
+      "trigger": "major outage, full project recovery",
+      "description": "Restaura todo el proyecto: lint, types, tests, build. Fix en orden non-blocking first.",
+      "inherits_skills": ["ci-cd", "docker-compose", "deploy", "git-discipline"],
+      "xp_per_use": 30
+    }
+  ]
+}

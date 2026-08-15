@@ -1,0 +1,163 @@
+﻿{
+    "schema_version": 2,
+    "created_at": "2026-07-28T12:00:00-06:00",
+    "updated_at": "2026-08-05T00:00:00-06:00",
+    "title": "Plan ARNES v2 - Ecosistema 100% propio",
+    "principle": "El harness hace el trabajo pesado; el modelo de IA es intercambiable. CERO dependencia del ecosistema/arnes.db. Memoria cerebral propia (SQLite+FTS5), Knowledge Graph, SDD/FDD/ADR propios.",
+    "master_plan": "docs/PLAN-ARNES.md (FUENTE DE VERDAD para continuidad entre sesiones)",
+    "current_state": {
+        "quests_completed": 41,
+        "agents_in_core": 15,
+        "skills_in_core": 9,
+        "smoke_test": "PASS 15/15",
+        "tokens_used": 70500,
+        "repo_tier": "lean",
+        "success_rate": "98%",
+        "model_config": "APLICADA 2026-08-05 (DeepSeek Flash 75% + GPT Luna + Qwen3.8 Max Atlas)",
+        "providers": ["opencode-go", "openai (oauth)", "nvidia (gratis)", "minimax", "z-ai", "bai"]
+    },
+    "phases": [
+        {
+            "id": 1,
+            "name": "ARNES BRAIN - memoria propia (SQLite+FTS5)",
+            "status": "done",
+            "description": "arnes.db con schema agents/observations/quests/sessions/edges. CLI arnes-memory (save/search/context/export-jsonl/import-jsonl). Skills: arnes-memory, arnes-agent-memory, arnes-context-digest. Integrado en 7 agent.md. Test de humo save->search->context->export->quest->edge PASS.",
+            "completed_at": "2026-08-05",
+            "acceptance_criteria": [
+                "arnes.db existe con FTS5 y tablas agents/observations/quests/sessions/edges - HECHO",
+                "arnes-memory save/search/context funcionan desde PowerShell - HECHO",
+                "Cada agente puede guardar y consultar SU memoria (namespace propio) - HECHO",
+                "Export/import JSONL para git funciona - HECHO",
+                "Atlas consulta memoria del agente via task() sin cargar todo - DISPONIBLE (via arnes-memory CLI)"
+            ]
+        },
+        {
+            "id": 2,
+            "name": "ARNES GRAPH - capa de relaciones",
+            "status": "done",
+            "description": "Tabla edges sobre arnes.db. CLI arnes-graph (add/query/neighbors/path/stats). Motor BFS para path-finding. Skill arnes-graph. Mapa de codigo: componentes <-> librerias <-> agentes.",
+            "completed_at": "2026-08-05",
+            "acceptance_criteria": [
+                "edges: node_a, node_b, relation, agent, ts - HECHO",
+                "Query: 'quien toco el Login?' retorna Vivi - HECHO",
+                "Query: 'que componentes dependen de Zod?' retorna lista - HECHO",
+                "Anti-alucinacion por relaciones: componente YA usa X -> no reimplementar - HECHO",
+                "Path-finding BFS Login.tsx -> tailwind - HECHO"
+            ]
+        },
+        {
+            "id": 3,
+            "name": "ARNES SDD - con metodos propios",
+            "status": "done",
+            "description": "Skills propias file-based: arnes-sdd-propose/spec/design/tasks/apply/verify/archive. Carpeta .arnes/sdd/ con templates. Change de ejemplo C-20260805-01. Ciclo probado con quest Q-002.",
+            "completed_at": "2026-08-05",
+            "acceptance_criteria": [
+                "Ciclo SDD completo corre con metodos propios - HECHO",
+                ".arnes/sdd/ guarda proposal->spec->design->tasks - HECHO",
+                "skills sdd-* del ecosistema reemplazadas en opencode.json - PARCIAL (skills propias creadas; remover las ajenas en limpieza FASE 6)"
+            ]
+        },
+        {
+            "id": 3.5,
+            "name": "ARNES SKILLS v2 - 100% propias (DECISION USUARIO 2026-08-05)",
+            "status": "pending",
+            "description": "Skills de los 13 agentes 100% propias, sin dependencias externas EN NADA. Las skills de internet (superpowers, ui-ux-pro-max, taste-skill) SE MANTIENEN como COMPLEMENTO DE PODER / arsenal (nunca dependencia obligatoria): el procedimiento es nuestro, las skills web potencian la ejecucion. Crear skills v2 en core/skills/ renovadas: trigger, inputs, pasos, output, conexion a arnes.db. Actualizar .atl/skill-registry.md (quitar 'origen externo', mapear complementos web).",
+            "acceptance_criteria": [
+                "skill-registry.md sin referencias 'origen externo'",
+                "Los 13 agentes tienen skill propia v2 (vivi-fireball, ansem-smite, kuja-backstab, etc.)",
+                "Un quest de frontend se resuelve 100% con skills propias",
+                "Cada skill conecta a memoria (arnes.db): guarda patron/leccion al usarse"
+            ]
+        },
+        {
+            "id": 4,
+            "name": "ARNES FDD - Feature-Driven propio",
+            "status": "done",
+            "description": "Skills arnes-fdd-plan/implement/review/archive. Carpeta .arnes/fdd/ con templates. Feature set de ejemplo FL-20260805-01 (Sistema de Login). Features conectadas a memoria.",
+            "completed_at": "2026-08-05",
+            "acceptance_criteria": [
+                "feature list -> plan -> implement -> review -> archive funciona - HECHO",
+                "Cada feature registra en arnes.db quien la hizo y que funciono - HECHO (quest por feature)",
+                "FDD conectado a arnes-memory - HECHO"
+            ]
+        },
+        {
+            "id": 5,
+            "name": "ARNES ADR - Architecture Decision Records",
+            "status": "pending",
+            "description": "Skill arnes-adr. Carpeta .arnes/adr/. Amarant registra decisiones con contexto y consecuencias.",
+            "acceptance_criteria": [
+                "Toda decision de arquitectura queda registrada en .arnes/adr/",
+                "Formato: contexto, decision, consecuencias, fecha, autor",
+                "Se guarda referencia en arnes.db"
+            ]
+        },
+        {
+            "id": 6,
+            "name": "ATLAS SHELL + GIT + DOCS",
+            "status": "pending",
+            "description": "atlas -> banner ARNES -> menu (chat/reconfigurar/estado). Wizard de modelos con flechas (estilo /models). Deteccion de proveedores. Reconfiguracion parcial. Git re-init (roto). .gitignore. README + docs para GitHub.",
+            "acceptance_criteria": [
+                "atlas desde CMD/PowerShell muestra banner y menu",
+                "Wizard con flechas selecciona modelo por agente desde catalogo vivo",
+                "Reconfigurar solo un agente si pierdes proveedor",
+                "Chat directo: opcion 1 -> opencode --agent atlas-player",
+                "git init funcional, commit inicial, subible a GitHub",
+                "docs/PLAN-ARNES.md y README actualizados"
+            ]
+        },
+        {
+            "id": 7,
+            "name": "TIDUS - Infrastructure & Growth Warden (NUEVO 2026-08-05)",
+            "status": "done",
+            "description": "Departamento de Sistemas del harness. Vigila recursos del entorno (disco/RAM/CPU), cuotas de proveedores (Go/OpenAI/NVIDIA), skills instaladas, crecimiento del harness.",
+            "completed_at": "2026-08-05",
+            "acceptance_criteria": [
+                "agent.md creado (core/classes/tidus.agent.md) - HECHO",
+                "Integrar en cli/atlas.ps1 SyncAgents (mapeo tidus) - HECHO",
+                "Skill tidus-tide-check (health-check recursos) - HECHO",
+                "Skill tidus-cuota-check (cuotas proveedores) - HECHO (en tidus-tide-check)",
+                "Health-check al inicio de sesion (Atlas Shell) - HECHO (test GREEN)",
+                "Conectar a arnes.db: tidus://health-history - HECHO"
+            ]
+        },
+        {
+            "id": 8,
+            "name": "RAGNAROK - Procurement & Research Warden (NUEVO 2026-08-05)",
+            "status": "done",
+            "description": "Departamento de Compras del harness. Investiga web (repos git, Reddit, X), busca skills/metodologias nuevas (SDD/FDD/grafos), compara contra lo actual, propone compra, documenta adopciones. El arnes nunca se estanca.",
+            "completed_at": "2026-08-05",
+            "acceptance_criteria": [
+                "agent.md creado (core/classes/ragnarok.agent.md) - HECHO",
+                "Integrar en cli/atlas.ps1 SyncAgents (mapeo ragnarok) - HECHO",
+                "Skill ragnarok-scout (scan web novedades) - HECHO",
+                "Skill ragnarok-compare (War Cry: comparativa + ROI) - HECHO",
+                "Scan de novedades al inicio de sesion - HECHO (ciclo probado)",
+                "Ciclo periodico Scout -> Prophecy -> War Cry cada N quests - HECHO (manual, automatizar en FASE 6)",
+                "Conectar a arnes.db: ragnarok://adopciones, ragnarok://rechazos - HECHO",
+                "Documentacion: lo adoptado se agrega a docs/ del repo - HECHO"
+            ]
+        },
+        {
+            "id": 9,
+            "name": "AURON L0 GATE - Permiso de Trabajo en Altura (NUEVO 2026-08-05)",
+            "status": "done",
+            "description": "Auron = supervisor de seguridad industrial. Antes de todo quest L0 verifica: skill requerida, docs revisadas, plan de rollback, entorno correcto, impacto, backup. Si algo falla -> bloquea (FAIL).",
+            "completed_at": "2026-08-05",
+            "acceptance_criteria": [
+                "Checklist L0 Gate de 6 checks en auron.agent.md - HECHO",
+                "Conectar a arnes.db: auron://l0-permits/<quest_id> - HECHO",
+                "Test: quest L0 sin plan de rollback -> Auron bloquea (FAIL) - HECHO 3/3 PASS",
+                "Test: quest L0 completo -> Auron permite (PASS) - HECHO"
+            ]
+        }
+    ],
+    "rules": [
+        "NO depender del ecosistema, arnes.db, openspec ni arneses externos. Solo Python + SQLite + PowerShell + Node + Git (preinstalados).",
+        "Al terminar cada sesion, actualizar docs/PLAN-ARNES.md (fases, gotchas, estado).",
+        "BOM UTF-8 obligatorio en scripts PS con Unicode (atlas-init.ps1).",
+        "El harness verifica (memoria + tests + grafos); el modelo ejecuta. Anti-alucinacion por diseno.",
+        "Cada agente tiene su memoria y Atlas la consulta via task() cuando la necesita.",
+        "Los archivos .arnes/memory/export/*.jsonl son el snapshot portable para git/backup."
+    ]
+}

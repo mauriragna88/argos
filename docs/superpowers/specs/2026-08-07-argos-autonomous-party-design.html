@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<title>ARGOS AUTONOMOUS PARTY — Diseño</title>
+<style>
+body { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; background:#0d1117; color:#e6edf3; font-family: system-ui, sans-serif; font-size: 22px; line-height: 1.6; }
+h1 { font-size: 34px; color:#f85149; }
+h2 { font-size: 28px; color:#79c0ff; border-bottom:2px solid #30363d; padding-bottom:.3rem; }
+h3 { font-size: 24px; color:#ffa657; }
+h4,h5,h6 { font-size: 22px; }
+p, li { font-size: 22px; }
+pre { background:#161b22; padding:1rem; border-radius:8px; font-size: 17px; overflow-x:auto; }
+code { background:#161b22; padding:.1em .3em; border-radius:4px; font-size:.9em; }
+li { margin:.4rem 0; }
+hr { border:0; border-top:2px solid #30363d; margin:2rem 0; }
+a { color:#58a6ff; }
+</style></head>
+<body>
+<h1>ARGOS AUTONOMOUS PARTY — Diseño de orquestación multiagente autónoma</h1>
+
+<p>&gt; **Fecha**: 2026-08-07</p>
+<p>&gt; **Estado**: propuesto (pendiente revisión del usuario)</p>
+<p>&gt; **Autor**: Usuario + asistente</p>
+<p>&gt; **Requiere aprobación antes de implementar**</p>
+<p>&gt; **Base**: ARGOS SUPERPOWERS (fusión Pi + ARNES ARGOS + Superpowers) — spec `2026-08-06-argos-superpowers-fusion-design.md`, plan implementado (commits `b929fc6`..`26952d8`).</p>
+
+<hr>
+
+<h2>1. Contexto</h2>
+
+<p>La fusión ARGOS SUPERPOWERS está implementada (paquete pi `argos-superpowers`, 9 tools `argos_memory_*`, 17 role-skills, cognitive router, working memory, permisos, compaction, UI `/argos*`, launcher `argos pi`, fusion-check 7/7 PASS). Los 16 agentes existen como role-skills pero **se ejecutan con el modelo de sesión** (Opción A v1).</p>
+
+<p>Esta spec evoluciona el harness para que los agentes **trabajen de forma autónoma en tareas largas**, cada uno ejecutándose **realmente con SU modelo configurado**, sin que el usuario elija agentes manualmente. El usuario expresa &quot;WHAT I WANT&quot;; Atlas (orquestador) transforma eso en WHO + WHAT TASK + WHICH MODEL + WHICH SKILL + HOW MUCH EFFORT + WHEN + HOW TO VERIFY.</p>
+
+<h3>Auditorías de esta fase (evidencia)</h3>
+
+<li>**`pi-subagents` instalado** en `~/.pi/agent/npm/` (v0.42.1, `pi install npm:pi-subagents`): añade la tool `subagent` a pi y expone APIs programáticas (`src/api/delegation.ts`, `background-work.ts`, `control-channel.ts`, `external-runs.ts`) + agentes predefinidos (reviewer, oracle, scout...). Es el mecanismo real de delegación.</li>
+<li>**Catálogo de modelos de pi contiene los IDs de `~/.config/arnes/agent-models.json`** (verificado con `pi --list-models`): `opencode-go/gpt-5.6-luna` ✓, `opencode-go/deepseek-v4-flash` ✓, `opencode-go/deepseek-v4-pro` ✓, `nvidia/z-ai/glm-5.2` ✓, `nvidia/minimaxai/minimax-m3` ✓, `openai-codex/gpt-5.6-luna` ✓. **El model router mapea directo; sin modelos faltantes.**</li>
+<li>La fuente de verdad de modelos sigue siendo `~/.config/arnes/agent-models.json` (NO hardcodear; leer siempre).</li>
+<li>La fundación reutilizable de la fusión: `argos-brain.ts` (runBrain), `argos-party.ts` (catálogo), `argos-model-router.ts`, `argos-orchestrator.ts` (classifyQuest/recommendParty), `argos-working-memory.ts`, `argos-permissions.ts`, `argos-compaction.ts`, `argos-ui.ts`, `argos-skills.ts`, `argos-learning.ts`.</li>
+
+<h2>2. Objetivo y no-objetivos</h2>
+
+<p>**Objetivo**: una quest larga (ej. &quot;crea una plataforma web para una escuela&quot;) se ejecuta autónomamente: Atlas clasifica → Amarant/SDD si DEEP → task graph → party selection con señales estructuradas → delegación vía tool `subagent` con modelos reales por agente → resultados estructurados → verificación por niveles → escalación controlada → aprendizaje → continuidad tras compaction/restart. El usuario no elige agentes.</p>
+
+<p>**No-objetivos (v1)**:</p>
+<li>No reemplazar SDD/FDD/ADR/TDD ARGOS (siguen siendo la metodología).</li>
+<li>No copiar/forkear pi-subagents (se consume como paquete instalado).</li>
+<li>No cambiar permanentemente la configuración de modelos de un agente (el escalation es por ejecución).</li>
+<li>No conversación libre entre agentes (comunicación por contratos/resultados/memoria/task graph).</li>
+<li>No otro orchestrator externo, otra memoria, otro framework de skills.</li>
+<li>No tocar OpenCode ni los comandos argos legacy.</li>
+
+<h2>3. Arquitectura</h2>
+
+<pre>                        USER
+                          │
+                          ▼
+                    ARGOS ATLAS         (sesión pi, modelo top-tier, uso reducido)
+                          │
+                 high-level thinking (clasifica, decide party, delega, verifica, autoriza)
+                          │
+              ┌───────────┼───────────┐
+              ▼           ▼           ▼
+          AMARANT       MEMORY      TASK GRAPH        (arnes.db: tasks/deps/runs)
+          (SDD/ADR)     (V3)            │
+                          │             ▼
+                          ▼        ARGOS SCHEDULER    (argos-scheduler.ts)
+                         SDD     party scoring + contracts + budgets + stop conditions
+                                      │
+                  pi-subagents tool `subagent` (Atlas delega — decisión aprobada A)
+                    ┌───────────┬──────┴─────────┬───────────┐
+                    ▼           ▼                ▼           ▼
+                  VIVI        ANSEM            AURON       EIKO
+               (modelo real)(modelo real)  (modelo real) (modelo real)
+                    └───────────┴───────┬────────┴───────────┘
+                                        ▼
+                                     KUJA (L2)
+                                        ▼
+                                    TYWIN (L3)
+                                        ▼
+                                     BARD (aprendizaje)
+                                        ▼
+                                   MEMORY V3 (consolidación)
+                                        ▼
+                                     ATLAS → FINALIZAR / next phase</pre>
+
+<li>Atlas = cerebro ejecutivo (modelo top-tier, pocas llamadas, decisiones importantes).</li>
+<li>Especialistas = agentes hijos de pi-subagents, cada uno con SU modelo (mapeo directo ARNES→pi).</li>
+<li>Task Graph = estado durable del trabajo en `arnes.db` (sobrevive compaction y restart).</li>
+<li>Comunicación = TASK_CONTRACT → TASK_RESULT estructurado; nunca transcripts.</li>
+
+<h2>4. Task Graph en arnes.db (aditivo)</h2>
+
+<p>Nuevas tablas (comandos aditivos en `arnes_brain.py`, sin tocar lo existente):</p>
+
+<pre>CREATE TABLE IF NOT EXISTS tasks (
+    id          TEXT PRIMARY KEY,        -- T1, T2...
+    quest_id    TEXT NOT NULL,
+    description TEXT NOT NULL,
+    domain      TEXT,                    -- architecture|frontend|backend|auth|db|security|testing|deployment...
+    assigned_agent TEXT,
+    status      TEXT DEFAULT &#x27;ready&#x27;,    -- ready|running|pass|fail|blocked|skipped
+    dependencies TEXT DEFAULT &#x27;[]&#x27;,      -- JSON: [task ids]
+    input       TEXT DEFAULT &#x27;&#x27;,
+    output      TEXT DEFAULT &#x27;&#x27;,
+    acceptance  TEXT DEFAULT &#x27;[]&#x27;,       -- JSON: criterios
+    evidence    TEXT DEFAULT &#x27;&#x27;,
+    attempts    INTEGER DEFAULT 0,
+    model       TEXT,
+    provider    TEXT,
+    created_at  TEXT DEFAULT (datetime(&#x27;now&#x27;)),
+    updated_at  TEXT DEFAULT (datetime(&#x27;now&#x27;))
+);
+CREATE TABLE IF NOT EXISTS task_dependencies (
+    task_id TEXT NOT NULL, depends_on TEXT NOT NULL, PRIMARY KEY (task_id, depends_on)
+);
+CREATE TABLE IF NOT EXISTS task_runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id TEXT NOT NULL, agent TEXT, model TEXT, provider TEXT,
+    result TEXT,               -- PASS | FAIL | REVIEW
+    summary TEXT, evidence TEXT, blockers TEXT,
+    tokens_in INTEGER DEFAULT 0, tokens_out INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime(&#x27;now&#x27;))
+);</pre>
+
+<p>Comandos CLI nuevos en `arnes_brain.py` (backward compatible):</p>
+<li>`task add &lt;json&gt;` — crea/actualiza task (upsert por id).</li>
+<li>`task update &lt;json&gt;` — status/assign/model/attempts/evidence.</li>
+<li>`task graph &lt;quest_id&gt;` — tareas + dependencias + status (para el scheduler).</li>
+<li>`task ready &lt;quest_id&gt;` — tasks `ready` cuyas dependencias están `pass`.</li>
+<li>`task result &lt;json&gt;` — registra un task_run + actualiza task.</li>
+<li>`quest-tasks &lt;quest_id&gt;` — lista tasks de la quest.</li>
+
+<p>El scheduler y la UI consumen esto vía `runBrain`.</p>
+
+<h2>5. Capability registry + party selection</h2>
+
+<li>`agent_capabilities` derivado de los `.agent.md` + metadata estructurada (SIN duplicar fuentes): se construye en `argos-party.ts` extendiendo `AgentCard` con `{ capabilities[], triggers[], anti_triggers[], risk_level, cost_tier, preferred_skills, historical_success }`.</li>
+<li>`classifyQuest` (ya existe) → descomposición en dominios (`architecture, frontend, backend, authentication, database, security, testing, deployment`).</li>
+<li>Mapeo dominio→agente (tabla de scoring): cada dominio aporta candidatos con peso (trigger match, histórico de éxito, cost tier, riesgo). Atlas decide con el ranking; nunca se llama a los 16 por defecto.</li>
+<li>`recommendParty` (ya existe) se extiende al scoring.</li>
+
+<h2>6. TASK_CONTRACT y TASK_RESULT</h2>
+
+<p>**TASK_CONTRACT** (inyectado al subagente vía la tool `subagent`, contexto aislado):</p>
+
+<pre>[ARGOS TASK CONTRACT]
+Agent: argos-ansem
+Quest: school-platform-001
+Task: AUTH-03
+Objective: Implement student login backend.
+Acceptance: email/password · Supabase Auth · errors handled · no service-role client-side · tests passing
+Relevant decisions: #184 #202
+Files likely: src/lib/auth.ts, src/api/auth/*
+Allowed scope: backend/auth
+Do not modify: frontend
+Skills recommended: TDD, systematic-debugging si tests fallan
+Return: RESULT, FILES_CHANGED, TESTS, EVIDENCE, BLOCKERS, MEMORIES_TO_SAVE</pre>
+
+<p>**TASK_RESULT** (persistido en `task_runs` + memoria):</p>
+
+<pre>TASK_RESULT: task_id, agent, status (PASS/FAIL), summary, files_changed[],
+tests, evidence, blockers[], decisions[], new_memory_candidates[], suggested_next_tasks[]</pre>
+
+<p>Atlas recibe solo el resumen (`Ansem: PASS · 2 files · 12 tests · no blockers`). No lee el transcript del subagente.</p>
+
+<h2>7. Model routing (real)</h2>
+
+<li>Fuente de verdad: `~/.config/arnes/agent-models.json` (leer siempre, NO hardcodear).</li>
+<li>Mapeo directo ARNES→pi confirmado (Sección 1). `argos-model-router.ts` resuelve `provider/model` y lo pasa a la definición del subagente.</li>
+<li>Fallback: si el modelo asignado no está disponible → fallback configurado por ARGOS (`.arnes/config.json` → `model_fallback`); si no existe, informar. Registrar `{requested, actual, reason}` en el task_run (nunca cambiar silenciosamente).</li>
+<li>Escalación por ejecución (no permanente): intentos 1-2 modelo base → intento 3 modelo superior (ej. flash→pro) → intento 4 intervención Atlas/usuario. Registrar `{base_model, escalated_model, reason}`.</li>
+
+<h2>8. Scheduler autónomo</h2>
+
+<p>`argos-scheduler.ts` (extensión):</p>
+
+<li>Comandos: `/argos-run` (inicia/continúa), `/argos-pause`, `/argos-resume`, `/argos-stop`.</li>
+<li>Loop (en `turn_end`/`agent_settled` cuando el scheduler está activo y el loop no está pausado):</li>
+
+<pre>while quest not complete:
+    ready = task ready (&lt;quest_id&gt;)          # dependencias satisfechas
+    if no ready and no running: escalate/stop
+    for each ready task (respecto a presupuesto y colisión de archivos):
+        contract = buildContract(task)
+        Atlas delega vía tool `subagent` (decisión A) con el contract
+    collect TASK_RESULT → task result (&lt;json&gt;)
+    update task graph → re-evaluar dependencias
+    resolve blockers → crear remediation tasks si aplica
+    stop conditions → break</pre>
+
+<li>**Stop conditions**: QUEST PASS (todos los tasks PASS + gates) / USER DECISION REQUIRED / PERMISSION REQUIRED / EXTERNAL BLOCKER / BUDGET LIMIT / REPEATED FAILURE LIMIT (configurable, default 3 escalaciones).</li>
+<li>**Guardas anti-loop infinito**: límite de intentos por task, límite de tasks creadas por quest, límite de iteraciones sin progreso (no-op guard).</li>
+<li>**Presupuestos por task**: `token_budget`, `tool_budget`, `turn_budget` (Quina decide según path: routine→cheap, complex→strong, architecture→strong, security→strong, verification→cheap).</li>
+<li>**Paralelismo con colisión**: tasks independientes pueden delegarse en paralelo (fanout de pi-subagents); antes de lanzar, detectar solapamiento de archivos (`files likely`) → si colisionan, serializar (o worktree con `using-git-worktrees` cuando aporte).</li>
+<li>**Autonomy levels**: `SAFE` (más confirmaciones) / `BALANCED` (autónomo en repo, confirma riesgosos) / `AUTONOMOUS` (continúa ampliamente, gates críticos nunca se omiten). Default `BALANCED` (config en `.arnes/config.json` → `autonomy_level`).</li>
+
+<h2>9. Roles en el loop</h2>
+
+<li>**Atlas**: clasifica, construye party, delega, monitoriza, resuelve blockers, verifica, autoriza FINALIZAR. Nunca hace trabajo delegable. Solo profundiza en subagente FAIL / Tywin FAIL / security critical / conflicto / dependency blocked / ambigüedad / fallo repetido.</li>
+<li>**Amarant**: DEEP/DELIBERATE → SDD/ADR primero (requirements, spec, architecture, tasks, acceptance). Autoridad de arquitectura.</li>
+<li>**Tywin**: verifica milestones (L3) y actúa como Memory Conflict Judge. Verdict PASS/FAIL/REVIEW con evidencia. Niveles: L0 trivial self-check / L1 tests agente / L2 Kuja / L3 Tywin milestone / L4 Auron+Tywin high-risk gate.</li>
+<li>**Varys**: evidencia/provenance (puede auditar recuerdos sin evidence).</li>
+<li>**Sam**: consolidación, promoción semántica/procedural, digests, dedupe, forgetting.</li>
+<li>**Bard**: aprendizaje (qué aprendimos, qué falló, qué automatizar) con clasificación required/recommended/future; nunca expande scope (las ideas fuera de scope van a `future_candidate`).</li>
+<li>**Quina**: token/memory/skill/tool-call/agent budgets según path.</li>
+<li>**Kuja**: L2 verification (tests).</li>
+<li>**Auron**: L4 high-risk gates + auditoría.</li>
+
+<h2>10. Compaction + continuidad</h2>
+
+<li>El scheduler persiste su estado en el checkpoint: `{quest, task graph, ready, running, blocked, agent assignments, next scheduler action}`.</li>
+<li>`session_before_compact` → consolidación + checkpoint con scheduler state.</li>
+<li>Recovery Capsule incluye: quest, progreso, ready tasks, blocked tasks, agente activo, next scheduler action.</li>
+<li>Después de compactar → el loop continúa (NO rediseñar el proyecto).</li>
+<li>`argos pi` al arrancar: detecta quest sin terminar (`quest-tasks` con status != pass) → &quot;Resume school-platform-001?&quot; → rehidrata working memory + task graph + checkpoint y continúa.</li>
+
+<h2>11. Anti-hallucination</h2>
+
+<li>Cada subagente recibe memory cards estructuradas ([PROJECT FACT #184] state/confidence/fact/source), no texto ambiguo.</li>
+<li>Jerarquía de evidencia (fusion spec §7) se mantiene.</li>
+<li>Los hechos del proyecto no cambian sin evidencia (Atlas no cambia facts sin evidence).</li>
+
+<h2>12. UI</h2>
+
+<li>Footer: `ARGOS • Quest school-platform-001 • 12/27 tasks` + RUNNING/READY/BLOCKED compacto.</li>
+<li>`/argos-party`: ATLAS (modelo, ORCHESTRATOR, ACTIVE) + cada agente (modelo, rol, RUNNING task).</li>
+<li>`/argos-quest`: barra de progreso, PASS/RUNNING/READY/BLOCKED/FAILED counts, next milestone.</li>
+<li>`/argos-tasks`: tabla del task graph (id, agente, status, dependencias).</li>
+
+<h2>13. Testing y criterios de terminación (del spec del usuario, adoptados)</h2>
+
+<p>1. Feature grande con un solo prompt → party seleccionada automáticamente.</p>
+<p>2. Atlas NO ejecuta trabajo especializado rutinario.</p>
+<p>3. Cada agente ejecuta con SU modelo configurado (verificable en task_runs: model/provider).</p>
+<p>4. Pi reutiliza providers autenticados; sin duplicar API keys.</p>
+<p>5. Tasks independientes en paralelo; dependencias respetadas; colisiones controladas.</p>
+<p>6. Contexto aislado por subagente (contract, no transcript).</p>
+<p>7. Atlas recibe resultados resumidos.</p>
+<p>8. Superpowers seleccionable automáticamente (vía skill routing + mastery).</p>
+<p>9. SDD/TDD/ADR funcionan (Amarant + party).</p>
+<p>10. Tywin verifica milestones (L0-L4).</p>
+<p>11. Retry/escalación controlada; sin loops infinitos.</p>
+<p>12. Cognitive Compaction conserva el scheduler; restart recupera la quest.</p>
+<p>13. Token usage por modelo medible (task_runs tokens_in/out).</p>
+<p>14. El modelo top-tier consume proporcionalmente menos que los workers.</p>
+
+<p>**Tests automatizables**: unit (task graph CRUD vía brain, party scoring, classifier, escalation policy, capsule con scheduler state) + integración (quest de prueba con 2-3 agentes en fixture, `/argos-run` con BALANCED, TASK_RESULT persistido, resume tras restart simulado). Extender `tests/integration/fusion-check.ps1`.</p>
+
+<h2>14. Fases de implementación</h2>
+
+<p>| Fase | Entregable | Verificación |</p>
+<p>|---|---|---|</p>
+<p>| 1 | Tablas + comandos `task*`/`quest-tasks` en `arnes_brain.py` (aditivo) | unit: CRUD + graph + ready; smoke brain real |</p>
+<p>| 2 | Capability registry + party scoring (extender `argos-party.ts`) | unit: scoring/triggers/anti_triggers |</p>
+<p>| 3 | TASK_CONTRACT builder + TASK_RESULT parser + wiring `subagent` con modelos | unit: contract/result round-trip; integración: 1 agente real |</p>
+<p>| 4 | Scheduler loop + stop conditions + presupuestos + autonomy levels | integración: quest 2-3 tasks BALANCED |</p>
+<p>| 5 | Escalación (modelo por ejecución) + verificación L0-L4 (Tywin) | integración: FAIL→escalar→L3 |</p>
+<p>| 6 | Paralelismo con control de colisión de archivos | integración: 2 tasks independientes en paralelo; colisión→serial |</p>
+<p>| 7 | UI `/argos-run/pause/resume/stop/tasks/quest` + compaction con scheduler state | smoke manual + unit capsule |</p>
+<p>| 8 | Resume/restart (`argos pi` detecta quest) + extender fusion-check | integración: restart simulado |</p>
+
+<p>Cada fase: implementar → testear → verificar → continuar (patrón del plan de fusión: red→green→commit por task).</p>
+
+<h2>15. Riesgos</h2>
+
+<li>**Cuotas de provider**: los subagentes consumen modelos; límites (429/usage) pueden pausar el loop → stop condition EXTERNAL BLOCKER + reintento con backoff.</li>
+<li>**pi-subagents API**: verificar la versión instalada antes de cada integración (regla &quot;no inventar APIs&quot;); si la API de delegación programática no expone lo necesario, usar la tool `subagent` (decisión A ya contempla esto).</li>
+<li>**Colisiones en paralelo**: mitigadas con detección de archivos; si persisten, worktrees.</li>
+<li>**Coste del loop**: presupuestos por task + stop conditions + no-op guard.</li>
+<li>**El escalation de modelo por ejecución** requiere que el modelo superior exista en pi (deepseek-v4-pro confirmado ✓).</li>
+
+</body></html>

@@ -1,0 +1,47 @@
+﻿{
+  "agent": "quina",
+  "name": "Quina",
+  "class": "Banker",
+  "tree": [
+    {
+      "skill": "devour",
+      "level": 1,
+      "cost_mp": 100,
+      "description": "Token-eats prompts redundantes. Compacta system prompts.",
+      "cast": "scan system prompts | remove boilerplate | -30% tokens",
+      "unlock_at": 0
+    },
+    {
+      "skill": "frog-drop",
+      "level": 2,
+      "cost_mp": 300,
+      "description": "Reporta gasto de tokens por agente por quest. Output: /status.",
+      "cast": "arnes.db fetch | agrega tokens | output table: agent × quest × tokens × cost",
+      "unlock_at": 100
+    },
+    {
+      "skill": "limit-gauge",
+      "level": 3,
+      "cost_mp": 500,
+      "description": "Imponer budget diario de tokens. Avisa al user al 50%, 80%, 100%.",
+      "cast": "read budget | track consumo | notifica thresholds",
+      "unlock_at": 300
+    },
+    {
+      "skill": "blue-magic-economy",
+      "level": 4,
+      "cost_mp": 800,
+      "description": "Aprende del gasto pasado y recomienda routing de modelos en quests similares.",
+      "cast": "arnes.db search past quests | sugerir modelo barato para esto",
+      "unlock_at": 600
+    },
+    {
+      "skill": "fat-sand-diet",
+      "level": 5,
+      "cost_mp": 1200,
+      "description": "Plan dietario de 24h. Distribuye quests grandes en ventanas de bajo coste.",
+      "cast": "forecast usage | propone schedule nocturno/off-peak | -40% costo",
+      "unlock_at": 1000
+    }
+  ]
+}

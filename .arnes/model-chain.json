@@ -1,0 +1,87 @@
+{
+  "$schema": "https://arnes.dev/schemas/model-chain-v1.json",
+  "version": "1.0.0",
+  "purpose": "Cadena de modelos chinos NVIDIA para auto-fallback de Atlas cuando un modelo falla por cuota diaria o error interno.",
+  "chain_strategy": "sequential_with_circuit_breaker",
+  "primary_provider": "nvidia",
+  "models": [
+    {
+      "slot": 1,
+      "provider": "nvidia",
+      "model_id": "deepseek-ai/deepseek-v4-pro",
+      "full_id": "nvidia/deepseek-ai/deepseek-v4-pro",
+      "nickname": "DeepSeek V4 Pro",
+      "tier": "flagship",
+      "use_case": "Atlas Player — razonamiento principal",
+      "free_tier_limit": "1000 req/day",
+      "context_window": "128K"
+    },
+    {
+      "slot": 2,
+      "provider": "nvidia",
+      "model_id": "moonshotai/kimi-k2.6",
+      "full_id": "nvidia/moonshotai/kimi-k2.6",
+      "nickname": "Kimi K2.6",
+      "tier": "premium",
+      "use_case": "Documentos largos, contexto amplio, arquitectura",
+      "free_tier_limit": "1000 req/day",
+      "context_window": "128K"
+    },
+    {
+      "slot": 3,
+      "provider": "nvidia",
+      "model_id": "zhipu-ai/glm-5.1",
+      "full_id": "nvidia/zhipu-ai/glm-5.1",
+      "nickname": "GLM 5.1",
+      "tier": "premium",
+      "use_case": "Coding, function calling, Zhipu GLM backend",
+      "free_tier_limit": "1000 req/day",
+      "context_window": "128K"
+    },
+    {
+      "slot": 4,
+      "provider": "nvidia",
+      "model_id": "minimaxai/minimax-m2.7",
+      "full_id": "nvidia/minimaxai/minimax-m2.7",
+      "nickname": "MiniMax M2.7",
+      "tier": "balanced",
+      "use_case": "Quick tasks, librarian, exploration barata",
+      "free_tier_limit": "1000 req/day",
+      "context_window": "1M"
+    }
+  ],
+  "fallback_providers": [
+    {
+      "name": "siliconflow",
+      "trigger_when": "todos los modelos NVIDIA fallan 3 veces seguidas",
+      "primary_model": "siliconflow/deepseek-ai/DeepSeek-V3",
+      "signup": "https://siliconflow.cn (¥14 gratis al registrarse)",
+      "models": ["DeepSeek-V3", "Qwen2.5-7B-Instruct", "glm-4-9b-chat"]
+    },
+    {
+      "name": "z-ai",
+      "trigger_when": "NVIDIA y SiliconFlow fallan",
+      "primary_model": "z-ai/glm-4.7-flash",
+      "signup": "https://open.bigmodel.cn (4 modelos gratis, GLM-4.7-Flash 200K context)",
+      "models": ["glm-4.7-flash", "glm-4.6-flash", "glm-4.5-air"]
+    }
+  ],
+  "circuit_breaker": {
+    "max_failures_per_model": 3,
+    "max_failures_per_provider": 5,
+    "cooldown_minutes": 30,
+    "cooldown_action": "saltar al siguiente modelo en chain; re-intentar el cooldowned despues del periodo"
+  },
+  "user_priority_order": [
+    "nvidia/deepseek-ai/deepseek-v4-pro",
+    "nvidia/moonshotai/kimi-k2.6",
+    "nvidia/zhipu-ai/glm-5.1",
+    "nvidia/minimaxai/minimax-m2.7"
+  ],
+  "notes": [
+    "Los 4 modelos son de NVIDIA NIM (free tier 1000 req/dia cada uno).",
+    "Total free capacity: 4000 req/dia si rotas entre los 4.",
+    "Para escalar mas alla: configurar SiliconFlow (¥14 al registrarse) como fallback secundario.",
+    "Atlas consulta este archivo en cada sesion para armar la cadena dinamica."
+  ]
+}

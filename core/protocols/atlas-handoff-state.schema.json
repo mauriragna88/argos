@@ -1,0 +1,18 @@
+﻿{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://arnes.local/schemas/atlas-handoff-state-1.0.json",
+  "title":"Atlas hand-off state index",
+  "type":"object","additionalProperties":false,
+  "required":["schema_version","quest_id","current_attempt_id","objective","status","dependencies","handoff_refs","prior_attempt_refs","model_attribution","updated_at"],
+  "properties":{
+    "schema_version":{"const":"1.0"},"quest_id":{"type":"string","pattern":"^Q-[0-9]{3,}$"},"current_attempt_id":{"type":"string","pattern":"^A-[0-9]{3,}$"},"objective":{"type":"string","minLength":1,"maxLength":2000},"status":{"enum":["planned","in_progress","awaiting_evidence","auditing","advising","decision_pending","retrying","paused","completed"]},"dependencies":{"type":"array","items":{"$ref":"#/$defs/dependency"}},
+    "handoff_refs":{"type":"array","items":{"$ref":"#/$defs/handoffRef"}},"prior_attempt_refs":{"type":"array","items":{"$ref":"#/$defs/correlatedRef"}},"model_attribution":{"type":"array","items":{"$ref":"#/$defs/modelAttribution"}},"latest_evidence_refs":{"type":"array","items":{"$ref":"#/$defs/correlatedRef"}},"latest_decision_ref":{"anyOf":[{"type":"null"},{"$ref":"#/$defs/correlatedRef"}]},"next_action_summary":{"type":"string","maxLength":2000},"updated_at":{"type":"string","format":"date-time"}
+  },
+  "allOf":[{"if":{"properties":{"status":{"const":"retrying"}}},"then":{"properties":{"prior_attempt_refs":{"minItems":1}}}}],
+  "$defs":{
+    "role":{"enum":["atlas","executor","varys","tywin","sam"]},"correlatedRef":{"type":"object","additionalProperties":false,"required":["path_or_id","quest_id","attempt_id"],"properties":{"path_or_id":{"type":"string","minLength":1},"quest_id":{"type":"string","pattern":"^Q-[0-9]{3,}$"},"attempt_id":{"type":"string","pattern":"^A-[0-9]{3,}$"}}},
+    "dependency":{"type":"object","additionalProperties":false,"required":["id","status","blocking"],"properties":{"id":{"type":"string"},"status":{"enum":["not_started","in_progress","satisfied","blocked","failed"]},"blocking":{"type":"boolean"},"evidence_ref":{"$ref":"#/$defs/correlatedRef"}}},
+    "handoffRef":{"type":"object","additionalProperties":false,"required":["handoff_id","from_role","to_role","path_or_id","quest_id","attempt_id"],"properties":{"handoff_id":{"type":"string","pattern":"^H-[A-Za-z0-9][A-Za-z0-9._-]*$"},"from_role":{"$ref":"#/$defs/role"},"to_role":{"$ref":"#/$defs/role"},"path_or_id":{"type":"string","minLength":1},"quest_id":{"type":"string","pattern":"^Q-[0-9]{3,}$"},"attempt_id":{"type":"string","pattern":"^A-[0-9]{3,}$"}},"allOf":[{"anyOf":[{"properties":{"from_role":{"const":"atlas"},"to_role":{"const":"executor"}}},{"properties":{"from_role":{"const":"executor"},"to_role":{"const":"varys"}}},{"properties":{"from_role":{"const":"varys"},"to_role":{"const":"tywin"}}},{"properties":{"from_role":{"const":"tywin"},"to_role":{"const":"sam"}}},{"properties":{"from_role":{"const":"sam"},"to_role":{"const":"atlas"}}}]}]},
+    "modelAttribution":{"type":"object","additionalProperties":false,"required":["agent","provider","model","quest_id","attempt_id"],"properties":{"agent":{"type":"string","minLength":1},"provider":{"type":"string","minLength":1},"model":{"type":"string","minLength":1},"quest_id":{"type":"string","pattern":"^Q-[0-9]{3,}$"},"attempt_id":{"type":"string","pattern":"^A-[0-9]{3,}$"},"route_reason":{"type":"string"}}}
+  }
+}

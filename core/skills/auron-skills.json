@@ -1,0 +1,47 @@
+{
+  "agent": "auron",
+  "name": "Auron",
+  "class": "Warden",
+  "tree": [
+    {
+      "skill": "sentinel",
+      "level": 1,
+      "cost_mp": 500,
+      "description": "Detecta vulnerabilidades OWASP Top 10 en el diff actual. Lista A01-A10 con tags.",
+      "cast": "lee diff | scan OWASP | reporta A01-A10 con archivo:línea",
+      "unlock_at": 0
+    },
+    {
+      "skill": "shield-wall",
+      "level": 2,
+      "cost_mp": 800,
+      "description": "Audita Supabase RLS policies en todas las tablas nuevas o modificadas.",
+      "cast": "supabase migration dump | verifica RLS por tabla | reporta brechas",
+      "unlock_at": 200
+    },
+    {
+      "skill": "banish",
+      "level": 3,
+      "cost_mp": 1200,
+      "description": "Elimina secrets hardcoded yagara `.env` filtrados en el diff.",
+      "cast": "scan grep patrones API_KEY/SECRET/JWT | bloquea commit | notifica",
+      "unlock_at": 500
+    },
+    {
+      "skill": "inspect-evil",
+      "level": 4,
+      "cost_mp": 1500,
+      "description": "Code review profundo de auth flows. Token management, session fixtures, MFA.",
+      "cast": "audit /api/auth/* | JWT decode | session mgmt | MFA bypass",
+      "unlock_at": 800
+    },
+    {
+      "skill": "seal-breaches",
+      "level": 5,
+      "cost_mp": 2000,
+      "description": "Genera reporte final de seguridad con CVEs, fix proposals y prioridades.",
+      "cast": "compile report.md | CVE tags | OWASP refs | critical-high-medium-low",
+      "unlock_at": 1200
+    }
+  ]
+}

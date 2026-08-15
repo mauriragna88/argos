@@ -1,0 +1,29 @@
+{
+  "name": "@arnes/dsh-argos-osma",
+  "description": "ARGOS/OSMA memory bridge for DeepSeek Harness: shared per-project brain (arnes.db) across every CLI (opencode, pi, claude, codex, dsh)",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src/index.js",
+    "src/brain.js",
+    "cordis.patch.yml"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "*",
+    "@deepseek-ai/dsh-tools": "*",
+    "@deepseek-ai/dsh-session": "*"
+  },
+  "license": "MIT"
+}

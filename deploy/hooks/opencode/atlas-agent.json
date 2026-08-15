@@ -1,0 +1,59 @@
+{
+  "_comment": "Atlas RPG agent definitions for OpenCode. Copiar y mergear con opencode.json existente.",
+  "agent": {
+    "atlas": {
+      "description": "Atlas RPG Player — orquestador con tematica RPG, rojo y negro, auto-loop",
+      "mode": "primary",
+      "prompt": "{file:./core/atlas-player.agent.md}",
+      "tools": {
+        "bash": true,
+        "delegate": true,
+        "read": true,
+        "edit": false,
+        "write": false
+      }
+    },
+    "vivi": {
+      "description": "Vivi (Mage) — Frontend DPS. React, Tailwind, design-systems. Siempre con Eiko.",
+      "mode": "subagent",
+      "prompt": "{file:./core/classes/vivi.agent.md}",
+      "category": "visual-engineering",
+      "tools": { "bash": true, "edit": true, "read": true, "write": true }
+    },
+    "paladin": {
+      "description": "[PERSONAJE] (Paladin) — Backend Tank. API, Supabase, Zod, server actions.",
+      "mode": "subagent",
+      "category": "deep",
+      "prompt": "{file:./core/classes/paladin.agent.md}",
+      "tools": { "bash": true, "edit": true, "read": true, "write": true }
+    },
+    "rogue": {
+      "description": "[PERSONAJE] (Rogue) — QA/Security. Vitest, Playwright, OWASP.",
+      "mode": "subagent",
+      "category": "deep",
+      "prompt": "{file:./core/classes/rogue.agent.md}",
+      "tools": { "bash": true, "edit": true, "read": true, "write": true }
+    },
+    "eiko": {
+      "description": "Eiko (Cleric) — Healer/DevOps. CI/CD, Docker, deploy, build fixes. Support de Vivi.",
+      "mode": "subagent",
+      "category": "unspecified-high",
+      "prompt": "{file:./core/classes/eiko.agent.md}",
+      "tools": { "bash": true, "edit": true, "read": true, "write": true }
+    },
+    "monk": {
+      "description": "[PERSONAJE] (Monk) — Architecture/Strategist. SDD, clean-arch, system design.",
+      "mode": "subagent",
+      "category": "ultrabrain",
+      "prompt": "{file:./core/classes/monk.agent.md}",
+      "tools": { "bash": true, "read": true, "write": true }
+    },
+    "ranger": {
+      "description": "[PERSONAJE] (Ranger) — Research/Librarian. Context7, web search, codebase grep.",
+      "mode": "subagent",
+      "category": "quick",
+      "prompt": "{file:./core/classes/ranger.agent.md}",
+      "tools": { "bash": true, "read": true, "webfetch": true, "websearch_web_search_exa": true }
+    }
+  }
+}

@@ -1,0 +1,202 @@
+﻿{
+    "version":  "1.0.0",
+    "updated_at":  "2026-08-13T23:57:00-06:00",
+    "updated_by":  "tywin",
+    "last_quest_id":  "osma-stats",
+     "patterns":  [
+                      {
+                          "quest_id":  "Quest Recommender Gate re-audit",
+                          "pattern":  "Set PowerShell Console OutputEncoding before any human Write-Host and short-circuit every -Json path before orchestration side effects.",
+                          "timestamp":  "2026-08-13T23:57:00-06:00"
+                      },
+                      {
+                         "quest_id":  "osma-stats-retry",
+                         "pattern":  "Keep legacy and new OSMA metrics in one defensive summary method; guard each SQL metric group and route the CLI directly to it.",
+                         "timestamp":  "2026-08-13T00:00:00Z"
+                     }
+                 ],
+    "agent_learnings":  {
+                            "vivi":  [
+
+                                     ],
+                            "eiko":  [
+
+                                     ],
+                            "ansem":  [
+
+                                      ],
+                            "kuja":  [
+
+                                     ],
+                            "amarant":  [
+
+                                        ],
+                            "eremez":  [
+
+                                       ],
+                            "auron":  [
+
+                                      ],
+                            "quina":  [
+
+                                      ]
+                        },
+     "failed_attempts":  [
+                             {
+                                 "quest_id":  "Quest Recommender Gate",
+                                 "agent":  "atlas-orchestrator/quest-detector",
+                                 "error":  "Human recommendation output is not UTF-8 safe in the target PowerShell invocation; -Json -Gate off does not exit after emitting recommendation and continues execution.",
+                                 "resolution":  "Make human recommendation output encoding-safe and make -Json return the recommendation before any gate-off execution path, then rerun the recommender tests and sanity commands.",
+                                 "timestamp":  "2026-08-13T23:45:00-06:00",
+                                 "repeated_in":  [
+
+                                                 ]
+                             },
+                             {
+                                "quest_id":  "OSMA-episode-pattern-completion",
+                                "agent":  "osma-v7",
+                                "error":  "Partial compliance: link reactivation does not increment coactivation_count; cue competition omits explicit recency/importance/episode-coherence scoring; cue search bypasses FTS5.",
+                                "resolution":  "Re-audit after incrementing link coactivation metadata, adding the required competition factors, and integrating the V7 cue path with FTS5 or documenting a justified equivalent.",
+                                "timestamp":  "2026-08-12T00:00:00Z",
+                                "repeated_in":  [
+
+                                                ]
+                            },
+                            {
+                                "quest_id":  "osma-stats",
+                                "agent":  "ansem",
+                                "error":  "osma-stats dispatch calls legacy osma_stats() without a defensive guard; missing legacy tables can crash before the defensive V5-V7 metric groups execute.",
+                                "resolution":  "Make the additive V4 summary path tolerate missing tables per metric group, then rerun the osma-stats and full OSMA suites.",
+                                "timestamp":  "2026-08-13T00:00:00Z",
+                                "repeated_in":  [
+
+                                                ]
+                            },
+                            {
+                                "quest_id":  "Q-002",
+                                "agent":  "ansem",
+                                "error":  "Circuit breaker after 3 fails in window",
+                                "resolution":  "Agent blocked for 30min. Consider pairing with Eiko or Auron for support on next backend quest.",
+                                "timestamp":  "2026-07-28T18:56:02-06:00",
+                                "repeated_in":  [
+
+                                                ]
+                            }
+                        ],
+    "party_config_history":  [
+                                 {
+                                     "quest_type":  "frontend",
+                                     "party":  [
+                                                   "vivi",
+                                                   "eiko"
+                                               ],
+                                     "success_rate":  0.97,
+                                     "total_quests":  30,
+                                     "last_used_quest":  "Q-022"
+                                 },
+                                 {
+                                     "quest_type":  "backend",
+                                     "party":  [
+                                                   "ansem",
+                                                   "eiko"
+                                               ],
+                                     "success_rate":  0.0,
+                                     "total_quests":  1,
+                                     "last_used_quest":  "Q-002"
+                                 },
+                                 {
+                                     "quest_type":  "fix",
+                                     "party":  [
+                                                   "kuja",
+                                                   "eiko"
+                                               ],
+                                     "success_rate":  1.0,
+                                     "total_quests":  2,
+                                     "last_used_quest":  "Q-008"
+                                 }
+                             ],
+    "trust_scores":  {
+                         "vivi":  {
+                                      "score":  0.97,
+                                      "trend":  "stable",
+                                      "quests_with_party":  30,
+                                      "recent_fail_count":  0,
+                                      "quests_since_last_fail":  30
+                                  },
+                         "eiko":  {
+                                      "score":  1.0,
+                                      "trend":  "stable",
+                                      "quests_with_party":  2,
+                                      "recent_fail_count":  0,
+                                      "quests_since_last_fail":  2
+                                  },
+                         "ansem":  {
+                                       "score":  0.75,
+                                       "trend":  "rising",
+                                       "quests_with_party":  1,
+                                       "recent_fail_count":  0,
+                                       "quests_since_last_fail":  1,
+                                       "comment":  "Recovery quest PASS (osma-stats). Trust restored to 0.75."
+                                   },
+                         "kuja":  {
+                                      "score":  1.0,
+                                      "trend":  "stable",
+                                      "quests_with_party":  2,
+                                      "recent_fail_count":  0,
+                                      "quests_since_last_fail":  2
+                                  },
+                         "amarant":  {
+                                         "score":  1.0,
+                                         "trend":  "n/a",
+                                         "quests_with_party":  0,
+                                         "comment":  "untested"
+                                     },
+                         "eremez":  {
+                                        "score":  1.0,
+                                        "trend":  "n/a",
+                                        "quests_with_party":  0,
+                                        "comment":  "untested"
+                                    },
+                         "auron":  {
+                                       "score":  1.0,
+                                       "trend":  "n/a",
+                                       "quests_with_party":  0,
+                                       "comment":  "untested - recommended for Ansem pairing"
+                                   },
+                         "quina":  {
+                                       "score":  1.0,
+                                       "trend":  "n/a",
+                                       "quests_with_party":  0,
+                                       "comment":  "banker role - always active for token tracking"
+                                   },
+                         "bran":  {
+                                      "score":  1.0,
+                                      "trend":  "n/a",
+                                      "quests_with_party":  0,
+                                      "comment":  "advisory only"
+                                  },
+                         "varys":  {
+                                       "score":  1.0,
+                                       "trend":  "n/a",
+                                       "quests_with_party":  38,
+                                       "comment":  "always active"
+                                   },
+                         "tywin":  {
+                                       "score":  1.0,
+                                       "trend":  "n/a",
+                                       "quests_with_party":  0,
+                                       "comment":  "always active"
+                                   },
+                         "sam":  {
+                                     "score":  1.0,
+                                     "trend":  "n/a",
+                                     "quests_with_party":  0,
+                                     "comment":  "always active"
+                                 }
+                     },
+    "circuit_breaker_state":  {
+                                  "blocked_agents":  [
+
+                                                     ]
+                              }
+}

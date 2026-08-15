@@ -1,0 +1,138 @@
+﻿{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arnes.dev/schemas/shared-blackboard-v1.json",
+  "title": "Arnes Shared Blackboard",
+  "description": "Cross-agent shared knowledge that all party members and auditors can read. Written by Varys (TURN 5), Tywin (TURN 6), and Sam (TURN 7). Read by Atlas at TURN 0.5 before party select. This is the central fix for the Silo Problem.",
+  "type": "object",
+  "required": ["version", "updated_at", "last_quest_id", "patterns", "agent_learnings", "failed_attempts", "party_config_history"],
+  "properties": {
+    "version": { "type": "string", "const": "1.0.0" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "updated_by": { "type": "string", "enum": ["varys", "tywin", "sam", "atlas"] },
+    "last_quest_id": { "type": "string", "pattern": "^Q-[A-Z0-9-]+$" },
+    "patterns": {
+      "type": "array",
+      "description": "Reusable code/config patterns discovered across quests.",
+      "items": {
+        "type": "object",
+        "required": ["id", "pattern", "discovered_by", "quest_id", "type"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^pat-[0-9]+$" },
+          "pattern": { "type": "string", "maxLength": 300 },
+          "discovered_by": { "type": "string", "enum": ["vivi", "eiko", "ansem", "kuja", "amarant", "eremez", "varys", "tywin", "sam", "auron", "bran", "quina", "atlas"] },
+          "quest_id": { "type": "string" },
+          "type": { "type": "string", "enum": ["pattern", "bugfix", "discovery", "preference"] },
+          "success_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+          "last_used": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "agent_learnings": {
+      "type": "object",
+      "description": "Per-agent learnings visible to all. Fix for Silo Problem.",
+      "properties": {
+        "vivi": { "type": "array", "items": { "$ref": "#/$defs/learning" } },
+        "eiko": { "type": "array", "items": { "$ref": "#/$defs/learning" } },
+        "ansem": { "type": "array", "items": { "$ref": "#/$defs/learning" } },
+        "kuja": { "type": "array", "items": { "$ref": "#/$defs/learning" } },
+        "amarant": { "type": "array", "items": { "$ref": "#/$defs/learning" } },
+        "eremez": { "type": "array", "items": { "$ref": "#/$defs/learning" } },
+        "auron": { "type": "array", "items": { "$ref": "#/$defs/learning" } },
+        "quina": { "type": "array", "items": { "$ref": "#/$defs/learning" } }
+      }
+    },
+    "failed_attempts": {
+      "type": "array",
+      "description": "Catalog of failed attempts so Sam can warn against repetition.",
+      "items": {
+        "type": "object",
+        "required": ["quest_id", "agent", "error", "resolution"],
+        "properties": {
+          "quest_id": { "type": "string" },
+          "agent": { "type": "string" },
+          "error": { "type": "string", "maxLength": 500 },
+          "resolution": { "type": "string", "maxLength": 500 },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "repeated_in": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "party_config_history": {
+      "type": "array",
+      "description": "Historical success rates by party composition. Sam uses this for recommendations.",
+      "items": {
+        "type": "object",
+        "required": ["quest_type", "party", "success_rate", "total_quests"],
+        "properties": {
+          "quest_type": { "type": "string", "enum": ["frontend", "backend", "fix", "architecture", "research", "devops", "boss"] },
+          "party": { "type": "array", "items": { "type": "string" } },
+          "success_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+          "total_quests": { "type": "integer", "minimum": 0 },
+          "last_used_quest": { "type": "string" }
+        }
+      }
+    },
+    "trust_scores": {
+      "type": "object",
+      "description": "Sam's evolving trust scores per agent.",
+      "properties": {
+        "vivi": { "$ref": "#/$defs/trust" },
+        "eiko": { "$ref": "#/$defs/trust" },
+        "ansem": { "$ref": "#/$defs/trust" },
+        "kuja": { "$ref": "#/$defs/trust" },
+        "amarant": { "$ref": "#/$defs/trust" },
+        "eremez": { "$ref": "#/$defs/trust" },
+        "auron": { "$ref": "#/$defs/trust" },
+        "bran": { "$ref": "#/$defs/trust" },
+        "varys": { "$ref": "#/$defs/trust" },
+        "tywin": { "$ref": "#/$defs/trust" },
+        "sam": { "$ref": "#/$defs/trust" },
+        "quina": { "$ref": "#/$defs/trust" }
+      }
+    },
+    "circuit_breaker_state": {
+      "type": "object",
+      "description": "Active circuit breaker state. Atlas reads this before TURN 1.",
+      "properties": {
+        "blocked_agents": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["agent", "blocked_until", "reason"],
+            "properties": {
+              "agent": { "type": "string" },
+              "blocked_until": { "type": "string", "format": "date-time" },
+              "reason": { "type": "string" },
+              "fail_count": { "type": "integer" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "learning": {
+      "type": "object",
+      "required": ["quest", "learning", "type"],
+      "properties": {
+        "quest": { "type": "string" },
+        "learning": { "type": "string", "maxLength": 500 },
+        "type": { "type": "string", "enum": ["pattern", "bugfix", "discovery", "preference"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
+    },
+    "trust": {
+      "type": "object",
+      "required": ["score", "trend"],
+      "properties": {
+        "score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "trend": { "type": "string", "enum": ["rising", "falling", "stable", "n/a"] },
+        "quests_with_party": { "type": "integer" },
+        "recent_fail_count": { "type": "integer" },
+        "quests_since_last_fail": { "type": "integer" },
+        "comment": { "type": "string" }
+      }
+    }
+  }
+}

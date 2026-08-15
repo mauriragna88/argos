@@ -1,0 +1,24 @@
+{
+  "version": "1.0",
+  "project": "auto",
+  "supabase": {
+    "migrations_dir": "supabase/migrations",
+    "types_file": "src/types/database.types.ts",
+    "local_stack": true
+  },
+  "code": {
+    "scan_dirs": ["src", "app"],
+    "extensions": [".ts", ".tsx", ".js", ".jsx"],
+    "max_line_distance_from": 8
+  },
+  "api": {
+    "routes_dir": "app/api",
+    "require_input_schema": true,
+    "forbid_select_star": true
+  },
+  "tiers": {
+    "minimum": ["L1", "L2"],
+    "standard": ["L1", "L2", "L2.5", "L3"],
+    "full": ["L1", "L2", "L2.5", "L3", "L4", "L5", "L6"]
+  }
+}

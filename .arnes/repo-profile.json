@@ -1,0 +1,23 @@
+﻿{
+    "repo_tier":  "lean",
+    "file_count_code":  1,
+    "file_count_tests":  0,
+    "loc_total":  13,
+    "module_count":  1,
+    "modules":  [
+                    "examples"
+                ],
+    "languages":  [
+                      "typescript"
+                  ],
+    "frameworks_detected":  [
+
+                            ],
+    "has_tests":  false,
+    "has_ci":  false,
+    "has_docker":  false,
+    "recommended_party_size":  2,
+    "recommended_model_tier":  "free",
+    "evaluated_at":  "2026-08-05T20:32:07.9621885-06:00",
+    "next_eval_after_quest":  20
+}

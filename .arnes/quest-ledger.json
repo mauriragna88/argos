@@ -1,0 +1,389 @@
+﻿{
+    "$schema":  "https://arnes.dev/schemas/quest-ledger-v1.json",
+    "version":  "1.0.0",
+    "purpose":  "Registro persistente de quests, tokens gastados, y limites semanales",
+    "weekly_reset_day":  "monday",
+    "weekly_reset_hour_utc":  0,
+    "limits":  {
+                   "weekly_tokens_budget":  1000000,
+                   "weekly_tokens_used":  78500,
+                   "weekly_tokens_remaining":  921500,
+                   "warn_threshold_pct":  80,
+                   "critical_threshold_pct":  95
+               },
+    "by_platform":  {
+                        "opencode":  {
+                                         "tier":  "pro",
+                                         "weekly_limit":  1000000,
+                                         "actual_used":  0
+                                     },
+                        "codex":  {
+                                      "tier":  null,
+                                      "weekly_limit":  null,
+                                      "actual_used":  0
+                                  },
+                        "claude":  {
+                                       "tier":  null,
+                                       "weekly_limit":  null,
+                                       "actual_used":  0
+                                   }
+                    },
+    "quests":  [
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  4500,
+                       "quest_id":  "Q-001",
+                       "timestamp":  "2026-07-28T16:09:24.7551877-06:00"
+                   },
+                   {
+                       "agent":  "ansem",
+                       "verdict":  "FAIL",
+                       "tokens_used":  8000,
+                       "quest_id":  "Q-002",
+                       "timestamp":  "2026-07-28T16:09:24.9067376-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  5200,
+                       "quest_id":  "Q-003",
+                       "timestamp":  "2026-07-28T19:55:36.7322358-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  4500,
+                       "quest_id":  "Q-004",
+                       "timestamp":  "2026-07-28T22:19:58.0537409-06:00"
+                   },
+                   {
+                       "agent":  "kuja",
+                       "verdict":  "PASS",
+                       "tokens_used":  3000,
+                       "quest_id":  "Q-005",
+                       "timestamp":  "2026-07-28T22:20:00.3593206-06:00"
+                   },
+                   {
+                       "agent":  "eiko",
+                       "verdict":  "PASS",
+                       "tokens_used":  2000,
+                       "quest_id":  "Q-006",
+                       "timestamp":  "2026-07-28T22:20:02.4382638-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  4500,
+                       "quest_id":  "Q-007",
+                       "timestamp":  "2026-07-28T22:21:51.7593171-06:00"
+                   },
+                   {
+                       "agent":  "kuja",
+                       "verdict":  "PASS",
+                       "tokens_used":  3000,
+                       "quest_id":  "Q-008",
+                       "timestamp":  "2026-07-28T22:21:54.0059555-06:00"
+                   },
+                   {
+                       "agent":  "eiko",
+                       "verdict":  "PASS",
+                       "tokens_used":  2000,
+                       "quest_id":  "Q-009",
+                       "timestamp":  "2026-07-28T22:21:56.0735354-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-010",
+                       "timestamp":  "2026-07-28T22:35:50.2673338-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-011",
+                       "timestamp":  "2026-07-29T05:36:17.6150074-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-012",
+                       "timestamp":  "2026-07-29T05:41:03.1755112-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-013",
+                       "timestamp":  "2026-07-29T06:19:17.0358574-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-014",
+                       "timestamp":  "2026-07-29T06:49:17.7908396-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-015",
+                       "timestamp":  "2026-07-29T07:33:31.3628250-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1500,
+                       "quest_id":  "Q-TEST",
+                       "timestamp":  "2026-07-29T07:34:29.3864925-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  2300,
+                       "quest_id":  "Q-001",
+                       "timestamp":  "2026-07-29T07:36:18.1187831-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-002",
+                       "timestamp":  "2026-08-01T23:08:17.0182008-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-003",
+                       "timestamp":  "2026-08-01T23:08:35.7421085-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-004",
+                       "timestamp":  "2026-08-01T23:08:52.9420835-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-005",
+                       "timestamp":  "2026-08-01T23:09:20.1598004-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-006",
+                       "timestamp":  "2026-08-01T23:31:48.0567584-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-007",
+                       "timestamp":  "2026-08-01T23:59:13.4126917-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-008",
+                       "timestamp":  "2026-08-02T00:03:31.4619899-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-009",
+                       "timestamp":  "2026-08-02T00:52:23.1636806-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-010",
+                       "timestamp":  "2026-08-02T00:55:14.6443988-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-011",
+                       "timestamp":  "2026-08-02T01:22:38.9263161-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-012",
+                       "timestamp":  "2026-08-02T01:23:40.6823094-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-013",
+                       "timestamp":  "2026-08-02T01:27:52.3339310-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-014",
+                       "timestamp":  "2026-08-02T01:28:05.9141446-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-015",
+                       "timestamp":  "2026-08-02T09:23:25.9557806-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-016",
+                       "timestamp":  "2026-08-02T09:25:43.6379590-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-017",
+                       "timestamp":  "2026-08-02T12:51:13.6905352-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-018",
+                       "timestamp":  "2026-08-02T13:06:17.9300548-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-019",
+                       "timestamp":  "2026-08-02T13:07:28.0611264-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-020",
+                       "timestamp":  "2026-08-02T13:12:00.6746782-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-021",
+                       "timestamp":  "2026-08-02T13:56:54.5075077-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-022",
+                       "timestamp":  "2026-08-04T13:24:57.2230362-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-023",
+                       "timestamp":  "2026-08-05T19:15:06.1492847-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-024",
+                       "timestamp":  "2026-08-05T20:33:17.0609591-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-025",
+                       "timestamp":  "2026-08-05T20:36:05.6382450-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-026",
+                       "timestamp":  "2026-08-05T21:04:21.6390666-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-027",
+                       "timestamp":  "2026-08-05T21:04:55.4532759-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-028",
+                       "timestamp":  "2026-08-05T23:35:29.7724419-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-029",
+                       "timestamp":  "2026-08-10T06:56:18.1896339-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-030",
+                       "timestamp":  "2026-08-10T06:57:16.8255337-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-031",
+                       "timestamp":  "2026-08-10T07:11:52.6307907-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-032",
+                       "timestamp":  "2026-08-13T19:46:31.5006744-06:00"
+                   },
+                   {
+                       "agent":  "vivi",
+                       "verdict":  "PASS",
+                       "tokens_used":  1000,
+                       "quest_id":  "Q-033",
+                       "timestamp":  "2026-08-14T18:46:26.1229575-06:00"
+                   }
+               ],
+    "stats":  {
+                  "total_quests":  49,
+                  "total_tokens_used":  78500,
+                  "avg_tokens_per_quest":  0,
+                  "success_rate_pct":  98
+              },
+    "notes":  [
+                  "Atlas CLI consulta este archivo al inicio de cada sesion para mostrar /status",
+                  "Quina actualiza tokens_used despues de cada quest completado",
+                  "El weekly reset es automatico: al abrir una sesion despues del lunes 00:00 UTC, Quina resetea",
+                  "Cuando llegas al warn_threshold, Quina avisa: \u0027Atlas, quedan 20% del budget semanal\u0027",
+                  "Cuando llegas al critical_threshold, Atlas pausa y pide confirmacion del user"
+              ]
+}

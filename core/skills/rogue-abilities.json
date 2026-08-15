@@ -1,0 +1,67 @@
+{
+  "class": "Rogue",
+  "character": "[PERSONAJE]",
+  "description": "Skill tree del Rogue, QA/Security. Test hunting y edge cases.",
+  "abilities": [
+    {
+      "name": "backstab",
+      "level": 1,
+      "damage": 20,
+      "mp_cost_tokens": 1000,
+      "prerequisites": [],
+      "unlock_uses": 0,
+      "trigger": "hunt edge cases y bugs",
+      "description": "Encuentra bugs y edge cases con testing sistematico. Root cause analysis.",
+      "inherits_skills": ["testing-principles", "vitest"],
+      "xp_per_use": 5
+    },
+    {
+      "name": "detect-traps",
+      "level": 2,
+      "damage": 30,
+      "mp_cost_tokens": 2000,
+      "prerequisites": ["backstab"],
+      "unlock_uses": 2,
+      "trigger": "security audit OWASP",
+      "description": "Escanea OWASP Top 10: XSS, CSRF, injection, broken auth, etc.",
+      "inherits_skills": ["owasp", "security"],
+      "xp_per_use": 10
+    },
+    {
+      "name": "poison-tipped",
+      "level": 2,
+      "damage": 25,
+      "mp_cost_tokens": 2000,
+      "prerequisites": ["backstab"],
+      "unlock_uses": 3,
+      "trigger": "tests negativos (casos error)",
+      "description": "Tests de casos negativos: input invalido, autorizacion denegada, errores.",
+      "inherits_skills": ["testing-principles", "mocking"],
+      "xp_per_use": 8
+    },
+    {
+      "name": "shadow-clone",
+      "level": 3,
+      "damage": 50,
+      "mp_cost_tokens": 6000,
+      "prerequisites": ["detect-traps"],
+      "unlock_uses": 2,
+      "trigger": "full test suite (unit + E2E)",
+      "description": "Suite completa: Vitest unit tests + Playwright E2E + integracion + mocks. Coverage >80%.",
+      "inherits_skills": ["vitest", "playwright", "mocking", "testing-principles"],
+      "xp_per_use": 25
+    },
+    {
+      "name": "eviscerate",
+      "level": 4,
+      "damage": 70,
+      "mp_cost_tokens": 8000,
+      "prerequisites": ["shadow-clone"],
+      "unlock_uses": 2,
+      "trigger": "boss-tier full QA (todos los flujos criticos)",
+      "description": "E2E completo de todos los flujos criticos del proyecto, security audit, performance tests.",
+      "inherits_skills": ["vitest", "playwright", "owasp", "security"],
+      "xp_per_use": 35
+    }
+  ]
+}

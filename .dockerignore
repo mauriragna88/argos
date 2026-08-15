@@ -1,0 +1,10 @@
+.git
+node_modules
+*.db
+*.jsonl
+.arnes/backups
+docs/PLAN-ARNES.md.bak
+imagen10.jpg
+Sin título.jpg
+Dockerfile
+docker-compose.yml

@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
 ARGOS TARGET - selecciona y lanza el CLI de trabajo (OpenCode, Codex, Claude o Freebuff)
@@ -10,6 +10,9 @@ El puente entre ARNES y el CLI que quieras usar:
   codex     -> despliega la persona Atlas a ~/.codex/AGENTS.md y abre codex
   claude    -> despliega la persona Atlas a ~/.claude/CLAUDE.md y abre claude
   freebuff  -> despliega la persona Atlas + roster del party a AGENTS.md del proyecto y abre freebuff
+  dsh       -> despliega la persona Atlas a AGENTS.md del repo deepseek-harness, valida OSMA
+               y arranca el servidor web de DeepSeek Harness (pnpm dsh web, http://127.0.0.1:3080).
+               El modelo se elige por sesion dentro de la Web UI (Settings -> Models).
 
 El default queda guardado en ~/.config/arnes/target.json (UNA vez por maquina).
 Para opencode/codex/claude, el modelo lo gestiona el propio CLI; ARNES aporta
@@ -30,7 +33,7 @@ param(
     [string]$Command = 'launch',
 
     [Parameter(Position = 1)]
-    [ValidateSet('', 'opencode', 'codex', 'claude', 'freebuff', 'auto')]
+    [ValidateSet('', 'opencode', 'codex', 'claude', 'freebuff', 'dsh', 'auto')]
     [string]$Target = '',
 
     [string]$Name = '',
@@ -49,6 +52,8 @@ $PersonaFile = Join-Path $Root 'core\atlas-player.agent.md'
 if (-not $ConfigDir) { $ConfigDir = Join-Path $env:USERPROFILE '.config\arnes' }
 if (-not $TargetDir) { $TargetDir = $ConfigDir }
 $TargetFile = Join-Path $ConfigDir 'target.json'
+# Ruta del checkout de DeepSeek Harness (default bajo el perfil del usuario)
+$DshDir = (Join-Path $env:USERPROFILE 'deepseek-harness')
 
 # ==== Targets disponibles ====
 $TargetMeta = @{
@@ -56,6 +61,7 @@ $TargetMeta = @{
     codex    = 'Codex CLI (persona Atlas en AGENTS.md)'
     claude   = 'Claude Code (persona Atlas en CLAUDE.md)'
     freebuff = 'Freebuff CLI (persona Atlas + party en AGENTS.md del proyecto)'
+    dsh      = 'DeepSeek Harness (web en :3080, ARGOS/OSMA precargado)'
 }
 
 function Get-InstalledTargets {
@@ -64,6 +70,7 @@ function Get-InstalledTargets {
     if (Get-Command codex -ErrorAction SilentlyContinue) { $result += 'codex' }
     if (Get-Command claude -ErrorAction SilentlyContinue) { $result += 'claude' }
     if (Get-Command freebuff -ErrorAction SilentlyContinue) { $result += 'freebuff' }
+    if (Test-Path $DshDir) { $result += 'dsh' }
     return $result
 }
 
@@ -181,7 +188,7 @@ switch ($Command) {
     'show' {
         $current = Get-CurrentTarget
         Write-Host ("  Target actual: {0} ({1})" -f $current, $TargetMeta[$current]) -ForegroundColor Cyan
-        Write-Host '  Para cambiar: argos target set <opencode|codex|claude|freebuff>' -ForegroundColor DarkGray
+        Write-Host '  Para cambiar: argos target set <opencode|codex|claude|freebuff|dsh>' -ForegroundColor DarkGray
         exit 0
     }
     'list' {
@@ -189,7 +196,7 @@ switch ($Command) {
         Write-Host '  ARNES ARGOS - TARGETS' -ForegroundColor Cyan
         $current = Get-CurrentTarget
         $installed = Get-InstalledTargets
-        foreach ($k in @('opencode', 'codex', 'claude', 'freebuff')) {
+        foreach ($k in @('opencode', 'codex', 'claude', 'freebuff', 'dsh')) {
             $mark = if ($k -eq $current) { ' *' } else { '  ' }
             $status = if ($k -in $installed) { 'instalado' } else { 'NO instalado' }
             Write-Host ("  {0} {1,-10} {2}  [{3}]" -f $mark, $k, $TargetMeta[$k], $status) -ForegroundColor White
@@ -201,11 +208,11 @@ switch ($Command) {
     }
     'set' {
         if (-not $Name) {
-            Write-Host '  Uso: argos target set <opencode|codex|claude|freebuff>' -ForegroundColor Yellow
+            Write-Host '  Uso: argos target set <opencode|codex|claude|freebuff|dsh>' -ForegroundColor Yellow
             exit 1
         }
         if (-not $TargetMeta.ContainsKey($Name)) {
-            Write-Host "  [!] Target invalido: $Name. Usa opencode, codex, claude o freebuff." -ForegroundColor Yellow
+            Write-Host "  [!] Target invalido: $Name. Usa opencode, codex, claude, freebuff o dsh." -ForegroundColor Yellow
             exit 1
         }
         if (-not (Test-Path $ConfigDir)) { New-Item -ItemType Directory -Path $ConfigDir -Force | Out-Null }
@@ -226,7 +233,7 @@ switch ($Command) {
             } else {
                 $installed = Get-InstalledTargets
                 if ($installed.Count -eq 0) {
-                    Write-Host '  [!] No hay ningun CLI instalado (opencode/codex/claude).' -ForegroundColor Red
+                    Write-Host '  [!] No hay ningun CLI instalado (opencode/codex/claude/dsh).' -ForegroundColor Red
                     Write-Host '      Instala al menos uno y vuelve a intentar.' -ForegroundColor Yellow
                     exit 1
                 }
@@ -323,6 +330,27 @@ switch ($Command) {
                 } else {
                     & claude
                 }
+            }
+            'dsh' {
+                # DeepSeek Harness: despliega persona Atlas, valida OSMA y arranca el servidor web.
+                if (-not (Test-Path $DshDir)) {
+                    Write-Host ('  [!] No se encontro DeepSeek Harness en: {0}' -f $DshDir) -ForegroundColor Red
+                    Write-Host '      Clonalo: git clone https://github.com/deepseek-ai/deepseek-harness.git (HOME)/deepseek-harness' -ForegroundColor Yellow
+                    exit 1
+                }
+                Write-Host '  [1/3] DeepSeek Harness · ARGOS/OSMA ya cargan via plugin (no se toca AGENTS.md del repo)...' -ForegroundColor Cyan
+                Write-Host '  [2/3] Validando OSMA (memoria)...' -ForegroundColor Cyan
+                . (Join-Path $PSScriptRoot 'osma-resolve.ps1')
+                if (Get-OsmaBrain) {
+                    Write-Host ('  [OK] OSMA resuelto: {0}' -f (Get-OsmaBrain)) -ForegroundColor Green
+                } else {
+                    Write-Host '  [!] OSMA no encontrado. Instala: osma/install.ps1 o clona https://github.com/mauriragna88/osma' -ForegroundColor Yellow
+                }
+                if ($NoLaunch) { exit 0 }
+                Write-Host ('  [3/3] Arrancando DeepSeek Harness ({0}) -> http://127.0.0.1:3080 ...' -f $DshDir) -ForegroundColor Cyan
+                Write-Host '       El modelo se elige por sesion en la Web UI (Settings -> Models).' -ForegroundColor DarkGray
+                Push-Location $DshDir
+                try { & pnpm dsh web } finally { Pop-Location }
             }
         }
     }

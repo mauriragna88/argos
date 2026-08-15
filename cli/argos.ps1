@@ -577,7 +577,7 @@ switch ($Command) {
     'target' {
         # argos target [opencode|codex|claude|freebuff|auto|show|list|set <nombre>]
         $verb = if ($Model) { $Model } elseif ($Args -and $Args.Count -gt 0) { $Args[0] } else { '' }
-        if ($verb -in @('opencode', 'codex', 'claude', 'freebuff', 'auto')) {
+        if ($verb -in @('opencode', 'codex', 'claude', 'freebuff', 'dsh', 'auto')) {
             # El quest es TODO lo que sigue al target (PowerShell parte el string en palabras)
             $quest = if ($Args -and $Args.Count -gt 0) { ($Args -join ' ') } else { '' }
             & (Join-Path $ScriptDir 'argos-target.ps1') -Target $verb -Quest $quest

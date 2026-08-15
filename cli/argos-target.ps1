@@ -347,10 +347,23 @@ switch ($Command) {
                     Write-Host '  [!] OSMA no encontrado. Instala: osma/install.ps1 o clona https://github.com/mauriragna88/osma' -ForegroundColor Yellow
                 }
                 if ($NoLaunch) { exit 0 }
-                Write-Host ('  [3/3] Arrancando DeepSeek Harness ({0}) -> http://127.0.0.1:3080 ...' -f $DshDir) -ForegroundColor Cyan
-                Write-Host '       El modelo se elige por sesion en la Web UI (Settings -> Models).' -ForegroundColor DarkGray
                 Push-Location $DshDir
-                try { & pnpm dsh web } finally { Pop-Location }
+                try {
+                    # Si ya hay un DSH activo en el puerto, NO lanzar otro (chocaria el puerto y se colgaria).
+                    $alive = $false
+                    try { $r = Invoke-WebRequest -Uri 'http://127.0.0.1:3080' -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop; $alive = ($r.StatusCode -eq 200) } catch { $alive = $false }
+                    if ($alive) {
+                        Write-Host '  [3/3] DeepSeek Harness YA esta activo en http://127.0.0.1:3080' -ForegroundColor Green
+                        Write-Host '        Abriendo el navegador...'
+                        Start-Process 'http://127.0.0.1:3080'
+                        Write-Host '        (argos target dsh no abre un 2do servidor; reclama aqui DSH.)' -ForegroundColor DarkGray
+                        Write-Host '        El modelo se elige por sesion en Settings -> Models.' -ForegroundColor DarkGray
+                    } else {
+                        Write-Host ('  [3/3] Arrancando DeepSeek Harness ({0}) -> http://127.0.0.1:3080 ...' -f $DshDir) -ForegroundColor Cyan
+                        Write-Host '       El modelo se elige por sesion en la Web UI (Settings -> Models).' -ForegroundColor DarkGray
+                        & pnpm dsh web
+                    }
+                } finally { Pop-Location }
             }
         }
     }

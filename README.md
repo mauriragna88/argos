@@ -17,7 +17,7 @@
 - **Configuración UNA vez por máquina**: conexiones de proveedores y modelos por agente se guardan en `~/.config/arnes/` y se despliegan a cualquier proyecto.
 - **Metodologías propias**: SDD, FDD, TDD y ADR sin herramientas externas.
 - **Multiplataforma**: Windows (PowerShell), macOS/Linux (PowerShell Core) y **Docker** para cualquier PC.
-- **Instalable vía npm** (`npm install -g arnes-argos`) o con el instalador directo.
+- **Instalable como repo normal** — clona `argos` + `osma` y listo.
 
 ---
 
@@ -57,49 +57,47 @@ FDD y ADR propias. El roadmap y las tareas todavía pendientes están en
 
 ## 🚀 Instalación
 
-### Opción A — Instalador directo (recomendado)
+> ARGOS (este repo) es el **harness**. Necesita la **memoria OSMA** (repo
+> [mauriragna88/osma](https://github.com/mauriragna88/osma)), que se instala una
+> vez por máquina. Ambas repos se clonan o se instalan como cualquier repo normal.
+
+### 1 — Instala la memoria OSMA (una vez por máquina)
+
+```powershell
+git clone https://github.com/mauriragna88/osma.git
+cd osma
+.\install.ps1        # instala en ~/.config/arnes/osma
+cd ..
+```
+
+### 2 — Clona ARGOS (el harness)
+
+```powershell
+git clone https://github.com/mauriragna88/argos.git
+cd argos
+```
+
+OSMA se resuelve automáticamente: `ARNES_OSMA_ROOT` → `~/.config/arnes/osma`
+→ `../osma` → fallback `./cli/`. No necesitas copiar nada.
+
+### Opción alternativa — instalación directa (one-liner)
 
 ```powershell
 # Windows (PowerShell)
-iwr -useb https://raw.githubusercontent.com/mauriragna88/arnes/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/mauriragna88/osma/main/install.ps1 | iex
 ```
+
+### Docker
 
 ```bash
-# macOS / Linux
-curl -fsSL https://raw.githubusercontent.com/mauriragna88/arnes/main/install.sh | bash
+git clone https://github.com/mauriragna88/argos.git && cd argos
+docker compose run --rm argos         # entra al entorno ARGOS
 ```
 
-> El instalador clona el repo en `~/arnes`,
-> instala OpenCode si falta, sincroniza los 16 agentes y deja el comando `argos` listo.
-
-### Opción B — Git clone + npm
-
-```bash
-git clone https://github.com/mauriragna88/arnes.git
-cd arnes
-npm install -g .        # instala el comando `argos` global y corre el postinstall (sync de agentes)
-```
-
-### Opción C — Docker (funciona en cualquier PC)
-
-```bash
-# 1. Clona el repo
-git clone https://github.com/mauriragna88/arnes.git && cd arnes
-
-# 2. Construye la imagen y entra al entorno ARGOS (monta TU carpeta de trabajo)
-docker compose run --rm arnes
-
-# Comandos directos:
-docker compose run --rm arnes connect      # conectar proveedores (una vez)
-docker compose run --rm arnes configure    # elegir modelo por agente (una vez)
-docker compose run --rm arnes status       # estado del entorno
-```
-
-Los datos se montan desde tu máquina (volúmenes), así que la configuración y los agentes persisten
-entre ejecuciones: `~/.config/arnes` (conexiones + modelos), `~/.config/opencode` (agentes + auth) y tu carpeta de trabajo.
+Los volúmenes montan tu configuración y trabajo: `~/.config/arnes`, `~/.config/opencode`
+y tu carpeta de trabajo persisten entre ejecuciones.
 
 ---
-
 ## ⚙️ Configuración — UNA VEZ por máquina
 
 ARNES ARGOS guarda la configuración **global de la máquina** (no por proyecto):

@@ -1,4 +1,4 @@
-﻿# ARGOS - Atlas (entorno generado por 'argos target freebuff')
+﻿# ARNES ARGOS - Atlas (entorno generado por 'argos target freebuff')
 
 # Atlas â€” Player Orquestador RPG
 

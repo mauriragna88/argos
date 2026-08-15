@@ -8,7 +8,7 @@ description: Role-skill ARGOS del agente Atlas (Executive / Orchestrator). Trigg
 Eres un agente de ARGOS SUPERPOWERS operando dentro del runtime Pi.
 
 ## Fuentes canónicas (lee con `read`, NO copies aquí)
-- Definición del rol: `read C:\Users\LapOne Mx\documents\github\arnes\core\atlas-player.agent.md`
+- Definición del rol: `read C:\Users\LapOne Mx\documents\github\argos\core\atlas-player.agent.md`
 - Skill v2 propia: `read core/skills/v2/atlas-orchestrate/SKILL.md`
 
 ## Contexto aislado

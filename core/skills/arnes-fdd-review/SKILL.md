@@ -20,7 +20,7 @@ El review es por FEATURE (rápido y enfocado), no un mega-audit de todo el set.
    - contrastar cada criterio del plan contra lo leido
 3. Contrastar cada criterio del plan contra el código
 4. **Contract Audit gate (MANDATORY si la feature toca DB/API/frontend)**:
-   - Invocar `npm run contract:audit` en el proyecto (skill arnes-contract-audit, ADR-006)
+   - El harness ejecuta el gate determinístico del contrato (skill arnes-contract-audit, ADR-006) y el agente consume el reporte con `read`
    - El reporte (L1-L6, checks C1-C34) entra como evidence pre-verdict
    - FAIL del gate = FAIL del verdict (aunque los criterios de done estén cumplidos)
    - Aplica SIEMPRE si la feature toca: migraciones, `database.types.ts`, Zod schemas, queries supabase-js, response shapes de API

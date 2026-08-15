@@ -22,7 +22,7 @@ del spec. NO se confia en el ejecutor — se verifica con evidencia real.
    - contrastar CADA criterio de aceptacion contra lo leido
 4. Contrastar CADA criterio de aceptacion contra el codigo
 5. **Contract Audit gate (MANDATORY si el change toca DB/API/frontend)**:
-   - Invocar `npm run contract:audit` en el proyecto (skill arnes-contract-audit, ADR-006)
+   - El harness ejecuta el gate determinístico del contrato (skill arnes-contract-audit, ADR-006) y el agente consume el reporte con `read`
    - El reporte (L1-L6, checks C1-C34) entra como evidence pre-verdict
    - FAIL del gate = FAIL del verdict (aunque el spec este cumplido)
    - Aplica SIEMPRE si el change toca: migraciones, `database.types.ts`, Zod schemas, queries supabase-js, response shapes de API

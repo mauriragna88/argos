@@ -8,7 +8,7 @@ description: Role-skill ARGOS del agente Tywin (Verifier + Memory Judge). Trigge
 Eres un agente de ARGOS SUPERPOWERS operando dentro del runtime Pi.
 
 ## Fuentes canónicas (lee con `read`, NO copies aquí)
-- Definición del rol: `read C:\Users\LapOne Mx\documents\github\arnes\core\auditors\tywin.agent.md`
+- Definición del rol: `read C:\Users\LapOne Mx\documents\github\argos\core\auditors\tywin.agent.md`
 - Skill v2 propia: `read core/skills/v2/tywin-judgment/SKILL.md`
 
 ## Contexto aislado

@@ -16,7 +16,7 @@ en runtime porque:
 - Las llaves primarias/foráneas están mal referenciadas o no coinciden los tipos
 - `database.types.ts` está desactualizado respecto a las migraciones
 - El API returna campos que el frontend no consume o viceversa
-- `supabase-js` `.select("col_inventada")` pasar tsc pero falla en runtime (el #1 gap del stack)
+- `supabase-js` `.select("col_inventada")` pasar el type-check pero fallar en runtime (el #1 gap del stack)
 
 **Estos bugs NO se pueden fixar con otro agente LLM "revisando" — el mismo modo de fallo
 (alucinación de identificadores) se reproduciría. La solución es un gate DETERMINÍSTICO: scripts
@@ -28,7 +28,7 @@ que validan hechos reales (schema vs código) y fallan igual cada vez.**
 - Antes del verdict de Tywin en FDD review (FASE 3) — mandatory
 - Antes de cualquier demo/deploy (Auron L0 Gate)
 - Después de crear o modificar migraciones
-- Comando directo: `/contract-audit` o `npm run contract:audit` en el proyecto
+- El harness lo ejecuta con `argos audit` — el agente consume el reporte con `read`
 
 ## Inputs
 
@@ -40,15 +40,15 @@ que validan hechos reales (schema vs código) y fallan igual cada vez.**
 
 ## Pasos (procedimiento PROPIO del arnes)
 
-1. **RECALL**: buscar en arnes.db auditorías previas del proyecto
-   `arnes-memory.ps1 search -Agent tywin -Query "contract audit <project>"`
+1. **RECALL**: buscar en la memoria ARNES auditorías previas del proyecto
+   `read .arnes/memory/export/tywin-memory.jsonl`
    — ver si ya se conocen drifts, patrones recurrentes, campos problemáticos
 2. **Gate L1 — Migrations ↔ Types staleness**:
    - `supabase db reset` contra local stack — fail si migraciones no aplican limpio
    - `supabase gen types typescript --local > /tmp/types.ts`
    - `diff /tmp/types.ts database.types.ts` — fail si diff (types stale)
 3. **Gate L2 — Schema ↔ Código (columnas referenciadas existen)**:
-   - `tsc --noEmit` estricto — captura `.eq()`, `.insert()`, `.update()` typos
+   - type-check estricto — captura `.eq()`, `.insert()`, `.update()` typos
    - **AST audit** (script propio): extraer todos los `.select("...")` string literals del codebase,
      validar cada token contra las Row types de `database.types.ts`
    - Mismo para `.order()`, `.range()`, join syntax `alias:table!fk(...)`
@@ -79,7 +79,7 @@ que validan hechos reales (schema vs código) y fallan igual cada vez.**
    - Vitest: cada route hit contra local stack, response parseada con su `outputSchema`
    - `supabase db test` para RLS policies (pgTAP o matrix anon/auth)
 9. **Síntesis del reporte**: mapear fails a check-IDs (C1-C38) con file:line evidence
-10. **GUARDAR**: `arnes-memory.ps1 save -Agent tywin -Topic "tywin/contract-audits" -Type audit`
+10. **GUARDAR**: `write` una línea en `.arnes/memory/export/tywin-memory.jsonl` (topic `tywin/contract-audits`, type `audit`)
     — guardar drifts encontrados, patrones recurrentes, lecciones para futuras sesiones
 11. **Entregar a Tywin**: reporte estructurado — Tywin lo consume como evidence pre-verdict
 
@@ -172,8 +172,8 @@ Remediation (si FAIL):
 |---|---|
 | validation-pipeline | estructura de gates y staged validation |
 | testing-principles | qué vale la pena testear, proporcionalidad |
-| vitest | runner para smoke tests de las routes |
-| typescript | reglas strict que(maximizan lo que tsc captura |
+| smoke-testing | runner para smoke tests de las routes |
+| typescript | reglas strict que maximizan lo que captura el type-check |
 | api-design | convenciones de contract (inputSchema/outputSchema) |
 | postgresql | validaciones FK/PK a nivel SQL |
 | supabase-cli | introspección de schema, gen types, db test |
@@ -202,18 +202,18 @@ Los **scripts determinísticos** viven en cada proyecto target (RES, CHAT), no e
 <project>/
 ├── scripts/
 │   └── contract-audit/
-│       ├── types-diff.ps1         # L1: gen types + diff
+│       ├── types-diff (script)    # L1: gen types + diff
 │       ├── select-audit.mjs       # L2 AST: .select() string audit
 │       ├── fk-audit.sql           # L3: information_schema queries
-│       ├── zod-smoke.test.ts     # L6: Vitest route smoke tests
-│       └── run-all.ps1           # entry: corre todo, exit code = pass/fail
+│       ├── zod-smoke.test.ts     # L6: route smoke tests
+│       └── run-all (script)       # entry: corre todo, exit code = pass/fail
 ├── package.json
-│   "contract:audit": "pwsh ./scripts/contract-audit/run-all.ps1"
+│   "contract:audit": "argos audit"
 └── .github/workflows/
     └── contract-audit.yml        # Pre-merge gate
 ```
 
-El **harness** provee la skill (este doc), la referencia de checks (arriba) y Tywin la invoca via `npm run contract:audit`.
+El **harness** provee la skill (este doc) y la referencia de checks (arriba); Tywin solicita el gate al harness (`argos audit`) y consume el reporte con `read`.
 
 ## Fuente
 

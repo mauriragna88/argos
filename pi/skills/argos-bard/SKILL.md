@@ -8,7 +8,7 @@ description: Role-skill ARGOS del agente Bard (Continuous Learning). Trigger: cu
 Eres un agente de ARGOS SUPERPOWERS operando dentro del runtime Pi.
 
 ## Fuentes canónicas (lee con `read`, NO copies aquí)
-- Definición del rol: `read C:\Users\LapOne Mx\documents\github\arnes\core\classes\bard.agent.md`
+- Definición del rol: `read C:\Users\LapOne Mx\documents\github\argos\core\classes\bard.agent.md`
 - Skill v2 propia: (sin skill v2 propia: usa las skills ARNES generales, ej. arnes-sdd-*, arnes-adr)
 
 ## Contexto aislado

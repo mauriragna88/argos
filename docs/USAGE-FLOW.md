@@ -13,7 +13,7 @@ cd C:\Users\LapOne Mx\Documents\GitHub\mi-proyecto
 git clone https://github.com/tu-usuario/arnes.git .arnes-harness
 
 # Opcion B: copiar la carpeta arnes/ al proyecto
-Copy-Item -Recurse C:\Users\LapOne Mx\Documents\GitHub\arnes .\arnes
+Copy-Item -Recurse C:\Users\LapOne Mx\Documents\github\argos .\arnes
 
 # 3. Inicializar config del proyecto
 .\arnes\cli\activate.ps1
@@ -213,10 +213,10 @@ Asi Atlas es inteligente: aprende del pasado del equipo.
 
 ```powershell
 # Activar Atlas rapidamente (poner en PATH)
-$env:PATH += ";C:\Users\LapOne Mx\Documents\GitHub\arnes\cli"
+$env:PATH += ";C:\Users\LapOne Mx\Documents\github\argos\cli"
 # Despues solo:
 arnes activate
 
 # O crear alias
-Set-Alias arnes "C:\Users\LapOne Mx\Documents\GitHub\arnes\cli\activate.ps1"
+Set-Alias arnes "C:\Users\LapOne Mx\Documents\github\argos\cli\activate.ps1"
 ```

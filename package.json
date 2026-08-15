@@ -45,6 +45,7 @@
     "test:ps": "powershell -NoProfile -ExecutionPolicy Bypass -File tests/run-all.ps1 -SkipSmoke"
   },
   "devDependencies": {
-    "tsx": "^4.23.12"
+    "tsx": "^4.23.12",
+    "typebox": "^1.3.14"
   }
 }

@@ -30,14 +30,14 @@ foreach ($name in @('argos-cycle.ps1', 'argos-party.ps1', 'argos-engine.ps1')) {
 # 2. Contrato de argos-cycle.ps1
 $cycle = Get-Content (Join-Path $Cli 'argos-cycle.ps1') -Raw
 Assert-That ($cycle -match '\[Parameter\(Mandatory = \$true\)\]') 'arnes-cycle: Quest obligatoria'
-Assert-That ($cycle -match 'arnes-engine\.ps1') 'arnes-cycle: referencia a arnes-engine'
-Assert-That ($cycle -match 'arnes-memory\.ps1') 'arnes-cycle: referencia a arnes-memory'
+Assert-That ($cycle -match 'argos-engine\.ps1') 'arnes-cycle: referencia a argos-engine'
+Assert-That ($cycle -match 'osma-resolve\.ps1') 'arnes-cycle: memoria via osma-resolve'
 Write-Host 'PASS  arnes-cycle contrato (Quest + engine + memoria)' -ForegroundColor Green
 
 # 3. Contrato de argos-party.ps1
 $party = Get-Content (Join-Path $Cli 'argos-party.ps1') -Raw
 Assert-That ($party -match "\[ValidateSet\('safe', 'balanced', 'autonomous'\)\]") 'argos-party: Modo safe/balanced/autonomous'
-Assert-That ($party -match 'arnes-engine\.ps1') 'argos-party: referencia a arnes-engine'
+Assert-That ($party -match 'argos-engine\.ps1') 'argos-party: referencia a argos-engine'
 Assert-That ($party -match 'MaxIterations') 'argos-party: MaxIterations presente'
 Write-Host 'PASS  argos-party contrato (Quest + Modo + engine)' -ForegroundColor Green
 

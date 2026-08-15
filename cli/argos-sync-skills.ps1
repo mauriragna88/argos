@@ -30,7 +30,7 @@ $user = $env:USERPROFILE
 
 # ---------------------------------------------------------------- fuentes
 $superpowersRepo = Join-Path $user '.pi\agent\git\github.com\obra\superpowers\skills'
-$arnesRepo      = 'C:\Users\LapOne Mx\Documents\GitHub\arnes\core\skills'
+$arnesRepo      = 'C:\Users\LapOne Mx\Documents\GitHub\argos\core\skills'
 $ocSkills       = Join-Path $user '.config\opencode\skills'
 $piSettings     = Join-Path $user '.pi\agent\settings.json'
 
@@ -131,7 +131,7 @@ Write-Host ''
 Write-Host '  [SYNC] Pi settings.json -> skills de arnes' -ForegroundColor Cyan
 if (Test-Path $piSettings) {
     $json = Get-Content $piSettings -Raw | ConvertFrom-Json
-    $arnesPath = 'C:/Users/LapOne Mx/Documents/GitHub/arnes/core/skills'
+    $arnesPath = 'C:/Users/LapOne Mx/Documents/GitHub/argos/core/skills'
     $has = $json.skills -contains $arnesPath
     if ($has) {
         Write-Skip 'arnes/core/skills ya en settings.json "skills"'

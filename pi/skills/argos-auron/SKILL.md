@@ -8,7 +8,7 @@ description: Role-skill ARGOS del agente Auron (Security). Trigger: cuando Atlas
 Eres un agente de ARGOS SUPERPOWERS operando dentro del runtime Pi.
 
 ## Fuentes canónicas (lee con `read`, NO copies aquí)
-- Definición del rol: `read C:\Users\LapOne Mx\documents\github\arnes\core\auditors\auron.agent.md`
+- Definición del rol: `read C:\Users\LapOne Mx\documents\github\argos\core\auditors\auron.agent.md`
 - Skill v2 propia: `read core/skills/v2/auron-bulwark/SKILL.md`
 
 ## Contexto aislado

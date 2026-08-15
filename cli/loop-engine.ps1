@@ -156,7 +156,7 @@ function Invoke-CircuitBreaker($agentName) {
     $cbScript = Join-Path $PSScriptRoot "circuit-breaker.ps1"
     if (Test-Path $cbScript) {
         try {
-            & $cbScript -Action record-fail -Agent $agentName -ErrorAction SilentlyContinue
+            $null = & $cbScript -Action record-fail -Agent $agentName -ErrorAction SilentlyContinue 2>&1
         } catch {}
     }
 }
@@ -290,7 +290,7 @@ function Quest-Done($state, $questId, $verdict, $agent, $tokens, $evidencePath, 
     } elseif ($verdict -eq "PASS" -and $agent) {
         $cbScript = Join-Path $PSScriptRoot "circuit-breaker.ps1"
         if (Test-Path $cbScript) {
-            try { & $cbScript -Action record-pass -Agent $agent -ErrorAction SilentlyContinue } catch {}
+            try { $null = & $cbScript -Action record-pass -Agent $agent -ErrorAction SilentlyContinue 2>&1 } catch {}
         }
     }
 
@@ -302,19 +302,19 @@ function Quest-Done($state, $questId, $verdict, $agent, $tokens, $evidencePath, 
             $content = "Quest $questId verdict: $verdict. Agent: $agent. Tokens: $tokens. Quest: $($state.current_quest). Evidence: $evidencePath. Audit verdict: $verdictPath. Remediation: $remediationPath. Sam counsel: $counselPath. Atlas decision: $decisionPath"
             $memAgent = if ($agent) { $agent } else { 'atlas' }
             $type = if ($verdict -eq "PASS") { "pattern" } else { "bugfix" }
-            & $memScript save -Agent $memAgent -Topic "atlas/quest-outcomes/$questId" -Type $type -Content $content 2>$null
+            $null = & $memScript save -Agent $memAgent -Topic "atlas/quest-outcomes/$questId" -Type $type -Content $content 2>&1
             # OSMA V5: registrar una EXPERIENCIA VALIDADA por quest finalizado
             # (situation->solution->outcome con reward; PASS=validado, FAIL=fallo).
             # Hace que el CLI harness (no solo PI) pueble la capa de experiencias.
             $reward = if ($verdict -eq "PASS") { 0.9 } elseif ($verdict -eq "FAIL_PARTIAL") { 0.3 } else { -0.8 }
-            & $memScript experience -ExperienceAction record `
+            $null = & $memScript experience -ExperienceAction record `
                 -Situation ("Quest: {0} | {1}" -f $questId, $state.current_quest) `
                 -Reasoning ("Agente asignado: {0}. Objetivo procesado mediante el harness." -f $memAgent) `
                 -Conclusion ("Accion llevada: {0}" -f $title) `
                 -Action ("Quest {0} finalizado con veredicto {1}." -f $questId, $verdict) `
                 -Outcome $content `
                 -Reward $reward `
-                -Agent $memAgent -Project (Split-Path (Get-Location) -Leaf) -QuestId $questId -Quiet 2>$null
+                -Agent $memAgent -Project (Split-Path (Get-Location) -Leaf) -QuestId $questId -Quiet 2>&1
         }
     } catch {}
 

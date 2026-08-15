@@ -8,7 +8,7 @@ description: Role-skill ARGOS del agente Eremez (Research). Trigger: cuando Atla
 Eres un agente de ARGOS SUPERPOWERS operando dentro del runtime Pi.
 
 ## Fuentes canónicas (lee con `read`, NO copies aquí)
-- Definición del rol: `read C:\Users\LapOne Mx\documents\github\arnes\core\classes\ranger.agent.md`
+- Definición del rol: `read C:\Users\LapOne Mx\documents\github\argos\core\classes\ranger.agent.md`
 - Skill v2 propia: `read core/skills/v2/eremez-mark/SKILL.md`
 
 ## Contexto aislado

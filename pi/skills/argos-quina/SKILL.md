@@ -8,7 +8,7 @@ description: Role-skill ARGOS del agente Quina (Cognitive + token budget). Trigg
 Eres un agente de ARGOS SUPERPOWERS operando dentro del runtime Pi.
 
 ## Fuentes canónicas (lee con `read`, NO copies aquí)
-- Definición del rol: `read C:\Users\LapOne Mx\documents\github\arnes\core\auditors\quina.agent.md`
+- Definición del rol: `read C:\Users\LapOne Mx\documents\github\argos\core\auditors\quina.agent.md`
 - Skill v2 propia: `read core/skills/v2/quina-ledger/SKILL.md`
 
 ## Contexto aislado

@@ -8,7 +8,7 @@ description: Role-skill ARGOS del agente Varys (Evidence / provenance). Trigger:
 Eres un agente de ARGOS SUPERPOWERS operando dentro del runtime Pi.
 
 ## Fuentes canónicas (lee con `read`, NO copies aquí)
-- Definición del rol: `read C:\Users\LapOne Mx\documents\github\arnes\core\auditors\varys.agent.md`
+- Definición del rol: `read C:\Users\LapOne Mx\documents\github\argos\core\auditors\varys.agent.md`
 - Skill v2 propia: `read core/skills/v2/varys-whisper/SKILL.md`
 
 ## Contexto aislado

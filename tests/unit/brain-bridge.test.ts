@@ -1,29 +1,34 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, copyFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, copyFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { runBrain } from "../../pi/extensions/argos-brain.js";
+import { runBrain, resolveBrainPath } from "../../pi/extensions/argos-brain.js";
 import { memoryCard } from "../../pi/extensions/argos-memory.js";
 
-// Proyecto ARNES simulado: el contrato del plan resuelve el brain en
-// <proyecto>/cli/arnes_brain.py, así que se copia el brain real al fixture temporal.
+// Proyecto ARNES simulado: el brain real vive en OSMA (instalación global o repo
+// hermano). Se resuelve como lo hace el harness (resolveBrainPath) y se copia al
+// fixture temporal. Si OSMA no está instalado, devuelve null y el test hace SKIP.
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
-function makeFakeArnesProject(): string {
+function makeFakeArnesProject(): string | null {
+  let brain: string;
+  try {
+    brain = resolveBrainPath(REPO_ROOT);
+  } catch {
+    return null;
+  }
   const dir = mkdtempSync(join(tmpdir(), "argos-bridge-"));
   mkdirSync(join(dir, ".arnes"), { recursive: true });
   mkdirSync(join(dir, "cli"), { recursive: true });
-  copyFileSync(
-    join(REPO_ROOT, "cli", "arnes_brain.py"),
-    join(dir, "cli", "arnes_brain.py")
-  );
+  copyFileSync(brain, join(dir, "cli", "arnes_brain.py"));
   return dir;
 }
 
-test("runBrain: save+recall round-trip contra arnes_brain.py", async () => {
+test("runBrain: save+recall round-trip contra arnes_brain.py", async (t) => {
   const dir = makeFakeArnesProject();
+  if (!dir) { t.skip("OSMA brain no disponible (instala OSMA para correr este test)"); return; }
   // init db via brain (runBrain inyecta <proyecto>/.arnes/arnes.db automáticamente)
   await runBrain(dir, ["init"]);
   await runBrain(dir, ["save", "-"], {
@@ -36,14 +41,21 @@ test("runBrain: save+recall round-trip contra arnes_brain.py", async () => {
   assert.ok(rows.some((r) => (r.content as string).includes("dark mode")));
 });
 
-test("runBrain: falla fuera de proyecto arnes", async () => {
+test("runBrain: sin brain devuelve ok=false; con brain auto-inicializa .arnes", async (t) => {
   const dir = mkdtempSync(join(tmpdir(), "argos-bridge-"));
   const res = await runBrain(dir, ["stats"]);
-  assert.equal(res.ok, false);
+  if (res.ok) {
+    // Brain de OSMA instalado: auto-inicializa el proyecto (crea .arnes/arnes.db)
+    assert.ok(existsSync(join(dir, ".arnes", "arnes.db")), "runBrain crea .arnes/arnes.db");
+  } else {
+    // Sin OSMA (CI): falla limpio sin corromper nada
+    t.skip("OSMA brain no disponible; se validó fallo limpio");
+  }
 });
 
-test("memory tools: search devuelve tarjeta con confidence y state", async () => {
+test("memory tools: search devuelve tarjeta con confidence y state", async (t) => {
   const dir = makeFakeArnesProject();
+  if (!dir) { t.skip("OSMA brain no disponible (instala OSMA para correr este test)"); return; }
   await runBrain(dir, ["init"]);
   await runBrain(dir, ["save", "-"], { agent: "ansem", topic_key: "ansem/rls-policies", type: "pattern", content: "RLS por user_id con auth.uid()", confidence: 0.98, score: 5, });
   const res = await runBrain(dir, ["recall", "RLS", "ansem", "5"]);

@@ -8,7 +8,7 @@ description: Role-skill ARGOS del agente Vivi (Frontend). Trigger: cuando Atlas 
 Eres un agente de ARGOS SUPERPOWERS operando dentro del runtime Pi.
 
 ## Fuentes canónicas (lee con `read`, NO copies aquí)
-- Definición del rol: `read C:\Users\LapOne Mx\documents\github\arnes\core\classes\mage.agent.md`
+- Definición del rol: `read C:\Users\LapOne Mx\documents\github\argos\core\classes\mage.agent.md`
 - Skill v2 propia: `read core/skills/v2/vivi-fireball/SKILL.md`
 
 ## Contexto aislado

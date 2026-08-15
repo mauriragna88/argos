@@ -4,23 +4,30 @@ import { mkdtempSync, mkdirSync, copyFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { runBrain } from "../../pi/extensions/argos-brain.js";
+import { runBrain, resolveBrainPath } from "../../pi/extensions/argos-brain.js";
 import { checkpointNow, buildRecoveryCapsule } from "../../pi/extensions/argos-compaction.js";
 import { isProtectedPath } from "../../pi/extensions/argos-permissions-core.js";
 import { classifyQuest, recommendParty } from "../../pi/extensions/argos-orchestrator.js";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
-function makeFakeArnesProject(): string {
+function makeFakeArnesProject(): string | null {
+  let brain: string;
+  try {
+    brain = resolveBrainPath(REPO_ROOT);
+  } catch {
+    return null;
+  }
   const dir = mkdtempSync(join(tmpdir(), "argos-cp-"));
   mkdirSync(join(dir, ".arnes"), { recursive: true });
   mkdirSync(join(dir, "cli"), { recursive: true });
-  copyFileSync(join(REPO_ROOT, "cli", "arnes_brain.py"), join(dir, "cli", "arnes_brain.py"));
+  copyFileSync(brain, join(dir, "cli", "arnes_brain.py"));
   return dir;
 }
 
-test("compaction: checkpoint → capsule preserva next action", async () => {
+test("compaction: checkpoint → capsule preserva next action", async (t) => {
   const dir = makeFakeArnesProject();
+  if (!dir) { t.skip("OSMA brain no disponible (instala OSMA para correr este test)"); return; }
   await runBrain(dir, ["init"]);
   const cpId = await checkpointNow(dir, {
     quest: "Q-1",

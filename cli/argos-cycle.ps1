@@ -144,12 +144,31 @@ if ($missing.Count -gt 0) {
     Write-Host '  ▸ [AUTO-INIT] entorno listo (contexto, conexiones, modelos y memoria).' -ForegroundColor Green
 }
 
+# ============ 0. MEMORIA: recall previo (ARGOS+OSMA unificados) ============
+# Consulta OSMA ANTES de planear: lecciones de quests parecidos + experiencias
+# validadas reutilizables. Atlas arranca con memoria, no desde cero.
+$memContext = ''
+if ($MemoryContext) {
+    $memContext = $MemoryContext
+} elseif (Test-Path $Mem) {
+    $memRecall = ''
+    $memExp = ''
+    try { $memRecall = (& $Mem recall -Query $Quest -Limit 5 -Quiet 2>$null | Out-String).Trim() } catch {}
+    try { $memExp = (& $Mem experience -ExperienceAction search -Query $Quest -Limit 3 -Quiet 2>$null | Out-String).Trim() } catch {}
+    if ($memRecall -and $memRecall -notmatch 'Sin recuerdos|^$|^\[\]$') { $memContext += "RECUERDOS DE QUESTS PARECIDOS:`n$memRecall`n" }
+    if ($memExp -and $memExp -notmatch 'Sin experiencias|^$|^\[\]$') { $memContext += "EXPERIENCIAS VALIDADAS REUTILIZABLES:`n$memExp`n" }
+    if ($memContext) {
+        Write-Host '' -ForegroundColor DarkGray
+        Write-Host '  ▸ [OSMA] Memoria consultada: lecciones de quests parecidos cargadas para Atlas.' -ForegroundColor DarkGray
+    }
+}
+
 # ============ 1. ATLAS: orquesta ============
 $atlasSystem = (Get-AgentPrompt 'atlas')
 if (-not $atlasSystem) { $atlasSystem = 'Eres Atlas, orquestador de un harness RPG. Nunca codeas: planeas, delega y autorizas.' }
 $atlasMsg = "Quest del usuario: $Quest`n`nDecide el PARTY (agentes especialistas) y el plan general.`nFormato EXACTO:`nPARTY: nombre1, nombre2, nombre3`nPLAN: <resumen del plan en 2-3 lineas>`nElige el party de esta lista: vivi, ansem, kuja, eiko, amarant, eremez, auron, bran, quina, varys, tywin, sam, bard, tidus, ragnarok"
-if ($MemoryContext) {
-    $atlasMsg += "`n`nCONTEXTO DE MEMORIA (sesiones/iteraciones previas del objetivo):`n$MemoryContext`n`nUsa este contexto para decidir el party y el plan: evita repetir lo ya hecho y ataca lo pendiente."
+if ($memContext) {
+    $atlasMsg += "`n`nCONTEXTO DE MEMORIA (lecciones de quests previos, evita repetir errores):`n$memContext`n`nUsa este contexto para decidir el party y el plan: evita repetir lo ya hecho y ataca lo pendiente."
 }
 $atlasR = Run-Step 'atlas' 'ATLAS - ORQUESTA' $atlasSystem $atlasMsg 4000
 if ($atlasR.ok) {
@@ -176,6 +195,16 @@ if ($bardR.ok) { $mejoras = $bardR.reply }
 # ============ 4. PARTY: cada especialista ejecuta su parte ============
 $members = @($partyList -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ -and $_ -ne 'atlas' })
 if ($members.Count -eq 0) { $members = @('vivi', 'ansem', 'kuja') }
+# --- SEGURIDAD AUTOMATICA: Auron entra si el quest toca auth/RLS/secrets/deploy ---
+$securityKeywords = 'auth|login|password|token|secret|rls|row.level|supabase.*policy|apikey|api.key|ssl|https|cors|sanitize|inyeccion|injection|deploy|produccion|production|permisos|roles|encrypt|hash'
+$questLower = $Quest.ToLower()
+if ($questLower -match $securityKeywords) {
+    if ($members -notcontains 'auron') {
+        $members += 'auron'
+        Write-Host '' -ForegroundColor Yellow
+        Write-Host '  ▸ [AURON] Quest con superficie de seguridad detectada: Auron se une al party automaticamente.' -ForegroundColor Yellow
+    }
+}
 $script:stepTotal = 3 + $members.Count + 2   # atlas + amarant + bard + party + tywin + atlas-final
 $roleHint = @{
     'vivi' = 'Frontend: React/Next.js/Tailwind. Entrega componentes y estilos.'
@@ -317,6 +346,22 @@ try {
             $debrief += "`nAgentes:`n" + ($memberSummaries -join "`n")
         }
         & $Mem save -Agent 'atlas' -Topic "atlas/debriefs/$questId" -Type 'debrief' -Content $debrief 2>$null
+    }
+} catch {}
+
+# === Experiencia VALIDADA V5: el ciclo completo queda como experiencia reutilizable ===
+# PASS -> reward 0.9 (verified, se reutiliza en problemas parecidos)
+# FAIL/RETOQUE -> reward -0.8 (evita repetir la ruta que fallo)
+try {
+    if (Test-Path $Mem) {
+        $projName = (Split-Path (Get-Location) -Leaf)
+        $expSituation = $Quest
+        $expReasoning = "Ciclo ARGOS: party [$partyList]. Plan de Amarant + mejoras de Bard."
+        $expConclusion = "Verdict Tywin: $verdict. Decision Atlas: $decision."
+        $expAction = "Party ejecuto: " + (($memberSummaries | Select-Object -First 2) -join ' | ')
+        $expOutcome = "Quest $questId completado con verdict $verdict."
+        $reward = if ($verdict -eq 'PASS' -and $decision -ne 'RETOQUE') { 0.9 } elseif ($verdict -eq 'FAIL' -or $decision -eq 'RETOQUE') { -0.8 } else { 0.3 }
+        & $Mem experience -ExperienceAction record -Situation $expSituation -Reasoning $expReasoning -Conclusion $expConclusion -Action $expAction -Outcome $expOutcome -Reward $reward -Project $projName -Agent 'atlas' -Quiet 2>$null | Out-Null
     }
 } catch {}
 

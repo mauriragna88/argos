@@ -315,6 +315,11 @@ switch ($Command) {
                 & freebuff
             }
             'claude' {
+                # Claude Code lee ~/.claude/CLAUDE.md + ~/.claude/agents/ (no ~/.config/arnes).
+                # Si el usuario no paso -TargetDir (tests si lo pasan), usa ~/.claude.
+                if (-not $PSBoundParameters.ContainsKey('TargetDir')) {
+                    $TargetDir = Join-Path $env:USERPROFILE '.claude'
+                }
                 Write-Host '  [1/3] Persona Atlas a CLAUDE.md...' -ForegroundColor Cyan
                 [void](Write-AtlasPersona -Target 'claude')
                 Write-Host '  [2/3] Desplegando party a Claude agents...' -ForegroundColor Cyan

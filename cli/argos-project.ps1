@@ -56,11 +56,28 @@ if ($Update) {
     if (Test-Path (Join-Path $ProjectDir 'go.mod')) { $stack += 'go' }
     if ($stack.Count -eq 0) { $stack += 'generico' }
 
-    # stats
+    # stats - conteo de archivos ACOTADO (un -Recurse sobre el HOME recorre AppData/.config
+    # y tarda minutos o cuelga; aqui solo se recorre si la carpeta es un proyecto real):
     $fileCount = 0
     try {
-        $fileCount = (Get-ChildItem $ProjectDir -Recurse -File -ErrorAction SilentlyContinue |
-            Where-Object { $_.FullName -notmatch '\\node_modules\\|\\.git\\|\\.venv\\' } | Measure-Object).Count
+        $hasGit = Test-Path (Join-Path $ProjectDir '.git')
+        $hasStack = (Test-Path (Join-Path $ProjectDir 'package.json')) -or
+                    (Test-Path (Join-Path $ProjectDir 'next.config.js')) -or
+                    (Test-Path (Join-Path $ProjectDir 'next.config.mjs')) -or
+                    (Test-Path (Join-Path $ProjectDir 'Dockerfile')) -or
+                    (Test-Path (Join-Path $ProjectDir 'go.mod')) -or
+                    (Test-Path (Join-Path $ProjectDir 'requirements.txt'))
+        if ($hasGit) {
+            # Repo git: contar archivos trackeados (instantaneo, no toca node_modules)
+            $fileCount = @(git ls-files 2>$null | Measure-Object).Count
+        } elseif ($hasStack) {
+            # Proyecto sin git: recursivo pero excluyendo carpetas pesadas
+            $fileCount = (Get-ChildItem $ProjectDir -Recurse -File -ErrorAction SilentlyContinue |
+                Where-Object { $_.FullName -notmatch '\\node_modules\\|\\.git\\|\\.venv\\|\\dist\\|\\build\\|\\.next\\|\\.nuxt\\|\\.turbo\\|\\coverage\\|\\__pycache__\\' } | Measure-Object).Count
+        } else {
+            # Carpeta no-proyecto (HOME, Desktop, etc.): solo nivel superior, instantaneo
+            $fileCount = @(Get-ChildItem $ProjectDir -File -ErrorAction SilentlyContinue | Measure-Object).Count
+        }
     } catch {}
     $questCount = @(Get-ChildItem (Join-Path $ArnesDir 'quests\*.md') -ErrorAction SilentlyContinue | Measure-Object).Count
     $memObs = 0

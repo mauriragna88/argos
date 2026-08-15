@@ -26,10 +26,15 @@ if (-not (Test-Path (Join-Path $arnes 'arnes.db'))) {
 # 2. health-check basico (memoria)
 Write-Host '  [ARGOS] Health-check...' -ForegroundColor Cyan
 $memCli = (Get-OsmaMemoryCli)
-$stats = & $memCli stats 2>&1 | Out-String
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "  [ARGOS] FALLO memoria: $stats" -ForegroundColor Red
-    exit 1
+if (-not (Test-OsmaInstalled)) {
+    Write-Host '  [ARGOS] OSMA no instalado: memoria desactivada (modo degradado).' -ForegroundColor Yellow
+    Write-Host '          Instala: argos osma-install   (o: osma/install.ps1)' -ForegroundColor DarkGray
+} else {
+    $stats = & $memCli stats 2>&1 | Out-String
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "  [ARGOS] FALLO memoria: $stats" -ForegroundColor Red
+        exit 1
+    }
 }
 
 # 2b. sync de skills (fusion harnesses: Pi <-> OpenCode)

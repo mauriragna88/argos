@@ -22,7 +22,7 @@ argos init               -> inicializar proyecto
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('', 'menu', 'init', 'connect', 'connect-agent', 'configure', 'chat', 'status', 'stats', 'models', 'model', 'memory', 'recommend', 'mode', 'doctor', 'verify', 'test-model', 'quest', 'party', 'xp', 'theme', 'code', 'opencode', 'target', 'goal', 'audit')]
+    [ValidateSet('', 'menu', 'init', 'connect', 'connect-agent', 'configure', 'chat', 'status', 'stats', 'models', 'model', 'memory', 'osma-install', 'recommend', 'mode', 'doctor', 'verify', 'test-model', 'quest', 'party', 'xp', 'theme', 'code', 'opencode', 'target', 'goal', 'audit')]
     [string]$Command = '',
 
     [Parameter(Position = 1)]
@@ -344,6 +344,7 @@ function Show-Menu {
     Write-Host '  [5] Modo de interaccion (auto/educativo/mixto)' -ForegroundColor White
     Write-Host '  [6] Estado del entorno (/status)' -ForegroundColor White
     Write-Host '  [7] Memoria (/memory)' -ForegroundColor White
+    Write-Host '  [O] Instalar memoria OSMA (/osma-install)' -ForegroundColor White
     Write-Host '  [8] Diagnostico de prerequisitos (/doctor)' -ForegroundColor White
     Write-Host '  [9] Abrir entorno (OpenCode / Codex / Claude / Freebuff) (/target)' -ForegroundColor White
     Write-Host '  [A] Contract Audit DB<->Frontend (/audit)' -ForegroundColor White
@@ -360,7 +361,15 @@ function Show-Menu {
         '4' { & (Join-Path $ScriptDir 'argos-recommend.ps1') -Apply; Read-Input '  Enter para volver'; Show-Menu }
         '5' { & $interactionScript wizard; Read-Input '  Enter para volver'; Show-Menu }
         '6' { Show-Status; Read-Input '  Enter para volver'; Show-Menu }
-        '7' { $mem = (Get-OsmaMemoryCli); & $mem stats; Read-Input '  Enter para volver'; Show-Menu }
+        '7' {
+            $mem = (Get-OsmaMemoryCli)
+            if (-not (Test-OsmaInstalled)) {
+                Write-Host '  [!] OSMA no instalado: memoria desactivada. Corre: argos osma-install' -ForegroundColor Yellow
+            } else { & $mem stats }
+            Read-Input '  Enter para volver'; Show-Menu
+        }
+        'o' { & (Join-Path $ScriptDir 'argos.ps1') osma-install; Read-Input '  Enter para volver'; Show-Menu }
+        'O' { & (Join-Path $ScriptDir 'argos.ps1') osma-install; Read-Input '  Enter para volver'; Show-Menu }
         '8' { & (Join-Path $ScriptDir 'argos-doctor.ps1'); Read-Input '  Enter para volver'; Show-Menu }
         '9' { & (Join-Path $ScriptDir 'argos-target.ps1') -Target auto }
         'a' { & (Join-Path $ScriptDir 'argos-audit.ps1'); Read-Input '  Enter para volver'; Show-Menu }
@@ -415,6 +424,27 @@ function Show-Status {
     Write-Host ''
     $conn = Join-Path $ScriptDir 'argos-connect.ps1'
     & $conn status
+    Write-Host ''
+    # === Memoria OSMA: estado del motor + scan de proyectos ARGOS ===
+    $osmaRoot = Get-OsmaRoot
+    if (-not $osmaRoot) {
+        Write-Host '  ▸ Memoria OSMA: no instalada. Corre: argos osma-install' -ForegroundColor Yellow
+    } else {
+        Write-Host '  ▸ Memoria OSMA: activa (motor global ~/.config/arnes/osma)' -ForegroundColor Green
+        $scanCli = Join-Path $osmaRoot 'osma-scan-projects.ps1'
+        if (Test-Path $scanCli) {
+            try {
+                $scanOut = @(& $scanCli -OnlyArnes -Json 2>$null) -join ''
+                if ($scanOut) {
+                    $scan = $scanOut | ConvertFrom-Json
+                    Write-Host ("  ▸ Proyectos con ARGOS+OSMA: {0} de {1} escaneados" -f @($scan.arnes).Count, $scan.total) -ForegroundColor Cyan
+                    foreach ($p in @($scan.arnes | Select-Object -First 6)) {
+                        Write-Host ("      - {0} (obs={1}, exps={2}, quests={3})" -f $p.name, $p.obs, $p.exps, $p.quests) -ForegroundColor DarkGray
+                    }
+                }
+            } catch { }
+        }
+    }
 }
 
 # === MAIN ===
@@ -619,7 +649,43 @@ switch ($Command) {
             & (Join-Path $ScriptDir 'argos-test-model.ps1') -Model $Model
         }
     }
-    'memory' { $mem = (Get-OsmaMemoryCli); & $mem stats }
+    'memory' {
+        $mem = (Get-OsmaMemoryCli)
+        if (-not (Test-OsmaInstalled)) {
+            Write-Host '  [!] OSMA no instalado: memoria desactivada. Corre: argos osma-install' -ForegroundColor Yellow
+        } else { & $mem stats }
+    }
+    'osma-install' {
+        # Instala el motor OSMA a ~/.config/arnes/osma (desde repo local o GitHub)
+        if (Test-OsmaInstalled) {
+            Write-Host ("  [OK] OSMA ya instalado en: {0}" -f (Get-OsmaRoot)) -ForegroundColor Green
+            exit 0
+        }
+        Write-Host '  ▸ Instalando OSMA (memoria per-proyecto)...' -ForegroundColor Cyan
+        $osmaInstall = $null
+        # 1) repo local hermano (Documents/GitHub/osma, ../osma)
+        $localCandidates = @(
+            (Join-Path $env:USERPROFILE 'Documents\GitHub\osma\install.ps1'),
+            (Join-Path (Split-Path $ScriptDir -Parent) '..\osma\install.ps1'),
+            (Join-Path (Split-Path $ScriptDir -Parent) 'osma\install.ps1')
+        )
+        foreach ($c in $localCandidates) { if (Test-Path $c) { $osmaInstall = $c; break } }
+        if (-not $osmaInstall) {
+            # 2) clonar temporal desde GitHub
+            Write-Host '  [>>] Repo OSMA no encontrado localmente - clonando desde GitHub...' -ForegroundColor DarkGray
+            $tmp = Join-Path $env:TEMP ('osma-install-' + [guid]::NewGuid().ToString('N'))
+            try {
+                & git clone --depth 1 https://github.com/mauriragna88/osma.git $tmp 2>&1 | Out-Null
+                $osmaInstall = Join-Path $tmp 'install.ps1'
+            } catch {
+                Write-Host '  [!] No se pudo clonar OSMA. Instala manual: git clone https://github.com/mauriragna88/osma.git' -ForegroundColor Red
+                exit 1
+            }
+        }
+        & $osmaInstall
+        Write-Host '  [OK] Memoria OSMA lista. Reinicia argos para activarla.' -ForegroundColor Green
+        exit 0
+    }
     default {
         # Quest inicial opcional: argos "haz X"  o  argos quest-inicial
         # Unir Model + Args (PowerShell parte el quest en palabras)

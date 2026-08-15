@@ -34,6 +34,14 @@ $ErrorActionPreference = 'Stop'
 $Root = Resolve-Path (Join-Path $PSScriptRoot '..')
 $Engine = Join-Path $PSScriptRoot 'argos-engine.ps1'
 $Mem = (Get-OsmaMemoryCli)
+# argos party usa quest/atask (tracking real) - sin OSMA no hay scheduler: abortar con aviso.
+if (-not (Test-OsmaInstalled)) {
+    Write-Host ''
+    Write-Host '  [!] argos party necesita la memoria OSMA (tracking de quests/tareas).' -ForegroundColor Yellow
+    Write-Host '      Instala la memoria:  argos osma-install   (o: osma/install.ps1)' -ForegroundColor Cyan
+    Write-Host '      O usa:  argos code "<quest>"  (sin party, funciona sin memoria)' -ForegroundColor DarkGray
+    exit 1
+}
 $GlobalConfigDir = Join-Path $env:USERPROFILE '.config\arnes'
 $ModelsPath = Join-Path $GlobalConfigDir 'agent-models.json'
 $WorkDir = (Get-Location).Path
@@ -97,6 +105,22 @@ Write-Host ("  Quest: {0}" -f $Quest) -ForegroundColor Yellow
 Write-Host ("  Modo: {0} | Budget: {1} tkns" -f $Mode, $Budget) -ForegroundColor DarkGray
 Write-Host ''
 
+# ============ 0. MEMORIA: recall previo (ARGOS+OSMA unificados) ============
+# Consulta OSMA ANTES de descomponer: lecciones de quests parecidos + experiencias
+# validadas reutilizables. Atlas descompone con memoria, no desde cero.
+$memContext = ''
+if (Test-Path $Mem) {
+    $memRecall = ''
+    $memExp = ''
+    try { $memRecall = (& $Mem recall -Query $Quest -Limit 5 -Quiet 2>$null | Out-String).Trim() } catch {}
+    try { $memExp = (& $Mem experience -ExperienceAction search -Query $Quest -Limit 3 -Quiet 2>$null | Out-String).Trim() } catch {}
+    if ($memRecall -and $memRecall -notmatch 'Sin recuerdos|^$|^\[\]$') { $memContext += "RECUERDOS DE QUESTS PARECIDOS:`n$memRecall`n" }
+    if ($memExp -and $memExp -notmatch 'Sin experiencias|^$|^\[\]$') { $memContext += "EXPERIENCIAS VALIDADAS REUTILIZABLES:`n$memExp`n" }
+    if ($memContext) {
+        Write-Host '  ▸ [OSMA] Memoria consultada: lecciones de quests parecidos cargadas para Atlas.' -ForegroundColor DarkGray
+    }
+}
+
 $atlasSystem = (Get-Persona 'atlas')
 if (-not $atlasSystem) { $atlasSystem = 'Eres Atlas, orquestador de un harness RPG. Nunca codeas: planeas, delega, autoriza.' }
 $roster = @('vivi','ansem','kuja','eiko','amarant','eremez','auron','bran','quina','varys','tywin','sam','bard','tidus','ragnarok')
@@ -132,6 +156,9 @@ Reglas:
 - "files" = archivos que la tarea va a modificar (rutas relativas, para controlar colisiones en paralelo).
 - Cada tarea con UN agente del roster. Dependencias por id. No inventes agentes.
 "@
+if ($memContext) {
+    $atlasMsg += "`nCONTEXTO DE MEMORIA (lecciones de quests previos, evita repetir errores):`n$memContext`nUsa este contexto para descomponer y elegir party: evita repetir lo ya hecho y ataca lo pendiente.`n"
+}
 Write-Host '  ▸ ATLAS descomponiendo y eligiendo party...' -ForegroundColor Cyan
 $atlasR = & $Engine -Model (Get-AgentModel 'atlas') -System $atlasSystem -Message $atlasMsg -MaxTokens 2500
 $party = @('vivi', 'ansem', 'kuja')
@@ -144,6 +171,12 @@ if ($atlasR.ok) {
             if ($parsed.party) {
                 $party = @($parsed.party | ForEach-Object { Normalize-Agent $_ } | Where-Object { $_ } | Select-Object -First 8)
                 if ($party.Count -eq 0) { $party = @('vivi', 'ansem', 'kuja') }
+            }
+            # --- SEGURIDAD AUTOMATICA: Auron entra si el quest toca auth/RLS/secrets/deploy ---
+            $securityKeywords = 'auth|login|password|token|secret|rls|row.level|supabase.*policy|apikey|api.key|ssl|https|cors|sanitize|inyeccion|injection|deploy|produccion|production|permisos|roles|encrypt|hash'
+            if ($Quest.ToLower() -match $securityKeywords -and $party -notcontains 'auron') {
+                $party += 'auron'
+                Write-Host '       [AURON] Quest con superficie de seguridad detectada: Auron se une al party automaticamente.' -ForegroundColor Yellow
             }
             if ($parsed.epics) {
                 $epics = @($parsed.epics | Select-Object -First 10)
@@ -346,5 +379,18 @@ Write-Host '  ══════════════════════
 try {
     $next = if ($finalVerdict -eq 'PASS') { 'Siguiente quest del backlog' } else { "Retomar quest $questId (tareas pendientes/fallidas)" }
     & $Mem checkpoint -Create -QuestId $questId -Agent 'atlas' -Goal $Quest -Phase "party-$finalVerdict" -Completed @((& $Mem atask -List -QuestId $questId -Status 'pass' -Quiet | ConvertFrom-Json | ForEach-Object { $_.task_id })) -Pending @((& $Mem atask -List -QuestId $questId -Status 'pending' -Quiet | ConvertFrom-Json | ForEach-Object { $_.task_id })) -NextAction $next -Quiet 2>$null | Out-Null
+} catch {}
+
+# === Experiencia VALIDADA V5: el party completo queda como experiencia reutilizable ===
+try {
+    if (Test-Path $Mem) {
+        $projName = (Split-Path (Get-Location) -Leaf)
+        $doneTasks = @(& $Mem atask -List -QuestId $questId -Status 'pass' -Quiet | ConvertFrom-Json)
+        $expReasoning = "Party autonomo ARGOS: party [$($party -join ', ')], $($epics.Count) tareas, modo $Mode."
+        $expAction = "Tareas PASS: " + (($doneTasks | Select-Object -First 3 | ForEach-Object { "$($_.task_id): $($_.summary)" }) -join ' | ')
+        $expOutcome = "Quest $questId con verdict $finalVerdict ($iteration iteraciones, $totalTokens tkns)."
+        $reward = if ($finalVerdict -eq 'PASS') { 0.9 } else { -0.8 }
+        & $Mem experience -ExperienceAction record -Situation $Quest -Reasoning $expReasoning -Conclusion "Verdict final del party: $finalVerdict." -Action $expAction -Outcome $expOutcome -Reward $reward -Project $projName -Agent 'atlas' -Quiet 2>$null | Out-Null
+    }
 } catch {}
 Write-Host ''

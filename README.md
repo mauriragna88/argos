@@ -80,6 +80,32 @@ cd argos
 OSMA se resuelve automáticamente: `ARNES_OSMA_ROOT` → `~/.config/arnes/osma`
 → `../osma` → fallback `./cli/`. No necesitas copiar nada.
 
+### Dos formas de bajar los repos (independientes o juntos)
+
+ARGOS y OSMA son **dos repos independientes**: cada uno funciona solo, y
+juntos se complementan.
+
+| Bajas solo... | Qué pasa | Cómo activar la memoria |
+|---|---|---|
+| **ARGOS** | El harness funciona completo (menú, connect, target, chat, quests) con **memoria desactivada** (modo degradado, avisa al usarla) | `argos osma-install` (instala OSMA y listo) |
+| **OSMA** | El motor de memoria funciona solo (CLIs `osma-memory` / `osma_brain.py` sobre cualquier `.arnes/arnes.db`) | — |
+| **Ambos juntos** | Complemento completo: ARGOS orquesta y OSMA recuerda por proyecto | Se resuelven solos (`~/.config/arnes/osma` o repos hermanos `../osma`) |
+
+```powershell
+# Forma A: repos hermanos lado a lado (git clone)
+mkdir harness && cd harness
+git clone https://github.com/mauriragna88/argos.git
+git clone https://github.com/mauriragna88/osma.git   # ARGOS lo encuentra en ../osma
+
+# Forma B: ARGOS como repo + OSMA instalado global (una vez por máquina)
+git clone https://github.com/mauriragna88/argos.git
+cd osma && .\install.ps1    # copia el motor a ~/.config/arnes/osma
+```
+
+> Si bajas solo ARGOS y usas memoria sin OSMA instalado, `argos doctor` te lo
+> avisará y `argos osma-install` lo instala en un paso. `argos party` (scheduler
+> con tracking de tareas) necesita OSMA y aborta con instrucciones si no está.
+
 ### Opción alternativa — instalación directa (one-liner)
 
 ```powershell

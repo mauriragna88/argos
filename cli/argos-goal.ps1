@@ -198,4 +198,17 @@ Write-Host ''
 Write-Host ("  Resumen: {0} iteracion(es) | verdicts: {1}" -f $iteration, ($verdicts -join ', ')) -ForegroundColor White
 Write-Host ("  Reportes en: {0}" -f $OutDir) -ForegroundColor DarkGray
 Write-Host ''
+
+# === Experiencia VALIDADA V5 del OBJETIVO COMPLETO (ARGOS+OSMA unificados) ===
+try {
+    . (Join-Path $PSScriptRoot 'osma-resolve.ps1')
+    $memCli = Get-OsmaMemoryCli
+    if (Test-Path $memCli) {
+        $projName = (Split-Path (Get-Location) -Leaf)
+        $expReasoning = "Modo autonomo ARGOS goal: $iteration iteracion(es), verdicts [$($verdicts -join ', ')], objetivo logrado via ciclos encadenados con memoria."
+        $expAction = "Iteraciones: " + (($history | Select-Object -Last 3 | ForEach-Object { "it$($_.iteration) [$($_.verdict)/$($_.decision)]" }) -join ', ')
+        $expOutcome = "Objetivo '$Goal' COMPLETADO en $iteration iteraciones."
+        & $memCli experience -ExperienceAction record -Situation $Goal -Reasoning $expReasoning -Conclusion "Objetivo global logrado (GOAL_COMPLETE)." -Action $expAction -Outcome $expOutcome -Reward 0.9 -Project $projName -Agent 'atlas' -Quiet 2>$null | Out-Null
+    }
+} catch {}
 exit 0

@@ -120,9 +120,35 @@ Objetivo: trabajar con Claude Code + persona Atlas + memoria ARGOS, por proyecto
 
 ## 5. Fixes pendientes (acción concreta)
 
-- [ ] **Fase A.1**: wrapper global `dsh.cmd` → `argos target dsh`
-- [ ] **Fase C.1**: `argos target claude` → persona a `~/.claude/CLAUDE.md` + party a `~/.claude/agents/`
-- [ ] **Fase B**: prueba end-to-end de memoria compartida (ARGOS → DSH → Claude)
+- [x] **Fase A.1**: wrapper global `dsh.cmd` → `argos target dsh` (2026-08-15)
+- [x] **Fase C.1**: `argos target claude` → persona a `~/.claude/CLAUDE.md` + party a `~/.claude/agents/` (2026-08-15)
+- [x] **Fase B**: prueba end-to-end de memoria compartida (ARGOS → DSH → Claude) (2026-08-15)
+
+## 7. Independencia ARGOS ↔ OSMA (implementado 2026-08-15)
+
+ARGOS y OSMA son repos independientes: cada uno funciona solo, y juntos se complementan.
+
+- **ARGOS solo (sin OSMA)**: el harness funciona en modo degradado — `Get-OsmaMemoryCli`
+  devuelve un stub no-op (`cli/osma-memory-noop.ps1`) que absorbe las llamadas de memoria
+  sin romper; `argos doctor` reporta `Memoria OSMA: no instalado`; `argos memory` avisa;
+  `argos party` (tracking quest/tareas) aborta con instrucciones porque necesita OSMA real.
+- **ARGOS + OSMA juntos**: se resuelven solos (`~/.config/arnes/osma` o repos hermanos
+  `../osma`); `argos status` muestra el scan `osma-scan-projects` (cuántos proyectos tienen
+  ARGOS+OSMA y su memoria); `argos osma-install` instala el motor en un paso.
+- **Nuevos comandos**: `argos osma-install` (instala OSMA), `argos doctor` (check de memoria),
+  menú `[O]` para instalar memoria.
+- **README**: documenta las 2 formas de bajar los repos (repos hermanos vs OSMA global) y
+  el comportamiento standalone vs complemento.
+- **Fix en tests**: `tests/run-all.ps1` limpiaba mal `$LASTEXITCODE` entre etapas (bug
+  preexistente) — ahora cada etapa arranca con exit code 0, el parseo de scripts reporta
+  correcto.
+
+### Fallos de tests preexistentes (NO causados por esta integración)
+
+- Unit tests TS (`tests/unit/capsule.test.ts`) — falla en base (con stash)
+- `tests/arnes-graph.tests.ps1` — referencia rota: el archivo no existe
+- Política read/write de skills — SKILL.md usa `npm run`/`tsc` (regla del repo)
+- Smoke test — `loop-engine chain auto-next` falla en base
 
 ---
 

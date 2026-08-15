@@ -65,6 +65,12 @@ $modelsOk = Test-Path (Join-Path $cfgDir 'agent-models.json')
 Add-Check 'Conexiones globales' $connOk $(if ($connOk) { "$cfgDir\connections.json" } else { 'faltante' }) 'argos connect (UNA vez por maquina)'
 Add-Check 'Modelos por agente' $modelsOk $(if ($modelsOk) { "$cfgDir\agent-models.json" } else { 'faltante' }) 'argos configure (UNA vez por maquina)'
 
+# === Memoria OSMA (motor de memoria per-proyecto) ===
+. (Join-Path $PSScriptRoot 'osma-resolve.ps1')
+$osmaRoot = Get-OsmaRoot
+$osmaDetail = if ($osmaRoot) { $osmaRoot } else { 'no instalado (memoria desactivada)' }
+Add-Check 'Memoria OSMA' ($null -ne $osmaRoot) $osmaDetail 'argos osma-install   (o: osma/install.ps1)'
+
 # === Agentes RPG instalados ===
 $agentsDir = Join-Path $env:USERPROFILE '.config\opencode\agents'
 $expectedAgents = @('atlas-player', 'vivi', 'ansem', 'kuja', 'eiko', 'amarant', 'eremez', 'auron', 'bran', 'quina', 'varys', 'tywin', 'sam', 'bard', 'tidus', 'ragnarok')

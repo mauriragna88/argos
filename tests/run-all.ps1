@@ -32,6 +32,9 @@ function Invoke-Step {
     Write-Host ''
     Write-Host ("===== {0} =====" -f $Name) -ForegroundColor Cyan
     try {
+        # Limpiar el exit code heredado de la etapa anterior: cada etapa
+        # solo falla si SU propio ultimo comando externo devolvio != 0.
+        $global:LASTEXITCODE = 0
         & $Body
         if ($LASTEXITCODE -ne 0) { throw "etapa termino con exit code $LASTEXITCODE" }
         Write-Host ("  [OK] {0}" -f $Name) -ForegroundColor Green

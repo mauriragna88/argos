@@ -625,12 +625,12 @@ switch ($Command) {
         # Unir Model + Args (PowerShell parte el quest en palabras)
         $questParts = @($Model) + @($Args) | Where-Object { $_ }
         $questArg = ($questParts | ForEach-Object { [string]$_ }) -join ' '
-        # Detectar proyecto nuevo
+        # Estado del proyecto + config global
         $state = Get-ProjectState
-        # Perfil del proyecto: refrescar ultimo acceso, git, stats, memoria
-        & (Join-Path $ScriptDir 'argos-project.ps1') -Update | Out-Null
-        if (-not $state.is_argos) {
-            Write-Host '  ▸ Proyecto nuevo detectado - inicializando...' -ForegroundColor Yellow
+        # Si NO hay config GLOBAL (nunca conectaste nada) -> onboarding de primera vez.
+        # En cualquier otro caso (aunque la carpeta no tenga .arnes/) -> abrir directo el entorno.
+        if (-not $state.has_connections -and -not $state.has_models) {
+            Write-Host '  ▸ Primera vez: conecta tus proveedores y elige modelos.' -ForegroundColor Yellow
             Init-Project
             Write-Host '  ▸ Primero conectemos tus proveedores de modelos:' -ForegroundColor Cyan
             & (Join-Path $ScriptDir 'argos-connect-wizard.ps1')
@@ -638,24 +638,16 @@ switch ($Command) {
             Write-Host '  ▸ Ahora configura que modelo usa cada agente:' -ForegroundColor Cyan
             Show-ConfigureModels
             Write-Host '  ▸ Listo! Abriendo tu entorno ARNES...' -ForegroundColor Green
-            Start-Sleep -Seconds 1
-            & (Join-Path $ScriptDir 'argos-target.ps1') -Target auto -Quest $questArg
-        } elseif (-not $state.has_connections -or -not $state.has_models) {
-            Write-Host '  ▸ Te faltan conexiones o configuracion de modelos.' -ForegroundColor Yellow
-            Write-Host '  ▸ Vamos a completar la configuracion inicial:' -ForegroundColor Cyan
-            if (-not $state.has_connections) {
-                & (Join-Path $ScriptDir 'argos-connect-wizard.ps1')
-                if (-not (Get-AvailableModels)) { Show-RagnarokGuide }
-            }
-            if (-not $state.has_models) {
-                Show-ConfigureModels
-            }
-            Write-Host '  ▸ Listo! Abriendo tu entorno ARNES...' -ForegroundColor Green
-            Start-Sleep -Seconds 1
-            & (Join-Path $ScriptDir 'argos-target.ps1') -Target auto -Quest $questArg
         } else {
-            # Entorno listo: abrir el target configurado (default) o mostrar selector
-            & (Join-Path $ScriptDir 'argos-target.ps1') -Target auto -Quest $questArg
+            # Ya hay config global: abrir directo el entorno. Si la carpeta no tiene .arnes/
+            # todavia, se crea para que la memoria funcione, pero SIN el wizard interactivo.
+            if (-not $state.is_argos) {
+                if (-not (Test-Path $ArnesDir)) { New-Item -ItemType Directory -Path $ArnesDir -Force | Out-Null }
+            }
+            & (Join-Path $ScriptDir 'argos-project.ps1') -Update | Out-Null
         }
+        # Abrir el entorno/target configurado (opencode/codex/claude/dsh)
+        Start-Sleep -Milliseconds 500
+        & (Join-Path $ScriptDir 'argos-target.ps1') -Target auto -Quest $questArg
     }
 }

@@ -639,12 +639,37 @@ switch ($Command) {
             Show-ConfigureModels
             Write-Host '  ▸ Listo! Abriendo tu entorno ARNES...' -ForegroundColor Green
         } else {
-            # Ya hay config global: abrir directo el entorno. Si la carpeta no tiene .arnes/
-            # todavia, se crea para que la memoria funcione, pero SIN el wizard interactivo.
+            # Ya hay config global. Si la carpeta no tiene .arnes/, inicializa la memoria
+            # ARGOS/OSMA SILENCIOSA y automaticamente (sin wizard ni bloquear). Luego
+            # SIEMPRE se abre el selector de entorno (opencode/codex/claude/freebuff/dsh).
             if (-not $state.is_argos) {
+                Write-Host '  ▸ Detectando proyecto sin memoria ARGOS/OSMA - inicializando...' -ForegroundColor DarkGray
+                # 1. carpeta .arnes/
                 if (-not (Test-Path $ArnesDir)) { New-Item -ItemType Directory -Path $ArnesDir -Force | Out-Null }
+                # 2. memoria arnes.db (motor OSMA global). Idempotente: no falla si ya existe.
+                try {
+                    $osmaMem = Get-OsmaMemoryCli
+                    if ($osmaMem) { & $osmaMem init *> $null }
+                } catch { }
+                # 3. config.json de referencia (harness)
+                try {
+                    if (-not (Test-Path $ConfigPath)) {
+                        $template = Join-Path $ScriptDir '..\argos\.arnes\config.json'
+                        if (-not (Test-Path $template)) { $template = Join-Path $ScriptDir '..\config.json' }
+                        if (-not (Test-Path $template)) {
+                            @{ version='1.0.0'; codename='argos'; player=@{ name='Atlas'; role='Player / Orchestrator'; tagline='Rojo y Negro como el Atlas de la Liga MX' } } |
+                                ConvertTo-Json -Depth 5 | Set-Content -Path $ConfigPath -Encoding UTF8
+                        } else {
+                            Copy-Item $template $ConfigPath -Force
+                        }
+                    }
+                } catch { }
+                # 4. perfil del proyecto (ruta, git, stack, stats, memoria)
+                & (Join-Path $ScriptDir 'argos-project.ps1') -Update | Out-Null
+                Write-Host '  [OK] Memoria ARGOS/OSMA inicializada en esta carpeta.' -ForegroundColor Green
+            } else {
+                & (Join-Path $ScriptDir 'argos-project.ps1') -Update | Out-Null
             }
-            & (Join-Path $ScriptDir 'argos-project.ps1') -Update | Out-Null
         }
         # Abrir el entorno/target configurado (opencode/codex/claude/dsh)
         Start-Sleep -Milliseconds 500

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { tmpdir, homedir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildAgentCatalog } from "../../pi/extensions/argos-party.js";
@@ -11,6 +11,16 @@ import { existsSync, readFileSync } from "node:fs";
 import { join as joinPath } from "node:path";
 
 const REPO = fileURLToPath(new URL("../../", import.meta.url));
+const SP_ROOT = joinPath(
+  homedir(),
+  ".pi",
+  "agent",
+  "git",
+  "github.com",
+  "obra",
+  "superpowers",
+  "skills"
+);
 
 test("role-skills: el generador produjo argos-atlas y argos-vivi con frontmatter valido", () => {
   const atlas = joinPath(REPO, "pi/skills/argos-atlas/SKILL.md");
@@ -19,10 +29,14 @@ test("role-skills: el generador produjo argos-atlas y argos-vivi con frontmatter
   assert.ok(existsSync(joinPath(REPO, "pi/skills/argos-vivi/SKILL.md")));
 });
 
-test("discoverSkills: encuentra role-skills ARGOS y superpowers", () => {
+test("discoverSkills: encuentra role-skills ARGOS y superpowers (si estan instalados)", () => {
   const skills = discoverSkills(REPO);
   assert.ok(skills.some((s) => s.name === "argos-atlas"));
-  assert.ok(skills.some((s) => s.name === "systematic-debugging"));
+  assert.ok(skills.some((s) => s.name === "argos-vivi"));
+  // superpowers vive en ~/.pi (solo en maquinas con pi instalado); en CI no existe
+  if (existsSync(SP_ROOT)) {
+    assert.ok(skills.some((s) => s.name === "systematic-debugging"));
+  }
 });
 
 test("catalog: construye agentes desde fuentes canónicas", async () => {

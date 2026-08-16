@@ -41,6 +41,19 @@ comandos. El texto "tus 16 agentes" del banner se convirtio en el "comando" `tus
 - Cualquier archivo nuevo debe escribirse con BOM (disciplina)
 - Los archivos con BOM pueden verse con 3 bytes extra en editores muy viejos
 
+## Actualizacion 2026-08-15 — EXCEPCION: contenido desplegado a CLIs (sin BOM)
+
+El BOM obligatorio aplica a los **scripts `.ps1` del harness** (los lee PowerShell 5.1).
+Pero los archivos de **contenido desplegado a CLIs externos** NO llevan BOM:
+
+- `~/.claude/CLAUDE.md` y `~/.claude/agents/*.md` → Claude Code parsea frontmatter
+  YAML que debe empezar exactamente en `---`; un BOM inicial rompe el parseo.
+- `~/.codex/AGENTS.md` y `AGENTS.md` de freebuff → mismos motivos.
+- `argos-target.ps1` escribe estos destinos con `Write-Utf8NoBom`
+  (UTF8Encoding(false)), mientras los `.ps1` siguen con BOM.
+
+Regla: **scripts .ps1 con BOM | contenido para CLIs sin BOM**.
+
 ## Razon (por que esta)
 
 "Un bug de encoding parece un bug de logica, y cuesta horas." Blindar el encoding es

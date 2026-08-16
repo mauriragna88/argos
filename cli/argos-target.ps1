@@ -55,6 +55,17 @@ function Get-ArnesHome {
     return $HOME
 }
 
+# Escribe contenido sin BOM UTF-8: los CLIs de destino (Claude Code, Codex, Freebuff)
+# parsean sus archivos (frontmatter YAML/AGENTS.md) y un BOM inicial rompe el parseo.
+# Nota: los .ps1 del harness SI llevan BOM (ADR-005); estos archivos de contenido NO.
+function Write-Utf8NoBom {
+    param([Parameter(Mandatory)][string]$Path, [Parameter(Mandatory)][string]$Content)
+    $dir = Split-Path $Path -Parent
+    if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($Path, $Content, $utf8NoBom)
+}
+
 if (-not $ConfigDir) { $ConfigDir = Join-Path (Get-ArnesHome) '.config\arnes' }
 if (-not $TargetDir) { $TargetDir = $ConfigDir }
 $TargetFile = Join-Path $ConfigDir 'target.json'
@@ -109,8 +120,7 @@ function Write-AtlasPersona {
     } else {
         $out = Join-Path $TargetDir 'CLAUDE.md'
     }
-    if (-not (Test-Path (Split-Path $out -Parent))) { New-Item -ItemType Directory -Path (Split-Path $out -Parent) -Force | Out-Null }
-    Set-Content -Path $out -Value ($header + $persona) -Encoding UTF8
+    Write-Utf8NoBom -Path $out -Content ($header + $persona)
     Write-Host ("  [OK] Persona Atlas desplegada: {0}" -f $out) -ForegroundColor Green
     return $true
 }
@@ -163,7 +173,7 @@ function Write-ClaudeParty {
         $body = Get-Content $src.FullName -Raw
         $front = "---`nname: $display`ndescription: $desc`n---`n`n"
         $out = Join-Path $agentsDir "$display.md"
-        Set-Content -Path $out -Value ($front + $body) -Encoding UTF8
+        Write-Utf8NoBom -Path $out -Content ($front + $body)
         $count++
     }
     Write-Host ("  [OK] Party desplegado a Claude: {0} agentes en {1}" -f $count, $agentsDir) -ForegroundColor Green
@@ -184,8 +194,7 @@ function Write-RosterBundle {
     }
     $header = "# ARNES ARGOS - Atlas (entorno generado por 'argos target $Target')`n`n"
     $rosterBlock = "`n## Party ARNES (roles)`n`nSoy el orquestador de este party. Para tareas especializadas invoca el rol adecuado:`n`n" + ($rosterLines -join "`n") + "`n`nLa memoria del proyecto vive en .arnes/ (arnes.db, exports JSONL en .arnes/memory/export/). Consultala antes de decidir.`n`n"
-    if (-not (Test-Path (Split-Path $Out -Parent))) { New-Item -ItemType Directory -Path (Split-Path $Out -Parent) -Force | Out-Null }
-    Set-Content -Path $Out -Value ($header + $persona + $rosterBlock) -Encoding UTF8
+    Write-Utf8NoBom -Path $Out -Content ($header + $persona + $rosterBlock)
     Write-Host ("  [OK] Entorno desplegado: {0}" -f $Out) -ForegroundColor Green
     return $true
 }

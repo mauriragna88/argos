@@ -8,7 +8,8 @@
 param(
     [string]$ProjectPath = (Get-Location).Path,
     [switch]$Json,
-    [switch]$Silent
+    [switch]$Silent,
+    [switch]$InitArnes
 )
 
 $ErrorActionPreference = "Continue"
@@ -33,29 +34,66 @@ $LedgerFile = Join-Path $ArnesDir "quest-ledger.json"
 $ProfileFile = Join-Path $ArnesDir "repo-profile.json"
 . (Join-Path $ArnesRoot "cli\artifact-integrity.ps1")
 
+# -InitArnes: bootstrapea un .arnes minimo en CI (runner limpio sin deployment).
+# Solo crea los archivos si faltan; nunca pisa el estado real de un proyecto.
+if ($InitArnes) {
+    New-Item -ItemType Directory -Path $ArnesDir -Force | Out-Null
+    if (-not (Test-Path $ConfigFile)) {
+        @{
+            subscription = @{ freebuff = $true; opencode = $false; claude = $false; codex = $false }
+            theme = "atlas"
+        } | ConvertTo-Json | Set-Content -LiteralPath $ConfigFile -Encoding UTF8
+    }
+    if (-not (Test-Path $LedgerFile)) {
+        @{
+            quests = @()
+            stats  = @{ total_quests = 0; total_tokens_used = 0; success_rate_pct = 0 }
+            limits = @{
+                weekly_tokens_budget   = 1000000
+                weekly_tokens_used     = 0
+                weekly_tokens_remaining = 1000000
+                warn_threshold_pct     = 80
+                critical_threshold_pct = 95
+            }
+        } | ConvertTo-Json | Set-Content -LiteralPath $LedgerFile -Encoding UTF8
+    }
+    if (-not (Test-Path $ProfileFile)) {
+        @{ repo_tier = "lean" } | ConvertTo-Json | Set-Content -LiteralPath $ProfileFile -Encoding UTF8
+    }
+}
+
 $checks = @()
 $passCount = 0
 $failCount = 0
+$skipCount = 0
 
 function Check {
-    param([string]$Name, [string]$Category, [scriptblock]$Test, [string]$Fix = "")
+    param([string]$Name, [string]$Category, [scriptblock]$Test, [string]$Fix = "", [scriptblock]$SkipIf = $null)
     $passed = $false
     $error = $null
-    try {
-        $result = & $Test
-        if ($result -is [bool]) { $passed = $result }
-        elseif ($result -is [string]) { $passed = $true }
-        elseif ($result -is [hashtable]) { $passed = $result.passed; $error = $result.error }
-        else { $passed = ($null -ne $result) }
-    } catch {
-        $passed = $false
-        $error = $_.Exception.Message
+    $skipped = $false
+    if ($SkipIf -and (& $SkipIf)) {
+        $skipped = $true
+    } else {
+        try {
+            $result = & $Test
+            if ($result -is [bool]) { $passed = $result }
+            elseif ($result -is [string]) { $passed = $true }
+            elseif ($result -is [hashtable]) { $passed = $result.passed; $error = $result.error }
+            else { $passed = ($null -ne $result) }
+        } catch {
+            $passed = $false
+            $error = $_.Exception.Message
+        }
     }
-    if ($passed) { $script:passCount++ } else { $script:failCount++ }
+    if ($skipped) { $script:skipCount++ }
+    elseif ($passed) { $script:passCount++ }
+    else { $script:failCount++ }
     $script:checks += [ordered]@{
         name     = $Name
         category = $Category
         passed   = $passed
+        skipped  = $skipped
         error    = $error
         fix      = $Fix
     }
@@ -108,16 +146,14 @@ Check "update-ledger.ps1 existe" "cli" {
     Test-Path (Join-Path $ArnesRoot "cli\update-ledger.ps1")
 }
 
-Check "14+ agentes sincronizados" "agents" {
+Check "14+ agentes sincronizados" "agents" -SkipIf { -not (Test-Path "$env:USERPROFILE\.config\opencode\agents") } {
     $agentDir = "$env:USERPROFILE\.config\opencode\agents"
-    if (-not (Test-Path $agentDir)) { return $false }
     $count = (Get-ChildItem $agentDir -Filter "*.md" -ErrorAction Stop).Count
     return ($count -ge 14)
 }
 
-Check "9 skill trees en cli dir" "skills" {
+Check "9 skill trees en cli dir" "skills" -SkipIf { -not (Test-Path "$env:USERPROFILE\.config\opencode\skills\atlas") } {
     $skillDir = "$env:USERPROFILE\.config\opencode\skills\atlas"
-    if (-not (Test-Path $skillDir)) { return $false }
     $count = (Get-ChildItem $skillDir -Filter "*.json" -ErrorAction Stop).Count
     return ($count -ge 8)
 }
@@ -155,7 +191,7 @@ Check "pwsh o powershell available" "runtime" {
     return ($null -ne $c)
 }
 
-Check "UTF-8 strict en agentes" "agents" {
+Check "UTF-8 strict en agentes" "agents" -SkipIf { -not (Test-Path "$env:USERPROFILE\.config\opencode\agents") } {
     $utf8Strict = New-Object System.Text.UTF8Encoding($false, $true)
     $agentDir = "$env:USERPROFILE\.config\opencode\agents"
     Get-ChildItem $agentDir -Filter "*.md" -ErrorAction Stop | ForEach-Object {
@@ -432,6 +468,7 @@ if ($Json) {
         total     = $total
         passed    = $passCount
         failed    = $failCount
+        skipped   = $skipCount
         exit_code = $exitCode
         checks    = @($checks)
     }
@@ -441,10 +478,12 @@ if ($Json) {
 
 if (-not $Silent) {
     Write-Host ""
-    Write-Host "  ATLAS SMOKE TEST [$passCount/$total PASS]" -ForegroundColor Cyan
+    Write-Host "  ATLAS SMOKE TEST [$passCount/$total PASS, $skipCount SKIP]" -ForegroundColor Cyan
     Write-Host "  ----------------------------------------"
     foreach ($ch in $checks) {
-        if ($ch.passed) {
+        if ($ch.skipped) {
+            Write-Host "  [SKIP] $($ch.name) ($($ch.category)) - deployment no presente" -ForegroundColor Yellow
+        } elseif ($ch.passed) {
             Write-Host "  [PASS] $($ch.name) ($($ch.category))" -ForegroundColor Green
         } else {
             Write-Host "  [FAIL] $($ch.name)" -ForegroundColor Red

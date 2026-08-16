@@ -16,8 +16,8 @@ jobs:
           node-version: 24
       - name: Install dependencies
         run: npm ci
-      - name: Full test suite (unit TS + PS + parser + secrets + smoke)
-        run: npm test
+      - name: Full test suite (unit TS + PS + parser + secrets + smoke, .arnes bootstrap)
+        run: node bin/run-tests.js -SmokeInit
 
   linux:
     name: Tests (Ubuntu + pwsh)

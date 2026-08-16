@@ -9,6 +9,7 @@
 # ============================================================
 $ErrorActionPreference = 'Stop'
 $Root = Resolve-Path (Join-Path $PSScriptRoot '..')
+$PSExe = if ($PSVersionTable.PSEdition -eq 'Core') { 'pwsh' } else { 'powershell' }
 $StatsCli = Join-Path $Root 'cli\argos-stats.ps1'
 $ThemeCli = Join-Path $Root 'cli\argos-theme.ps1'
 $work = Join-Path $Root ('.arnes-stats-test-' + [guid]::NewGuid().ToString('N'))
@@ -40,7 +41,7 @@ try {
     Push-Location $work
     try {
         # ==== STATS ====
-        $stats = (& powershell -NoProfile -ExecutionPolicy Bypass -File $StatsCli | Out-String)
+        $stats = (& $PSExe -NoProfile -ExecutionPolicy Bypass -File $StatsCli | Out-String)
         Assert-That ($stats -match 'Quests:\s+5') "stats: 5 quests -> $stats"
         Assert-That ($stats -match 'Tasa de exito:\s+80%') "stats: 4/5 PASS = 80% -> $stats"
         Assert-That ($stats -match 'Tokens usados:\s+1000') "stats: tokens 1000 -> $stats"
@@ -48,11 +49,11 @@ try {
         Assert-That ($stats -match 'Mejor racha:\s+3 dias') "stats: mejor racha 3 -> $stats"
 
         # ==== THEME ====
-        $setOut = (& powershell -NoProfile -ExecutionPolicy Bypass -File $ThemeCli set -Name vivi | Out-String)
+        $setOut = (& $PSExe -NoProfile -ExecutionPolicy Bypass -File $ThemeCli set -Name vivi | Out-String)
         Assert-That ($setOut -match "Tema cambiado a 'vivi'") "theme set vivi -> $setOut"
         $cfg = Get-Content (Join-Path $workArnes 'config.json') -Raw | ConvertFrom-Json
         Assert-That ([string]$cfg.theme -eq 'vivi') "config.json theme == vivi (obtenido $($cfg.theme))"
-        $showOut = (& powershell -NoProfile -ExecutionPolicy Bypass -File $ThemeCli show | Out-String)
+        $showOut = (& $PSExe -NoProfile -ExecutionPolicy Bypass -File $ThemeCli show | Out-String)
         Assert-That ($showOut -match 'vivi') "theme show refleja vivi -> $showOut"
 
         Write-Output 'PASS argos-stats-theme: dashboard, racha actual + mejor racha, y tema persiste'

@@ -20,12 +20,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests/run-all.ps1 -SkipSmoke
 #>
 [CmdletBinding()]
 param(
-    [switch]$SkipSmoke
+    [switch]$SkipSmoke,
+    [switch]$SmokeInit
 )
 
 $ErrorActionPreference = 'Stop'
 $Root = Resolve-Path (Join-Path $PSScriptRoot '..')
 $failCount = 0
+
+# Interprete que corre esta suite: pwsh en Linux/macOS, powershell en Windows
+$PSExe = if ($PSVersionTable.PSEdition -eq 'Core') { 'pwsh' } else { 'powershell' }
 
 function Invoke-Step {
     param([string]$Name, [scriptblock]$Body)
@@ -51,25 +55,25 @@ Invoke-Step 'Unit tests TypeScript' {
 
 # 2. Tests funcionales PS
 Invoke-Step 'Tests funcionales PowerShell' {
-    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\argos-xp.tests.ps1')
+    & $PSExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\argos-xp.tests.ps1')
     if ($LASTEXITCODE -ne 0) { throw 'argos-xp.tests fallo' }
-    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\model-catalog.tests.ps1')
+    & $PSExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\model-catalog.tests.ps1')
     if ($LASTEXITCODE -ne 0) { throw 'model-catalog.tests fallo' }
-    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\arnes-graph.tests.ps1')
+    & $PSExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\arnes-graph.tests.ps1')
     if ($LASTEXITCODE -ne 0) { throw 'arnes-graph.tests fallo' }
-    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\orchestration-contract.tests.ps1')
+    & $PSExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\orchestration-contract.tests.ps1')
     if ($LASTEXITCODE -ne 0) { throw 'orchestration-contract.tests fallo' }
-    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\argos-stats-theme.tests.ps1')
+    & $PSExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\argos-stats-theme.tests.ps1')
     if ($LASTEXITCODE -ne 0) { throw 'argos-stats-theme.tests fallo' }
-    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\argos-target.tests.ps1')
+    & $PSExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\argos-target.tests.ps1')
     if ($LASTEXITCODE -ne 0) { throw 'argos-target.tests fallo' }
-    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\argos-goal.tests.ps1')
+    & $PSExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\argos-goal.tests.ps1')
     if ($LASTEXITCODE -ne 0) { throw 'argos-goal.tests fallo' }
 }
 
 # 3. Politica read/write
 Invoke-Step 'Politica read/write de skills' {
-    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\verify-read-write-only.ps1')
+    & $PSExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\verify-read-write-only.ps1')
     if ($LASTEXITCODE -ne 0) { throw 'verify-read-write-only fallo' }
 }
 
@@ -93,14 +97,16 @@ Invoke-Step 'Parseo de scripts PowerShell' {
 
 # 5. Escaneo de secretos
 Invoke-Step 'Escaneo de secretos' {
-    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\scan-secrets.ps1')
+    & $PSExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\scan-secrets.ps1')
     if ($LASTEXITCODE -ne 0) { throw 'scan-secrets encontro patrones sospechosos' }
 }
 
 # 6. Smoke test (opcional)
 if (-not $SkipSmoke) {
     Invoke-Step 'Smoke test del harness' {
-        & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'cli\smoke-test.ps1') -Silent
+        $smokeArgs = @('-Silent')
+        if ($SmokeInit) { $smokeArgs += '-InitArnes' }
+        & $PSExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'cli\smoke-test.ps1') @smokeArgs
         if ($LASTEXITCODE -ne 0) { throw 'smoke-test fallo' }
     }
 }

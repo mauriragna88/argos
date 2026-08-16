@@ -10,6 +10,7 @@
 # ============================================================
 $ErrorActionPreference = 'Stop'
 $Root = Resolve-Path (Join-Path $PSScriptRoot '..')
+$PSExe = if ($PSVersionTable.PSEdition -eq 'Core') { 'pwsh' } else { 'powershell' }
 $GoalCli = Join-Path $Root 'cli\argos-goal.ps1'
 $Stub = Join-Path $Root 'tests\stubs\fake-cycle.ps1'
 $work = Join-Path $Root ('.argos-goal-test-' + [guid]::NewGuid().ToString('N'))
@@ -29,7 +30,7 @@ try {
     Push-Location $work
     try {
         # ==== 1. Flujo completo: FAIL -> remediation como siguiente prompt -> GOAL_COMPLETE ====
-        & powershell -NoProfile -ExecutionPolicy Bypass -File $GoalCli -Goal "plataforma escolar" -MaxIterations 5 -PauseSeconds 0 -CycleCommand $Stub | Out-Null
+        & $PSExe -NoProfile -ExecutionPolicy Bypass -File $GoalCli -Goal "plataforma escolar" -MaxIterations 5 -PauseSeconds 0 -CycleCommand $Stub | Out-Null
         $code = $LASTEXITCODE
         Assert-That ($code -eq 0) "goal completa con exit 0 (obtenido $code)"
         $state = Get-GoalState
@@ -45,7 +46,7 @@ try {
         Remove-Item (Join-Path $workArnes 'stub-count.txt') -Force -ErrorAction SilentlyContinue
         Remove-Item (Join-Path $workArnes 'goal-state.json') -Force -ErrorAction SilentlyContinue
         Set-Content -Path (Join-Path $workArnes 'autowork-stop') -Value 'stop' -Encoding UTF8
-        & powershell -NoProfile -ExecutionPolicy Bypass -File $GoalCli -Goal "otro objetivo" -MaxIterations 5 -PauseSeconds 0 -CycleCommand $Stub | Out-Null
+        & $PSExe -NoProfile -ExecutionPolicy Bypass -File $GoalCli -Goal "otro objetivo" -MaxIterations 5 -PauseSeconds 0 -CycleCommand $Stub | Out-Null
         $state = Get-GoalState
         Assert-That ($state.status -eq 'stopped') "stop flag -> status stopped (obtenido $($state.status))"
         Assert-That (-not (Test-Path (Join-Path $workArnes 'autowork-stop'))) 'stop flag consumido'
@@ -55,7 +56,7 @@ try {
         Remove-Item (Join-Path $workArnes 'stub-count.txt') -Force -ErrorAction SilentlyContinue
         $env:ARNES_FAKE_ALWAYS_FAIL = '1'
         try {
-            & powershell -NoProfile -ExecutionPolicy Bypass -File $GoalCli -Goal "objetivo imposible" -MaxIterations 2 -PauseSeconds 0 -CycleCommand $Stub | Out-Null
+            & $PSExe -NoProfile -ExecutionPolicy Bypass -File $GoalCli -Goal "objetivo imposible" -MaxIterations 2 -PauseSeconds 0 -CycleCommand $Stub | Out-Null
         } finally {
             Remove-Item Env:\ARNES_FAKE_ALWAYS_FAIL -ErrorAction SilentlyContinue
         }
@@ -66,7 +67,7 @@ try {
         # ==== 4. Resume continua desde donde quedo ====
         $env:ARNES_FAKE_ALWAYS_FAIL = '1'
         try {
-            & powershell -NoProfile -ExecutionPolicy Bypass -File $GoalCli -Goal "objetivo imposible" -MaxIterations 5 -PauseSeconds 0 -CycleCommand $Stub -Resume | Out-Null
+            & $PSExe -NoProfile -ExecutionPolicy Bypass -File $GoalCli -Goal "objetivo imposible" -MaxIterations 5 -PauseSeconds 0 -CycleCommand $Stub -Resume | Out-Null
         } finally {
             Remove-Item Env:\ARNES_FAKE_ALWAYS_FAIL -ErrorAction SilentlyContinue
         }

@@ -4,8 +4,11 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $catalog = Join-Path $root 'cli\model-catalog.ps1'
 $work = Join-Path $root ('.model-catalog-test-' + [guid]::NewGuid().ToString('N'))
-$ok = Join-Path $work 'models-ok.cmd'
-$fail = Join-Path $work 'models-fail.cmd'
+$PSExe = if ($PSVersionTable.PSEdition -eq 'Core') { 'pwsh' } else { 'powershell' }
+# Wrappers .ps1 multiplataforma (el branch .ps1 de model-catalog.ps1 ejecuta con pwsh/powershell
+# en cualquier SO; .cmd solo existe en Windows).
+$ok = Join-Path $work 'models-ok.ps1'
+$fail = Join-Path $work 'models-fail.ps1'
 $chain = Join-Path $work 'model-chain.json'
 
 function Assert-That {
@@ -15,10 +18,11 @@ function Assert-That {
 
 New-Item -ItemType Directory -Path $work -Force | Out-Null
 try {
-    # A .cmd path exercises the Windows wrapper branch, independent of OpenCode.
-    @('@echo off', 'echo zzz/model-b', 'echo aaa/model-a', 'exit /b 0') |
+    # Wrappers .ps1 ejercitan la rama de shell (pwsh/powershell), independientes de OpenCode
+    # y multiplataforma.
+    @('Write-Output zzz/model-b', 'Write-Output aaa/model-a') |
         Set-Content -LiteralPath $ok -Encoding ascii
-    @('@echo off', 'echo controlled provider failure 1>&2', 'exit /b 7') |
+    @('[Console]::Error.WriteLine("controlled provider failure")', 'exit 7') |
         Set-Content -LiteralPath $fail -Encoding ascii
     [ordered]@{
         models = @(

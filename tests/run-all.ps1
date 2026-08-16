@@ -104,10 +104,15 @@ Invoke-Step 'Escaneo de secretos' {
 # 6. Smoke test (opcional)
 if (-not $SkipSmoke) {
     Invoke-Step 'Smoke test del harness' {
-        $smokeArgs = @('-Silent')
+        $smokeArgs = @()
         if ($SmokeInit) { $smokeArgs += '-InitArnes' }
-        & $PSExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'cli\smoke-test.ps1') @smokeArgs
-        if ($LASTEXITCODE -ne 0) { throw 'smoke-test fallo' }
+        # Sin -Silent: la salida (checks PASS/FAIL/SKIP) va al log para diagnosticar
+        # fallos en CI. Si falla, el detalle queda visible en el error de la etapa.
+        $smokeOut = (& $PSExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'cli\smoke-test.ps1') @smokeArgs 2>&1 | Out-String)
+        $smokeCode = $LASTEXITCODE
+        if ($smokeCode -ne 0) {
+            throw "smoke-test fallo (exit $smokeCode)`n$smokeOut"
+        }
     }
 }
 

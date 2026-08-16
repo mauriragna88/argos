@@ -84,6 +84,8 @@ function Check {
         } catch {
             $passed = $false
             $error = $_.Exception.Message
+            $stack = ($_.ScriptStackTrace -split "`n" | Select-Object -First 6) -join " | "
+            if ($stack) { $error = "$error :: $stack" }
         }
     }
     if ($skipped) { $script:skipCount++ }

@@ -1,8 +1,20 @@
 # artifact-integrity.ps1 - Sellos SHA-256 para artefactos del harness
 
+function Get-Sha256Hex([Parameter(Mandatory)][string]$Path) {
+    # SHA-256 con .NET puro: no depende de Get-FileHash (cmdlet) que puede no
+    # resolverse en runners restringidos; misma semantica y formato (hex mayus).
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try {
+        $hash = $sha.ComputeHash([IO.File]::ReadAllBytes($Path))
+        return ([BitConverter]::ToString($hash) -replace '-', '')
+    } finally {
+        $sha.Dispose()
+    }
+}
+
 function Write-ArtifactHash([Parameter(Mandatory)][string]$Path) {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { throw "Artifact not found: $Path" }
-    (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash | Set-Content -LiteralPath "$Path.sha256" -Encoding ASCII
+    Get-Sha256Hex $Path | Set-Content -LiteralPath "$Path.sha256" -Encoding ASCII
     if (-not $env:ARNES_ARTIFACT_HMAC_KEY) { throw "ARNES_ARTIFACT_HMAC_KEY is required to sign artifacts." }
     $key = [Text.Encoding]::UTF8.GetBytes($env:ARNES_ARTIFACT_HMAC_KEY)
     $bytes = [IO.File]::ReadAllBytes($Path)
@@ -14,7 +26,7 @@ function Test-ArtifactHash([Parameter(Mandatory)][string]$Path) {
     $seal = "$Path.sha256"
     if (-not (Test-Path -LiteralPath $seal -PathType Leaf)) { return $false }
     $expected = (Get-Content -LiteralPath $seal -Raw -Encoding ASCII).Trim()
-    $actual = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
+    $actual = Get-Sha256Hex $Path
     if ($expected -ne $actual -or -not $env:ARNES_ARTIFACT_HMAC_KEY -or -not (Test-Path -LiteralPath "$Path.sig" -PathType Leaf)) { return $false }
     $key = [Text.Encoding]::UTF8.GetBytes($env:ARNES_ARTIFACT_HMAC_KEY)
     $bytes = [IO.File]::ReadAllBytes($Path)

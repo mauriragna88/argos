@@ -94,6 +94,42 @@ Write-Host '    (cada agente usa SU modelo de ~/.config/arnes/agent-models.json)
 Write-Host '    (Atlas es el orquestador primary; OhMyOpenCode es el motor de orquestacion)' -ForegroundColor DarkGray
 Write-Host ''
 
+# Auto-reparacion del opencode.json global: si referencia {file:...} a un archivo
+# inexistente (ej: repo renombrado/borrado), lo corrige apuntando al repo actual.
+function Repair-OpenCodeConfigRefs {
+    $ocCfg = Join-Path $env:USERPROFILE '.config\opencode\opencode.json'
+    if (-not (Test-Path $ocCfg)) { return }
+    try {
+        $raw = Get-Content $ocCfg -Raw
+    } catch { return }
+    # Todas las refs {file:<absoluto>} que no existen
+    $regex = [regex]'\{file:([^}]+)\}'
+    $changed = $false
+    foreach ($m in $regex.Matches($raw)) {
+        $p = $m.Groups[1].Value -replace '^file:', '' -replace '\\', '\'
+        if (-not $p) { continue }
+        # Normalizar C:/... -> C:\... para Test-Path
+        $abs = if ($p -match '^[A-Za-z]:/') { $p -replace '^([A-Za-z]):/', '$1:\' } else { $p }
+        if (-not (Test-Path -LiteralPath $abs -ErrorAction SilentlyContinue)) {
+            # Si la ref apuntaba a un repo ARNES viejo junto a este, apuntar a este repo
+            $fixedPath = (Join-Path $Root 'core\atlas-player.agent.md')
+            $raw = $raw.Replace($m.Value, ('{file:' + ($fixedPath -replace '\\', '/') + '}'))
+            $changed = $true
+            Write-Host ("  [~] opencode.json global: ruta rota corregida ({0})" -f (Split-Path $p -Leaf)) -ForegroundColor Yellow
+        }
+    }
+    if ($changed) {
+        try {
+            $null = $raw | ConvertFrom-Json
+            Set-Content -LiteralPath $ocCfg -Value $raw -Encoding UTF8
+        } catch {
+            Write-Host '  [!] No se pudo reparar opencode.json (JSON invalido).' -ForegroundColor Red
+        }
+    }
+}
+
+Repair-OpenCodeConfigRefs
+
 $oc = Get-Command opencode -ErrorAction SilentlyContinue
 if (-not $oc) {
     Write-Host '  [!] opencode no encontrado. Instala: npm install -g opencode-ai' -ForegroundColor Red

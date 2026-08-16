@@ -4,10 +4,15 @@
 OSMA RESOLVE - localiza el motor OSMA (repos separado) desde el harness ARGOS
 .Resolucion: 1) $env:ARNES_OSMA_ROOT  2) ~/.config/arnes/osma  3) ../osma  4) ./cli (legacy)
 #>
+# Home portable: USERPROFILE es de Windows; en Linux/macOS se usa HOME.
+function Get-ArnesHome {
+    if ($env:USERPROFILE) { return $env:USERPROFILE }
+    return $HOME
+}
 function Get-OsmaRoot {
     $candidates = @()
     if ($env:ARNES_OSMA_ROOT) { $candidates += $env:ARNES_OSMA_ROOT }
-    $candidates += (Join-Path $env:USERPROFILE '.config\arnes\osma')
+    $candidates += (Join-Path (Get-ArnesHome) '.config\arnes\osma')
     $candidates += (Join-Path (Split-Path $PSScriptRoot -Parent) '..\osma')
     $candidates += $PSScriptRoot
     foreach ($c in $candidates) {

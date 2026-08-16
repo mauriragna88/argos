@@ -49,11 +49,17 @@ $ErrorActionPreference = 'Stop'
 $Root = Resolve-Path (Join-Path $PSScriptRoot '..')
 $PersonaFile = Join-Path $Root 'core\atlas-player.agent.md'
 
-if (-not $ConfigDir) { $ConfigDir = Join-Path $env:USERPROFILE '.config\arnes' }
+# Home portable: USERPROFILE es de Windows; en Linux/macOS se usa HOME.
+function Get-ArnesHome {
+    if ($env:USERPROFILE) { return $env:USERPROFILE }
+    return $HOME
+}
+
+if (-not $ConfigDir) { $ConfigDir = Join-Path (Get-ArnesHome) '.config\arnes' }
 if (-not $TargetDir) { $TargetDir = $ConfigDir }
 $TargetFile = Join-Path $ConfigDir 'target.json'
 # Ruta del checkout de DeepSeek Harness (default bajo el perfil del usuario)
-$DshDir = (Join-Path $env:USERPROFILE 'deepseek-harness')
+$DshDir = (Join-Path (Get-ArnesHome) 'deepseek-harness')
 
 # ==== Targets disponibles ====
 $TargetMeta = @{
@@ -318,7 +324,7 @@ switch ($Command) {
                 # Claude Code lee ~/.claude/CLAUDE.md + ~/.claude/agents/ (no ~/.config/arnes).
                 # Si el usuario no paso -TargetDir (tests si lo pasan), usa ~/.claude.
                 if (-not $PSBoundParameters.ContainsKey('TargetDir')) {
-                    $TargetDir = Join-Path $env:USERPROFILE '.claude'
+                    $TargetDir = Join-Path (Get-ArnesHome) '.claude'
                 }
                 Write-Host '  [1/3] Persona Atlas a CLAUDE.md...' -ForegroundColor Cyan
                 [void](Write-AtlasPersona -Target 'claude')

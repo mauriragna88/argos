@@ -20,19 +20,30 @@ El departamento de compras del arnes: que nunca nos quedemos atrás de la indust
 - Qué tenemos actualmente (skills, metodologías, proveedores — de memoria/grafo)
 - Interés del usuario (dominio a investigar)
 
-## Pasos (procedimiento PROPIO del arnes)
+## Pasos (procedimiento PROPIO del arnes — SERVICIO REAL 2026-08-17)
+El rol de compras ahora es EJECUTABLE: `cli/argos-skills.ps1` (registrado como
+`argos skills ...` y `/skills` en el chat).
+
 1. **RECALL**: qué usamos hoy
    `read .arnes/memory/export/ragnarok-memory.jsonl`
    `read .arnes/graph/edges.jsonl` — mapa actual
-2. **Scout**: la búsqueda web externa la hace el harness por fuera de la skill.
-   El agente `read` los resultados que ya están en memoria (`ragnarok/scout-results`,
-   `ragnarok/comparativas`) y las docs del repo.
+2. **Scout (real)**: buscar skills externas
+   `pwsh cli/argos-skills.ps1 -Action find -Query "<dominio>"`
+   → corre `npx skills find` contra repos de skills comunitarias.
 3. **Filtrar**: relevancia al arnes, mantenimiento, licencia, compatibilidad
+   (si un repo promete, ver su inventario: `-Action list -Repo <owner/repo>`)
 4. **War Cry (comparativa)**: lo nuevo vs lo actual en tabla pros/cons + ROI
 5. **Recomendar**: ADOPTAR / ESPERAR / NO (con justificación)
-6. **GUARDAR**: `write` una linea en `.arnes/memory/export/ragnarok-memory.jsonl` (topic `ragnarok/scout-results`, type `discovery`)
+6. **Comprar (instalar) con confirmacion**:
+   `pwsh cli/argos-skills.ps1 -Action add -Repo <owner/repo> -Skill <nombre>`
+   → instala en `.agents/skills/<nombre>/` SOLO con confirmacion del usuario
+   (Auron audita el contenido antes de uso en produccion).
+7. **GUARDAR**: `write` una linea en `.arnes/memory/export/ragnarok-memory.jsonl` (topic `ragnarok/scout-results`, type `discovery`)
    + comparativas y rechazos (para no re-investigar lo mismo)
-7. **Documentar**: si se adopta, actualizar docs/ del repo
+8. **Documentar**: si se adopta, actualizar docs/ del repo
+
+Inventario actual: `pwsh cli/argos-skills.ps1 -Action installed`
+(`argos skills installed` / `/skills`).
 
 ## Output esperado
 - Lista de candidatos con fuentes + comparativa + recomendación clara

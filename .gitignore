@@ -20,6 +20,10 @@
 .arnes/triage-log.jsonl
 .arnes/model-runs.jsonl
 
+# ===== Skills externas instaladas (regenerables via skills-lock.json / argos skills add) =====
+.agents/skills/
+.claude/skills/
+
 # ===== Credenciales OpenCode =====
 ~/.config/opencode/auth.json
 auth.json

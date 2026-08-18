@@ -461,6 +461,21 @@ Check "9 agentes sin patron -join roto" "agents" {
     return $true
 }
 
+# === RAGNAROK (skills externas) ===
+Check "argos-skills existe" "harness" {
+    Test-Path (Join-Path $ArnesRoot "cli\argos-skills.ps1")
+}
+
+Check "argos-skills installed lista inventario" "harness" {
+    $c = Run-Capture { & (Join-Path $ArnesRoot "cli\argos-skills.ps1") -Action installed -Json }
+    return ($c -match '"action":\s*"installed"' -and $c -match "own_skills")
+}
+
+Check "ragnarok-scout skill usa servicio real" "harness" {
+    $content = Get-Content (Join-Path $ArnesRoot "core\skills\v2\ragnarok-scout\SKILL.md") -Raw
+    return ($content -match "argos-skills.ps1" -and $content -match "SERVICIO REAL")
+}
+
 # === USER STYLE (adaptacion de respuesta) ===
 Check "user-style existe" "harness" {
     Test-Path (Join-Path $ArnesRoot "cli\user-style.ps1")

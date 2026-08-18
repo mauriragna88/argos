@@ -22,7 +22,7 @@ argos init               -> inicializar proyecto
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('', 'menu', 'init', 'connect', 'connect-agent', 'configure', 'chat', 'status', 'stats', 'triage-stats', 'style', 'models', 'model', 'memory', 'osma-install', 'recommend', 'mode', 'doctor', 'verify', 'test-model', 'quest', 'party', 'xp', 'theme', 'code', 'opencode', 'target', 'goal', 'audit')]
+    [ValidateSet('', 'menu', 'init', 'connect', 'connect-agent', 'configure', 'chat', 'status', 'stats', 'triage-stats', 'style', 'skills', 'models', 'model', 'memory', 'osma-install', 'recommend', 'mode', 'doctor', 'verify', 'test-model', 'quest', 'party', 'xp', 'theme', 'code', 'opencode', 'target', 'goal', 'audit')]
     [string]$Command = '',
 
     [Parameter(Position = 1)]
@@ -473,6 +473,38 @@ switch ($Command) {
             }
         } else {
             Write-Host "  Uso: argos style detect|remember|recall|profile \"<prompt>\"" -ForegroundColor Yellow
+        }
+    }
+    'skills' {
+        # argos skills find <query> | list -Repo x | add -Repo x -Skill y | installed
+        $sub = if ($Args -and $Args.Count -gt 0) { $Args[0] } else { 'installed' }
+        $extra = if ($Args.Count -gt 1) { @($Args[1..($Args.Count - 1)]) } else { @() }
+        switch ($sub) {
+            'find' {
+                if ($extra.Count -gt 0) {
+                    & (Join-Path $ScriptDir 'argos-skills.ps1') -Action find -Query ($extra -join ' ')
+                } else {
+                    $q = Read-Input '  Ragnarok: que skills busco? '
+                    & (Join-Path $ScriptDir 'argos-skills.ps1') -Action find -Query $q
+                }
+            }
+            'list' {
+                $repo = ''
+                for ($i = 0; $i -lt $extra.Count; $i++) { if ($extra[$i] -eq '-Repo' -and $i + 1 -lt $extra.Count) { $repo = $extra[$i+1] } }
+                if (-not $repo) { Write-Host '  Uso: argos skills list -Repo <owner/repo>' -ForegroundColor Yellow; break }
+                & (Join-Path $ScriptDir 'argos-skills.ps1') -Action list -Repo $repo
+            }
+            'add' {
+                $repo = ''; $skill = ''; $yes = $false
+                for ($i = 0; $i -lt $extra.Count; $i++) {
+                    if ($extra[$i] -eq '-Repo' -and $i + 1 -lt $extra.Count) { $repo = $extra[$i+1] }
+                    if ($extra[$i] -eq '-Skill' -and $i + 1 -lt $extra.Count) { $skill = $extra[$i+1] }
+                    if ($extra[$i] -eq '-Yes') { $yes = $true }
+                }
+                if (-not $repo -or -not $skill) { Write-Host '  Uso: argos skills add -Repo <owner/repo> -Skill <nombre> [-Yes]' -ForegroundColor Yellow; break }
+                & (Join-Path $ScriptDir 'argos-skills.ps1') -Action add -Repo $repo -Skill $skill $(if ($yes) { '-Yes' })
+            }
+            default { & (Join-Path $ScriptDir 'argos-skills.ps1') -Action installed }
         }
     }
     'theme' {

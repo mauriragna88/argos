@@ -186,6 +186,8 @@ function Show-InteractiveChat {
     Write-Host '    /status       estado del harness' -ForegroundColor DarkGray
     Write-Host '    /triage-stats stats de dificultad -> modelo -> resultado' -ForegroundColor DarkGray
     Write-Host '    /style        perfil de estilo del usuario (como responde Atlas)' -ForegroundColor DarkGray
+    Write-Host '    /skills       inventario de skills (Ragnarok)' -ForegroundColor DarkGray
+    Write-Host '    /skills find  buscar skills externas' -ForegroundColor DarkGray
     Write-Host '    /quit         salir' -ForegroundColor DarkGray
     Write-Host ''
 
@@ -329,6 +331,14 @@ function Show-InteractiveChat {
             }
             '^\s*/style\s*$' {
                 & (Join-Path $PSScriptRoot 'user-style.ps1') -Action profile
+                continue
+            }
+            '^\s*/skills\s*$' {
+                & (Join-Path $PSScriptRoot 'argos-skills.ps1') -Action installed
+                continue
+            }
+            '^\s*/skills\s+find\s+(.+)$' {
+                & (Join-Path $PSScriptRoot 'argos-skills.ps1') -Action find -Query $Matches[1]
                 continue
             }
             default {

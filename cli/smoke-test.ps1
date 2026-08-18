@@ -467,6 +467,61 @@ Check "9 agentes sin patron -join roto" "agents" {
     return $true
 }
 
+# === FASE 5: REGRESSION FACTORY ===
+Check "regression existe" "harness" {
+    Test-Path (Join-Path $ArnesRoot "cli\regression.ps1")
+}
+
+Check "regression create con dedupe" "harness" {
+    $tmpArnes = Join-Path ([System.IO.Path]::GetTempPath()) ("arnes-reg-" + [guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Path $tmpArnes -Force | Out-Null
+    try {
+        $c1 = Run-Capture { & (Join-Path $ArnesRoot "cli\regression.ps1") -Action create -QuestId Q-910 -GuardType unit -GuardPath "tests/x.test.ts" -FailureSignature "sig" -ArnesDir $tmpArnes -Json }
+        $c2 = Run-Capture { & (Join-Path $ArnesRoot "cli\regression.ps1") -Action create -QuestId Q-910 -GuardType unit -GuardPath "tests/x.test.ts" -FailureSignature "sig" -ArnesDir $tmpArnes -Json }
+        $l = Run-Capture { & (Join-Path $ArnesRoot "cli\regression.ps1") -Action list -ArnesDir $tmpArnes -Json }
+        return ($c1 -match '"ok"' -or $c1 -match 'regression_guard') -and ($c2 -match 'duplicate') -and ($l -match "Q-910")
+    } finally {
+        Remove-Item $tmpArnes -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Check "quest-done sugiere regression en PASS tras FAIL" "harness" {
+    $tmpArnes = Join-Path ([System.IO.Path]::GetTempPath()) ("arnes-reg2-" + [guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Path $tmpArnes -Force | Out-Null
+    try {
+        $env:ARNES_ARTIFACT_HMAC_KEY = "smoke-test-only-key"
+        & (Join-Path $ArnesRoot "cli\loop-engine.ps1") -Action reset -ArnesDir $tmpArnes | Out-Null
+        & (Join-Path $ArnesRoot "cli\loop-engine.ps1") -Action start -Quest "fix bug del 404" -ArnesDir $tmpArnes | Out-Null
+        $state = Get-Content (Join-Path $tmpArnes "loop-state.json") -Raw | ConvertFrom-Json
+        $qid = $state.current_quest_id; $aid = $state.current_attempt_id
+        # seed un loop_attempt FAIL previo para simular FAIL -> PASS
+        Add-Content (Join-Path $tmpArnes "loop-attempts.jsonl") -Value ('{"event":"loop_attempt","ts":"2026-08-17T00:00:00","quest_id":"' + $qid + '","attempt":"A-001","attempt_number":1,"verdict":"FAIL_PARTIAL","agent":"kuja","tokens_used":100,"cause":"failed_verification","remediation":"re-audit"}') -Encoding UTF8
+        $fx = Join-Path ([System.IO.Path]::GetTempPath()) ("arnes-regfix-" + [guid]::NewGuid().ToString("N"))
+        New-Item -ItemType Directory -Path $fx -Force | Out-Null
+        try {
+            $ev = Join-Path $fx "evidence.json"; $vd = Join-Path $fx "verdict.json"; $sc = Join-Path $fx "sam-counsel.json"; $ad = Join-Path $fx "atlas-decision.json"
+            @{ type="evidence_pack"; quest_id=$qid; attempt_id=$aid; quest_acceptance_criteria=@("t") } | ConvertTo-Json | Set-Content $ev -Encoding UTF8
+            @{ type="verdict"; quest_id=$qid; attempt_id=$aid; verdict="PASS" } | ConvertTo-Json | Set-Content $vd -Encoding UTF8
+            @{ type="sam_counsel"; quest_id=$qid; attempt_id=$aid; verdict="PASS"; recommendation=@{ action="finalize" } } | ConvertTo-Json -Depth 4 | Set-Content $sc -Encoding UTF8
+            @{ type="atlas_decision"; quest_id=$qid; attempt_id=$aid; decision="finalize"; rationale="smoke"; sam_counsel_path=$sc; counsel_action="finalize"; overrides_counsel=$false } | ConvertTo-Json -Depth 4 | Set-Content $ad -Encoding UTF8
+            . (Join-Path $ArnesRoot "cli\artifact-integrity.ps1")
+            @($ev,$vd,$sc,$ad) | ForEach-Object { Write-ArtifactHash $_ }
+            $c = Run-Capture { & (Join-Path $ArnesRoot "cli\loop-engine.ps1") -Action quest-done -Verdict PASS -AgentUsed kuja -TokensUsed 800 -EvidencePackPath $ev -AuditVerdictPath $vd -SamCounselPath $sc -AtlasDecisionPath $ad -ArnesDir $tmpArnes }
+            return ($c -match "REGRESSION" -and $c -match "sugerida")
+        } finally {
+            Remove-Item $fx -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    } finally {
+        Remove-Item $tmpArnes -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Check "kuja y auron tienen regression factory" "harness" {
+    $k = Get-Content (Join-Path $ArnesRoot "core\classes\rogue.agent.md") -Raw
+    $a = Get-Content (Join-Path $ArnesRoot "core\auditors\auron.agent.md") -Raw
+    return ($k -match "Regression Factory" -and $a -match "Regression Factory")
+}
+
 # === FASE 3: LOOP CONTRACT + LADDER ===
 Check "loop-contract existe" "harness" {
     Test-Path (Join-Path $ArnesRoot "cli\loop-contract.ps1")

@@ -348,6 +348,29 @@ function Quest-Done($state, $questId, $verdict, $agent, $tokens, $evidencePath, 
         Add-Content -LiteralPath $attemptLog -Value $attempt -Encoding UTF8
     } catch {}
 
+    # FASE 5: Regression Factory - PASS tras FAIL previo => sugerir guard
+    try {
+        if ($verdict -eq "PASS") {
+            $attemptLog = Join-Path $ArnesDir "loop-attempts.jsonl"
+            $hadFail = $false
+            if (Test-Path -LiteralPath $attemptLog) {
+                foreach ($line in (Get-Content -LiteralPath $attemptLog -Encoding UTF8 | Where-Object { $_.Trim() })) {
+                    try { $prev = $line | ConvertFrom-Json } catch { continue }
+                    if ($prev.quest_id -eq $questId -and $prev.verdict -ne "PASS" -and $prev.event -eq "loop_attempt") {
+                        $hadFail = $true
+                        break
+                    }
+                }
+            }
+            if ($hadFail) {
+                $regressionScript = Join-Path $PSScriptRoot "regression.ps1"
+                if (Test-Path $regressionScript) {
+                    $null = & $regressionScript -Action suggest -QuestId $questId -Verdict PASS -Prompt $state.current_quest -ArnesDir $ArnesDir 2>&1
+                }
+            }
+        }
+    } catch {}
+
     # FASE 1 Telemetria: registrar run de modelo (event log .arnes/model-runs.jsonl)
     try {
         $telemetryScript = Join-Path $PSScriptRoot "model-telemetry.ps1"

@@ -22,7 +22,7 @@ argos init               -> inicializar proyecto
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('', 'menu', 'init', 'connect', 'connect-agent', 'configure', 'chat', 'status', 'stats', 'triage-stats', 'style', 'skills', 'allocate', 'contract', 'models', 'model', 'memory', 'osma-install', 'recommend', 'mode', 'doctor', 'verify', 'test-model', 'quest', 'party', 'xp', 'theme', 'code', 'opencode', 'target', 'goal', 'audit')]
+    [ValidateSet('', 'menu', 'init', 'connect', 'connect-agent', 'configure', 'chat', 'status', 'stats', 'triage-stats', 'style', 'skills', 'allocate', 'contract', 'regression', 'models', 'model', 'memory', 'osma-install', 'recommend', 'mode', 'doctor', 'verify', 'test-model', 'quest', 'party', 'xp', 'theme', 'code', 'opencode', 'target', 'goal', 'audit')]
     [string]$Command = '',
 
     [Parameter(Position = 1)]
@@ -473,6 +473,22 @@ switch ($Command) {
             }
         } else {
             Write-Host "  Uso: argos style detect|remember|recall|profile \"<prompt>\"" -ForegroundColor Yellow
+        }
+    }
+    'regression' {
+        # argos regression list [Q-XXX] | check <path>
+        $sub = if ($Args -and $Args.Count -gt 0) { $Args[0] } else { 'list' }
+        switch ($sub) {
+            'list'  {
+                $qid = if ($Args.Count -gt 1) { $Args[1] } else { '' }
+                & (Join-Path $ScriptDir 'regression.ps1') -Action list -QuestId $qid
+            }
+            'check' {
+                $p = if ($Args.Count -gt 1) { $Args[1] } else { '' }
+                if (-not $p) { Write-Host '  Uso: argos regression check <ruta-al-guard>' -ForegroundColor Yellow; break }
+                & (Join-Path $ScriptDir 'regression.ps1') -Action check -GuardPath $p
+            }
+            default { Write-Host '  Uso: argos regression list [Q-XXX] | check <path>' -ForegroundColor Yellow }
         }
     }
     'contract' {

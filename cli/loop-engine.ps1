@@ -151,6 +151,37 @@ function Update-Ledger($questId, $verdict, $agent, $tokens) {
     $ledger | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $LedgerFile -Encoding UTF8
 }
 
+function Update-TriageOutcome($questId, $verdict, $agent) {
+    # Cierra el ciclo del Prompt Triage: quest-detector deja outcome=PENDING al
+    # clasificar el prompt; aqui se anota el veredicto real sobre el ULTIMO
+    # registro pendiente (append-only: los eventos ya cerrados no se tocan).
+    try {
+        $logFile = Join-Path $ArnesDir "triage-log.jsonl"
+        if (-not (Test-Path -LiteralPath $logFile)) { return }
+        $lines = @(Get-Content -LiteralPath $logFile -Encoding UTF8 | Where-Object { $_.Trim() })
+        if ($lines.Count -eq 0) { return }
+        $outcome = if ($verdict -eq "PASS") { "PASS" } else { "FAIL" }
+        $found = $false
+        for ($i = $lines.Count - 1; $i -ge 0; $i--) {
+            try { $evt = $lines[$i] | ConvertFrom-Json } catch { continue }
+            if ($evt.event -eq "triage" -and $evt.outcome -eq "PENDING") {
+                $evt.outcome = $outcome
+                if ($evt.PSObject.Properties["quest_id"]) { $evt.quest_id = $questId } else { $evt | Add-Member -NotePropertyName quest_id -NotePropertyValue $questId -Force }
+                if ($agent) {
+                    if ($evt.PSObject.Properties["agent"]) { $evt.agent = $agent } else { $evt | Add-Member -NotePropertyName agent -NotePropertyValue $agent -Force }
+                }
+                if ($evt.PSObject.Properties["closed_at"]) { $evt.closed_at = (Get-Date).ToString("o") } else { $evt | Add-Member -NotePropertyName closed_at -NotePropertyValue (Get-Date).ToString("o") -Force }
+                $lines[$i] = $evt | ConvertTo-Json -Compress
+                $found = $true
+                break
+            }
+        }
+        if ($found) {
+            $lines | Set-Content -LiteralPath $logFile -Encoding UTF8
+        }
+    } catch {}
+}
+
 function Invoke-CircuitBreaker($agentName) {
     if (-not $agentName) { return }
     $cbScript = Join-Path $PSScriptRoot "circuit-breaker.ps1"
@@ -283,6 +314,38 @@ function Quest-Done($state, $questId, $verdict, $agent, $tokens, $evidencePath, 
 
     # Update ledger
     Update-Ledger $questId $verdict $agent $tokens
+
+    # Prompt Triage: cerrar el outcome PENDING con el veredicto real
+    Update-TriageOutcome $questId $verdict $agent
+
+    # FASE 1 Telemetria: registrar run de modelo (event log .arnes/model-runs.jsonl)
+    try {
+        $telemetryScript = Join-Path $PSScriptRoot "model-telemetry.ps1"
+        if (Test-Path $telemetryScript) {
+            # difficulty + modelo recomendado vienen del evento triage cerrado (si existe)
+            $triageDifficulty = 0
+            $triageModel = ""
+            $triageRoute = ""
+            $triageQuestType = "unknown"
+            $triageFile = Join-Path $ArnesDir "triage-log.jsonl"
+            if (Test-Path -LiteralPath $triageFile) {
+                foreach ($line in (Get-Content -LiteralPath $triageFile -Encoding UTF8 | Where-Object { $_.Trim() })) {
+                    try { $tev = $line | ConvertFrom-Json } catch { continue }
+                    if ($tev.event -eq "triage" -and $tev.quest_id -eq $questId) {
+                        $triageDifficulty = [int]$tev.difficulty
+                        $triageModel = [string]$tev.model_used
+                        $triageRoute = [string]$tev.recommendation
+                        $triageQuestType = [string]$tev.prompt_type
+                    }
+                }
+            }
+            $reward = if ($verdict -eq "PASS") { 0.9 } elseif ($verdict -eq "FAIL_PARTIAL") { 0.3 } else { -0.8 }
+            $null = & $telemetryScript -Action record `
+                -Agent $agent -Model $triageModel -QuestId $questId -QuestType $triageQuestType -Difficulty $triageDifficulty `
+                -Route $triageRoute -TokensUsed $tokens -Verdict $verdict -Reward $reward `
+                -ArnesDir $ArnesDir 2>&1
+        }
+    } catch {}
 
     # Circuit breaker
     if ($verdict -ne "PASS" -and $agent) {

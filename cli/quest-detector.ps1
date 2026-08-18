@@ -15,7 +15,10 @@ param(
     [string]$Prompt = "",
     [switch]$Json,
     [switch]$Silent,
-    [switch]$Recommend
+    [switch]$Recommend,
+    [switch]$NoLog,    # Prompt Triage: no hacer append a .arnes/triage-log.jsonl
+    [switch]$SkipOsma, # Prompt Triage: no consultar OSMA (experiencias similares)
+    [switch]$NoStyle   # User Style: no registrar el estilo del prompt en OSMA
 )
 
 $ErrorActionPreference = "Stop"
@@ -51,7 +54,7 @@ $patterns = @{
 }
 
 # L0 indicators (require user confirmation)
-$l0Indicators = @("delete","bulk delete","destroy","drop table","rm -rf","production deploy","prod deploy","force push","git reset","schema migration","rls change","rls policy","rls modification","auth change","rollback prod","rollback production","secret rotation","aws","gcp","azure","database migration","breaking change")
+$l0Indicators = @("delete","bulk delete","destroy","drop table","rm -rf","production deploy","prod deploy","force push","git reset","schema migration","rls change","rls policy","rls modification","auth change","rollback prod","rollback production","secret rotation","aws","gcp","azure","database migration","breaking change","produccion","producción","rollback","migracion","migración","rls","borrar","rotacion de secrets","rotación de secrets")
 
 # Count matches per quest_type
 $scores = @{}
@@ -184,6 +187,112 @@ $result = @{
     timestamp = (Get-Date).ToString("o")
 }
 
+# === PROMPT TRIAGE: difficulty 1-4 + modelo recomendado + memoria ===
+# Protocolo: core/protocols/prompt-triage.md
+$difficulty = 2
+switch ($complexity) {
+    'trivial' { $difficulty = 1 }
+    'simple'  { $difficulty = 2 }
+    'medium'  { $difficulty = 3 }
+    'complex' { $difficulty = 3 }
+    'boss'    { $difficulty = 4 }
+}
+if ($bestType -eq 'boss') { $difficulty = 4 }
+if ($isL0 -and $difficulty -lt 3) { $difficulty = 3 }  # L0 manda: minimo complejo
+
+$modelTier = 'flash'
+$recommendedModel = 'opencode-go/deepseek-v4-flash'
+if ($difficulty -ge 4) {
+    $modelTier = 'highest'
+    $recommendedModel = 'opencode-go/qwen3.8-max'
+} elseif ($difficulty -eq 3) {
+    $modelTier = 'pro'
+    $recommendedModel = switch ($bestType) {
+        'frontend'      { 'opencode-go/gpt-5.6-luna' }
+        'architecture'  { 'opencode-go/kimi-k2.6' }
+        'research'      { 'opencode-go/deepseek-v4-flash' }  # ranger: workhorse basta
+        'devops'        { 'opencode-go/deepseek-v4-pro' }
+        default         { 'opencode-go/deepseek-v4-pro' }    # backend / fix / unknown
+    }
+}
+
+$triageGate = if ($difficulty -ge 4 -or $isL0) { 'required' } elseif ($difficulty -eq 3) { 'ask' } else { 'auto_pass' }
+
+# AMBIGUITY: prompt abierto -> Atlas complementa antes de clasificar (V1.3).
+# El nivel final = prompt del usuario + complemento de Atlas; el complemento puede
+# subir el nivel, asi que un prompt ambiguo sube el gate a 'ask' (Atlas enriquecera).
+$ambiguityPatterns = @("creas mejor","creas que mejor","como tu veas","lo que mejor","alguna idea","sugiere","sugiereme","recomiendame","recomiendame algo","que opinas","que me recomiendas","mejor forma","no se","nose","no se como","quiza","tal vez","a poco","no estoy seguro","ayudame a decidir","que haria","que harías","segun tu","según tu","que prefieres","tienes alguna","podrias sugerir","dame ideas","me gustaria algo","haz algo","hazme algo")
+$isAmbiguous = $false
+if ($bestScore -eq 0) { $isAmbiguous = $true }   # 0 keywords: ni sabemos el tipo de quest
+foreach ($ap in $ambiguityPatterns) {
+    if ($promptLower.Contains($ap)) { $isAmbiguous = $true; break }
+}
+if ($isAmbiguous -and $triageGate -eq 'auto_pass') {
+    $triageGate = 'ask'   # Atlas va a complementar; el nivel puede subir -> confirmar
+}
+
+# OSMA consulta (best-effort): experiencias similares para afinar la clasificacion
+$osmaHint = ''
+if (-not $SkipOsma) {
+    try {
+        . (Join-Path $PSScriptRoot 'osma-resolve.ps1')
+        $memCli = Get-OsmaMemoryCli
+        if ($memCli) {
+            $exp = (& $memCli experience -ExperienceAction search -Query $Prompt -Limit 3 -Quiet 2>$null | Out-String).Trim()
+            $rec = (& $memCli recall -Query $Prompt -Limit 3 -Quiet 2>$null | Out-String).Trim()
+            $parts = @()
+            if ($exp -and $exp -notmatch 'Sin experiencias|^$|^\[\]$') { $parts += "exp: $exp" }
+            if ($rec -and $rec -notmatch 'Sin recuerdos|^$|^\[\]$') { $parts += "rec: $rec" }
+            if ($parts.Count -gt 0) { $osmaHint = $parts -join ' | ' }
+        }
+    } catch {}
+
+    # User Style: aprender el estilo del prompt (OSMA user/style/*) - best effort
+    if (-not $NoStyle) {
+        try {
+            $styleScript = Join-Path $PSScriptRoot 'user-style.ps1'
+            if (Test-Path $styleScript) {
+                $null = & $styleScript -Action remember -Prompt $Prompt -Quiet 2>&1
+            }
+        } catch {}
+    }
+}
+
+$result.difficulty = $difficulty
+$result.model_tier = $modelTier
+$result.recommended_model = $recommendedModel
+$result.triage_gate = $triageGate
+$result.is_ambiguous = $isAmbiguous
+$result.osma_hint = $osmaHint
+
+# Memoria: append a .arnes/triage-log.jsonl (event log append-only, no memoria paralela)
+if (-not $NoLog) {
+    try {
+        $logDir = Join-Path (Split-Path $PSScriptRoot -Parent) '.arnes'
+        if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir -Force | Out-Null }
+        $logFile = Join-Path $logDir 'triage-log.jsonl'
+        $signals = @()
+        if ($isL0) { $signals += 'l0' }
+        if ($hasChain) { $signals += 'chain' }
+        if ($bestType -eq 'unknown') { $signals += 'unknown_type' }
+        if ($isAmbiguous) { $signals += 'ambiguity' }
+        $evt = [ordered]@{
+            event = 'triage'
+            ts = (Get-Date).ToString('o')
+            prompt_type = $bestType
+            difficulty = $difficulty
+            signals = $signals
+            similarity = @{ matched = [bool]$osmaHint; hint = $osmaHint }
+            model_used = $recommendedModel
+            recommendation = $modelTier
+            user_decision = 'auto'
+            outcome = 'PENDING'
+            notes = "quest-detector heuristic | gate=$triageGate$(if ($isAmbiguous) { ' | ambiguity: Atlas complementa antes de clasificar' })"
+        } | ConvertTo-Json -Compress
+        Add-Content -Path $logFile -Value $evt -Encoding UTF8
+    } catch {}
+}
+
 # === Recommendation block (only when -Recommend) ===
 if ($Recommend) {
     # Costo estimado: 1K tokens ~ $0.005 -> MP*0.0005 centavos, redondeado a 2 decimales.
@@ -249,6 +358,7 @@ if (-not $Silent) {
     Write-Host "  Has chain:     $hasChain" -ForegroundColor DarkGray
     Write-Host "  Estimated HP:  $estimatedHP" -ForegroundColor DarkGray
     Write-Host "  Estimated MP:  $estimatedMP tokens" -ForegroundColor DarkGray
+    Write-Host ("  Triage:        dificultad {0}/4 · modelo: {1} ({2})" -f $difficulty, $recommendedModel, $modelTier) -ForegroundColor Green
     Write-Host ""
 }
 

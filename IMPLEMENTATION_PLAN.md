@@ -15,6 +15,14 @@ Que el harness registre **qué modelo hizo qué, con qué resultado y a qué cos
 | Ruta | Cambio |
 |---|---|
 | `cli/arnes_brain.py` | Nueva tabla `model_runs` (o extensión de `skill_executions`) en `_migrate()` (aditivo, idempotente, patrón V4-V7); comandos `osma-model-run` (record) y `osma-model-stats` (agregados) |
+
+> **NOTA DE IMPLEMENTACIÓN (2026-08-17)**: el brain real vive en el repo OSMA global
+> (`~/.config/arnes/osma/osma_brain.py`, fuera de este repo). La telemetría de Fase 1
+> se implementó **dentro de este repo** sin tocar el brain compartido:
+> `cli/model-telemetry.ps1` (record/stats sobre `.arnes/model-runs.jsonl`, event log
+> append-only) con hook automático en `loop-engine.ps1` (quest-done). El contrato de
+> la tabla `model_runs` del brain queda como extensión futura del repo OSMA; el
+> evento log cumple el criterio de done (stats con datos reales) desde ya.
 | `pi/extensions/argos-learning.ts` | En `agent_settled`, registrar run: agent/model/provider/quest_type/difficulty/route/party/tokens_in/out/cached/cost/latency/loops/verdict/first_pass_success/reward_signal |
 | `pi/extensions/argos-cognition.ts` | Pasar `path` (FAST/RECALL/SKILL/DELIBERATE/DEEP) elegido al registro |
 | `cli/argos-engine.ps1` | Devolver `latency_ms`, `cached_tokens`, `cost_estimate` en la respuesta (ya devuelve usage) |

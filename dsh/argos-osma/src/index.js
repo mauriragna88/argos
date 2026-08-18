@@ -8,10 +8,146 @@
 //     observacion + experiencia (igual que argos-learning.ts en PI).
 //  3. Cualquier CLI (opencode, pi, claude, codex, dsh) escribe/lee el MISMO
 //     arnes.db del proyecto actual.
-import { existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, appendFileSync, mkdirSync, readFileSync } from 'node:fs'
+import { join, dirname } from 'node:path'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import { runBrain, resolveProjectRoot, isArnesProject, resolveScanScript } from './brain.js'
+
+// ---------- Prompt Triage (misma heuristica que cli/quest-detector.ps1) ----------
+// Protocolo: core/protocols/prompt-triage.md — clasifica 1-4, recomienda modelo,
+// gate de confirmacion y deja rastro en .arnes/triage-log.jsonl (event log).
+const TRIAGE_PATTERNS = {
+  frontend: ['componente', 'component', 'tsx', 'jsx', 'ui', 'css', 'tailwind', 'modal', 'dashboard', 'formulario', 'form', 'login form', 'signup', 'pagina', 'pantalla', 'responsive', 'animacion', 'sidebar', 'navbar', 'header', 'footer', 'button', 'input', 'select', 'card', 'hero', 'toast', 'tabla', 'list', 'grid', 'layout', 'styled'],
+  backend: ['api', 'endpoint', 'route', 'supabase', 'postgres', 'prisma', 'schema', 'query', 'mutation', 'rls', 'server action', 'middleware', 'zod', 'webhook', 'backend', 'server', 'database', 'table', 'migration', 'trigger', 'sql', 'rest', 'graphql', 'trpc', 'rpc', 'cron'],
+  fix: ['bug', 'fix', 'broken', 'error', 'fail', 'no funciona', 'crash', '404', '500', 'regression', 'exception', 'stack trace', 'undefined', 'null pointer', 'race condition', 'memory leak'],
+  architecture: ['arquitectura', 'architecture', 'plan', 'redisen', 'refactor mayor', 'migrar', 'monorepo', 'design system', 'project structure', 'adr', 'clean architecture', 'hexagonal', 'microservice', 'serverless', 'event-driven', 'cqrs'],
+  research: ['investiga', 'busca', 'compara', 'que libreria', 'best practice', 'mejor forma', 'docs', 'documentation', 'como se hace', 'how to', 'tutorial', 'benchmark', 'comparison', 'alternatives', 'vs'],
+  devops: ['deploy', 'ci', 'cd', 'docker', 'production', 'prod', 'rollback', 'vercel', 'netlify', 'github actions', 'pipeline', 'workflow', 'build', 'release', 'infrastructure', 'k8s', 'kubernetes', 'terraform'],
+  boss: ['feature completa', 'nueva area', 'modulo entero', 'v1', 'mvp', 'from scratch', 'rebuild', 'new project', 'greenfield', 'go-live', 'prod-ready', 'complete feature', 'end to end'],
+}
+
+const TRIAGE_L0 = ['delete', 'bulk delete', 'destroy', 'drop table', 'rm -rf', 'production deploy', 'prod deploy', 'force push', 'git reset', 'schema migration', 'rls change', 'rls policy', 'auth change', 'rollback prod', 'rollback production', 'secret rotation', 'database migration', 'breaking change', 'produccion', 'producción', 'rollback', 'migracion', 'migración', 'rls', 'borrar', 'rotacion de secrets', 'rotación de secrets']
+
+// Modelo recomendado por dificultad/dominio (espejo de quest-detector.ps1)
+function recommendModel(difficulty, questType) {
+  if (difficulty >= 4) return { model: 'opencode-go/qwen3.8-max', tier: 'highest', gate: 'required' }
+  if (difficulty === 3) {
+    const byType = {
+      frontend: 'opencode-go/gpt-5.6-luna',
+      architecture: 'opencode-go/kimi-k2.6',
+      research: 'opencode-go/deepseek-v4-flash',
+      devops: 'opencode-go/deepseek-v4-pro',
+    }
+    return { model: byType[questType] || 'opencode-go/deepseek-v4-pro', tier: 'pro', gate: 'ask' }
+  }
+  return { model: 'opencode-go/deepseek-v4-flash', tier: 'flash', gate: 'auto_pass' }
+}
+
+function classifyPrompt(prompt) {
+  const lower = String(prompt || '').toLowerCase()
+  // quest type por keywords
+  let bestType = 'unknown'
+  let bestScore = 0
+  for (const [qt, kws] of Object.entries(TRIAGE_PATTERNS)) {
+    const score = kws.filter((k) => lower.includes(k)).length
+    if (score > bestScore) { bestScore = score; bestType = qt }
+  }
+  // L0
+  const isL0 = TRIAGE_L0.some((k) => lower.includes(k))
+  // complexity por longitud (misma tabla que el detector)
+  const len = prompt.length
+  let complexity = 'simple'
+  if (len < 30) complexity = 'trivial'
+  else if (len < 80) complexity = 'simple'
+  else if (len < 200) complexity = 'medium'
+  else if (len < 500) complexity = 'complex'
+  else complexity = 'boss'
+  if (bestType === 'boss') complexity = 'boss'
+  if (isL0) complexity = 'complex'
+  // difficulty 1-4
+  let difficulty = 2
+  if (complexity === 'trivial') difficulty = 1
+  else if (complexity === 'medium') difficulty = 3
+  else if (complexity === 'complex') difficulty = 3
+  else if (complexity === 'boss') difficulty = 4
+  if (bestType === 'boss') difficulty = 4
+  if (isL0 && difficulty < 3) difficulty = 3
+  // AMBIGUITY (V1.3): prompt abierto -> Atlas complementa antes de clasificar.
+  // El nivel final = prompt + complemento; si es ambiguo el gate sube a ask
+  // porque el complemento puede subir el nivel. (Espejo de quest-detector.ps1)
+  const ambiguityPatterns = ['creas mejor', 'como tu veas', 'lo que mejor', 'alguna idea', 'sugiere', 'sugiereme', 'recomiendame', 'que opinas', 'mejor forma', 'no se', 'nose', 'no se como', 'quiza', 'tal vez', 'no estoy seguro', 'ayudame a decidir', 'que haria', 'segun tu', 'según tu', 'que prefieres', 'podrias sugerir', 'dame ideas', 'me gustaria algo', 'haz algo', 'hazme algo']
+  const isAmbiguous = bestScore === 0 || ambiguityPatterns.some((ap) => lower.includes(ap))
+  let rec = recommendModel(difficulty, bestType)
+  // L0 manda: gate required siempre (espejo de quest-detector.ps1)
+  if (isL0 && rec.gate === 'ask') rec.gate = 'required'
+  if (isAmbiguous && rec.gate === 'auto_pass') rec.gate = 'ask'
+  return { quest_type: bestType, confidence: bestScore, complexity, is_l0: isL0, difficulty, is_ambiguous: isAmbiguous, ...rec, prompt: prompt }
+}
+
+// Append de evento triage a .arnes/triage-log.jsonl (append-only, no memoria)
+function appendTriageLog(projectRoot, triage, osmaHint) {
+  try {
+    const logFile = join(projectRoot, '.arnes', 'triage-log.jsonl')
+    mkdirSync(dirname(logFile), { recursive: true })
+    const evt = {
+      event: 'triage',
+      ts: new Date().toISOString(),
+      prompt_type: triage.quest_type,
+      difficulty: triage.difficulty,
+      signals: [triage.is_l0 ? 'l0' : '', triage.quest_type === 'unknown' ? 'unknown_type' : '', triage.is_ambiguous ? 'ambiguity' : ''].filter(Boolean),
+      similarity: { matched: Boolean(osmaHint), hint: osmaHint || '' },
+      model_used: triage.model,
+      recommendation: triage.tier,
+      user_decision: 'auto',
+      outcome: 'PENDING',
+      notes: 'dsh argos_triage | gate=' + triage.gate + (triage.is_ambiguous ? ' | ambiguity: Atlas complementa' : ''),
+    }
+    appendFileSync(logFile, JSON.stringify(evt) + '\n', 'utf8')
+  } catch {
+    // nunca romper la tool por un fallo de log
+  }
+}
+
+// ---------- argos_triage: clasificar dificultad + recomendar modelo ----------
+const triageTool = defineTool({
+  name: 'argos_triage',
+  description: 'Clasifica un prompt (dificultad 1-4, quest type, L0), recomienda modelo (flash/pro/highest) y gate de confirmacion (auto_pass/ask/required). Consulta experiencias OSMA similares y deja rastro en .arnes/triage-log.jsonl. Úsalo ANTES de empezar cualquier tarea no trivial para decidir si conviene un modelo de razonamiento.',
+  parameters: {
+    prompt: { type: 'string', required: true, description: 'El prompt/quest del usuario a clasificar' },
+    cwd: { type: 'string', description: 'Ruta del proyecto (opcional)' },
+  },
+  output: {
+    schema: { type: 'string' },
+    render: (_args, value) => [{ type: 'text', text: value }],
+  },
+  async execute(args, exec) {
+    const root = resolveProjectRoot(args.cwd || (exec && exec.cwd) || process.cwd())
+    if (!root) return text('ARGOS: no hay proyecto ARNES aquí (falta .arnes/arnes.db).')
+    const triage = classifyPrompt(args.prompt)
+    // consulta OSMA: experiencias similares para afinar (anti-repeticion)
+    let osmaHint = ''
+    try {
+      const res = await runBrain(root, ['osma-experience-search', args.prompt, '-', '-', '3'])
+      if (res.ok && Array.isArray(res.data) && res.data.length > 0) {
+        osmaHint = res.data.map((e) => `[${e.validation_status}] apply=${e.applicability} conf=${e.confidence}: ${(e.summary || e.situation || '').slice(0, 80)}`).join(' | ')
+      }
+    } catch {}
+    appendTriageLog(root, triage, osmaHint)
+    const gateLine = triage.gate === 'auto_pass'
+      ? 'Gate: auto_pass (ejecutar directo con flash)'
+      : triage.gate === 'ask'
+        ? 'Gate: ASK — confirma antes: [cambiar a pro] [seguir flash] [dividir]'
+        : 'Gate: REQUIRED — tarea L0/dificultad 4, confirmacion obligatoria'
+    return text([
+      `Prompt Triage (DSH): dificultad ${triage.difficulty}/4`,
+      `Quest type: ${triage.quest_type} (conf ${triage.confidence}) | complejidad: ${triage.complexity} | L0: ${triage.is_l0} | AMBIGUO: ${triage.is_ambiguous}`,
+      triage.is_ambiguous ? 'Prompt abierto: Atlas complementa (interpreta + alternativas + planeacion minima) antes de clasificar.' : '',
+      `Modelo recomendado: ${triage.model} (tier ${triage.tier})`,
+      gateLine,
+      osmaHint ? `OSMA: ${osmaHint}` : 'OSMA: sin experiencias similares',
+    ].filter(Boolean).join('\n'))
+  },
+})
 
 export const name = 'argos-osma'
 export const inject = ['tools']
@@ -235,6 +371,54 @@ const episodeTool = defineTool({
   },
 })
 
+// ---------- argos_model_stats: telemetria de modelos (Fase 1) ----------
+// Lee .arnes/model-runs.jsonl (event log de telemetria, escrito por
+// cli/model-telemetry.ps1 en quest-done) y agrega por modelo.
+const modelStatsTool = defineTool({
+  name: 'argos_model_stats',
+  description: 'Telemetría de modelos (Fase 1): lee .arnes/model-runs.jsonl y agrega success rate, tokens y dificultades por modelo recomendado. Úsalo para saber qué modelo (flash/pro/highest) funciona mejor por quest type y presupuestar.',
+  parameters: {
+    cwd: { type: 'string', description: 'Ruta del proyecto (opcional)' },
+  },
+  output: {
+    schema: { type: 'string' },
+    render: (_args, value) => [{ type: 'text', text: value }],
+  },
+  async execute(args, exec) {
+    const root = resolveProjectRoot(args.cwd || (exec && exec.cwd) || process.cwd())
+    if (!root) return text('ARGOS: no hay proyecto ARNES aquí.')
+    const logFile = join(root, '.arnes', 'model-runs.jsonl')
+    if (!existsSync(logFile)) return text('Sin telemetría todavía: no existe .arnes/model-runs.jsonl. Se llena al cerrar quests (quest-done).')
+    let runs = []
+    try {
+      runs = readFileSync(logFile, 'utf8').split('\n').filter((l) => l.trim()).map((l) => { try { return JSON.parse(l) } catch { return null } }).filter(Boolean)
+    } catch {
+      return text(`ARGOS error leyendo ${logFile}`)
+    }
+    if (runs.length === 0) return text('model-runs.jsonl existe pero sin eventos.')
+    const byModel = {}
+    for (const r of runs) {
+      const key = `${r.model} [${r.route}]`
+      if (!byModel[key]) byModel[key] = { count: 0, pass: 0, fail: 0, tokens: 0, diffs: {} }
+      byModel[key].count++
+      if (r.verdict === 'PASS') byModel[key].pass++
+      else if (r.verdict) byModel[key].fail++
+      byModel[key].tokens += Number(r.tokens_used) || 0
+      const d = Number(r.difficulty) || 0
+      byModel[key].diffs[d] = (byModel[key].diffs[d] || 0) + 1
+    }
+    const lines = Object.entries(byModel)
+      .sort((a, b) => b[1].count - a[1].count)
+      .map(([model, v]) => {
+        const sr = v.count ? Math.round((v.pass / v.count) * 100) : 0
+        const avg = v.count ? Math.round(v.tokens / v.count) : 0
+        const dl = Object.keys(v.diffs).sort().map((d) => `D${d}x${v.diffs[d]}`).join(' ')
+        return `${model}: ${v.count} runs | ${sr}% success | avg ${avg} tok | ${dl}`
+      })
+    return text([`TELEMETRIA DE MODELOS (${runs.length} runs)`, ...lines].join('\n'))
+  },
+})
+
 // ---------- argos_scan: auto-identificación de proyectos ARGOS/OSMA ----------
 const scanTool = defineTool({
   name: 'argos_scan',
@@ -294,7 +478,7 @@ function installLearningHook(ctx) {
 }
 
 export function apply(ctx) {
-  for (const tool of [statusTool, saveTool, recallTool, expTool, expSearchTool, cueTool, episodeTool, scanTool]) {
+  for (const tool of [statusTool, saveTool, recallTool, expTool, expSearchTool, cueTool, episodeTool, scanTool, triageTool, modelStatsTool]) {
     ctx.tools.register(tool)
   }
   installLearningHook(ctx)

@@ -184,6 +184,8 @@ function Show-InteractiveChat {
     Write-Host '    /memory       estado de memoria' -ForegroundColor DarkGray
     Write-Host '    /models       ver catalogo de modelos' -ForegroundColor DarkGray
     Write-Host '    /status       estado del harness' -ForegroundColor DarkGray
+    Write-Host '    /triage-stats stats de dificultad -> modelo -> resultado' -ForegroundColor DarkGray
+    Write-Host '    /style        perfil de estilo del usuario (como responde Atlas)' -ForegroundColor DarkGray
     Write-Host '    /quit         salir' -ForegroundColor DarkGray
     Write-Host ''
 
@@ -319,6 +321,14 @@ function Show-InteractiveChat {
             '^\s*/status\s*$' {
                 Write-Host '  ARNES ARGOS - Estado' -ForegroundColor $theme.Primary
                 Write-Host "  Agentes: 16 · Memoria: arnes.db · Proceso: SDD/FDD/ADR" -ForegroundColor Green
+                continue
+            }
+            '^\s*/triage-stats\s*$' {
+                & (Join-Path $PSScriptRoot 'triage-stats.ps1')
+                continue
+            }
+            '^\s*/style\s*$' {
+                & (Join-Path $PSScriptRoot 'user-style.ps1') -Action profile
                 continue
             }
             default {

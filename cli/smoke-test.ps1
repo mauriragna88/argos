@@ -371,7 +371,7 @@ Check "loop-engine toggle-auto" "harness" {
 }
 
 Check "orchestrator integra repo-profile" "harness" {
-    $c = Run-Capture { & (Join-Path $ArnesRoot "cli\atlas-orchestrator.ps1") -Quest "test" -ArnesDir $ArnesDir }
+    $c = Run-Capture { & (Join-Path $ArnesRoot "cli\atlas-orchestrator.ps1") -Quest "crea un boton rojo en el header" -ArnesDir $ArnesDir }
     return ($c -match "Repo Profile")
 }
 
@@ -459,6 +459,110 @@ Check "9 agentes sin patron -join roto" "agents" {
         if ($c -match '-\s*join\s*"') { return $false }
     }
     return $true
+}
+
+# === USER STYLE (adaptacion de respuesta) ===
+Check "user-style existe" "harness" {
+    Test-Path (Join-Path $ArnesRoot "cli\user-style.ps1")
+}
+
+Check "user-style detect clasifica estilos" "harness" {
+    $c1 = Run-Capture { & (Join-Path $ArnesRoot "cli\user-style.ps1") -Action detect -Prompt "sigue adelante" -Json }
+    $c2 = Run-Capture { & (Join-Path $ArnesRoot "cli\user-style.ps1") -Action detect -Prompt "crea un formulario de login con validacion zod, manejo de errores, estado de carga, y tests con vitest, ademas integra el schema con supabase y haz que los mensajes de error sean accesibles" -Json }
+    return ($c1 -match '"primary":\s*"incremental"' -and $c2 -match '"primary":\s*"detallado"')
+}
+
+Check "user-style remember escribe en OSMA" "harness" {
+    $tmpArnes = Join-Path ([System.IO.Path]::GetTempPath()) ("arnes-style-" + [guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Path $tmpArnes -Force | Out-Null
+    try {
+        # OSMA real es global; el check verifica que remember no falla y detecta bien
+        $c = Run-Capture { & (Join-Path $ArnesRoot "cli\user-style.ps1") -Action remember -Prompt "ya hazlo rapido urgente" -Quiet -ArnesDir $tmpArnes }
+        # no debe imprimir nada (Quiet) - y no debe fallar
+        return ([string]::IsNullOrWhiteSpace($c))
+    } finally {
+        Remove-Item $tmpArnes -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Check "user-style recall devuelve perfil" "harness" {
+    $c = Run-Capture { & (Join-Path $ArnesRoot "cli\user-style.ps1") -Action recall -Prompt "sigue adelante" -Json }
+    return ($c -match '"current"' -and $c -match '"history"')
+}
+
+# === FASE 1 telemetria + DSH triage ===
+Check "model-telemetry existe" "harness" {
+    Test-Path (Join-Path $ArnesRoot "cli\model-telemetry.ps1")
+}
+
+Check "model-telemetry record ejecutable" "harness" {
+    $tmpArnes = Join-Path ([System.IO.Path]::GetTempPath()) ("arnes-tel-smoke-" + [guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Path $tmpArnes -Force | Out-Null
+    try {
+        $c = Run-Capture { & (Join-Path $ArnesRoot "cli\model-telemetry.ps1") -Action record -Agent vivi -Model opencode-go/deepseek-v4-flash -QuestId Q-999 -QuestType frontend -Difficulty 2 -TokensUsed 100 -Verdict PASS -ArnesDir $tmpArnes }
+        $log = Join-Path $tmpArnes "model-runs.jsonl"
+        return ($c -match "run registrado" -and (Test-Path $log))
+    } finally {
+        Remove-Item $tmpArnes -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Check "model-telemetry stats JSON valido" "harness" {
+    $tmpArnes = Join-Path ([System.IO.Path]::GetTempPath()) ("arnes-tel-smoke-" + [guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Path $tmpArnes -Force | Out-Null
+    try {
+        & (Join-Path $ArnesRoot "cli\model-telemetry.ps1") -Action record -Agent vivi -Model opencode-go/deepseek-v4-flash -QuestId Q-999 -QuestType frontend -Difficulty 2 -TokensUsed 100 -Verdict PASS -ArnesDir $tmpArnes | Out-Null
+        $c = Run-Capture { & (Join-Path $ArnesRoot "cli\model-telemetry.ps1") -Action stats -Json -ArnesDir $tmpArnes }
+        return ($c -match '"total"' -and $c -match 'success_pct')
+    } finally {
+        Remove-Item $tmpArnes -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Check "quest-done registra telemetria (hook F1)" "harness" {
+    $tmpArnes = Join-Path ([System.IO.Path]::GetTempPath()) ("arnes-telhook-" + [guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Path $tmpArnes -Force | Out-Null
+    try {
+        $env:ARNES_ARTIFACT_HMAC_KEY = "smoke-test-only-key"
+        # seed triage PENDING con difficulty 3 (como dejaria el detector)
+        Set-Content (Join-Path $tmpArnes "triage-log.jsonl") -Value '{"event":"triage","ts":"2026-08-17T19:30:00","prompt_type":"backend","difficulty":3,"signals":[],"similarity":{"hint":"","matched":false},"model_used":"opencode-go/deepseek-v4-pro","recommendation":"pro","user_decision":"auto","outcome":"PENDING","notes":"test"}' -Encoding UTF8
+        & (Join-Path $ArnesRoot "cli\loop-engine.ps1") -Action reset -ArnesDir $tmpArnes | Out-Null
+        & (Join-Path $ArnesRoot "cli\loop-engine.ps1") -Action start -Quest "crea api de pagos" -ArnesDir $tmpArnes | Out-Null
+        $state = Get-Content (Join-Path $tmpArnes "loop-state.json") -Raw | ConvertFrom-Json
+        $qid = $state.current_quest_id; $aid = $state.current_attempt_id
+        $fx = Join-Path ([System.IO.Path]::GetTempPath()) ("arnes-fix-" + [guid]::NewGuid().ToString("N"))
+        New-Item -ItemType Directory -Path $fx -Force | Out-Null
+        try {
+            $ev = Join-Path $fx "evidence.json"; $vd = Join-Path $fx "verdict.json"; $sc = Join-Path $fx "sam-counsel.json"; $ad = Join-Path $fx "atlas-decision.json"
+            @{ type="evidence_pack"; quest_id=$qid; attempt_id=$aid; quest_acceptance_criteria=@("t") } | ConvertTo-Json | Set-Content $ev -Encoding UTF8
+            @{ type="verdict"; quest_id=$qid; attempt_id=$aid; verdict="PASS" } | ConvertTo-Json | Set-Content $vd -Encoding UTF8
+            @{ type="sam_counsel"; quest_id=$qid; attempt_id=$aid; verdict="PASS"; recommendation=@{ action="finalize" } } | ConvertTo-Json -Depth 4 | Set-Content $sc -Encoding UTF8
+            @{ type="atlas_decision"; quest_id=$qid; attempt_id=$aid; decision="finalize"; rationale="smoke"; sam_counsel_path=$sc; counsel_action="finalize"; overrides_counsel=$false } | ConvertTo-Json -Depth 4 | Set-Content $ad -Encoding UTF8
+            . (Join-Path $ArnesRoot "cli\artifact-integrity.ps1")
+            @($ev,$vd,$sc,$ad) | ForEach-Object { Write-ArtifactHash $_ }
+            & (Join-Path $ArnesRoot "cli\loop-engine.ps1") -Action quest-done -Verdict PASS -AgentUsed vivi -TokensUsed 500 -EvidencePackPath $ev -AuditVerdictPath $vd -SamCounselPath $sc -AtlasDecisionPath $ad -ArnesDir $tmpArnes | Out-Null
+            $log = Join-Path $tmpArnes "model-runs.jsonl"
+            if (-not (Test-Path $log)) { return $false }
+            $content = Get-Content $log -Raw
+            return ($content -match 'deepseek-v4-pro' -and $content -match '"verdict":\s*"PASS"' -and $content -match '"difficulty":\s*3')
+        } finally {
+            Remove-Item $fx -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    } finally {
+        Remove-Item $tmpArnes -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Check "dsh argos-osma bundle valido (node --check)" "harness" {
+    $bundle = Join-Path $ArnesRoot "dsh\argos-osma\src\index.js"
+    if (-not (Test-Path $bundle)) { return $false }
+    $null = Run-Capture { node --check $bundle }
+    return ($LASTEXITCODE -eq 0)
+}
+
+Check "dsh argos_triage tool presente" "harness" {
+    $content = Get-Content (Join-Path $ArnesRoot "dsh\argos-osma\src\index.js") -Raw
+    return ($content -match "argos_triage" -and $content -match "argos_model_stats" -and $content -match "classifyPrompt")
 }
 
 # === Exit ===

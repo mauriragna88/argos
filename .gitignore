@@ -17,6 +17,8 @@
 .arnes/loop-state.json
 .arnes/circuit-breaker.json
 .arnes/backups/
+.arnes/triage-log.jsonl
+.arnes/model-runs.jsonl
 
 # ===== Credenciales OpenCode =====
 ~/.config/opencode/auth.json

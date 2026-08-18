@@ -97,6 +97,26 @@ if (-not $Quest) {
     exit 1
 }
 
+# Step 0.5: User Style (adaptacion de respuesta)
+$userStyleScript = Join-Path $ScriptDir "user-style.ps1"
+$styleInfo = $null
+if (Test-Path $userStyleScript) {
+    try {
+        $styleOut = & $userStyleScript -Action recall -Prompt $Quest -Json 2>$null
+        $styleInfo = ($styleOut -join "`n").Trim() | ConvertFrom-Json
+        if (-not $Json -and $styleInfo) {
+            Write-Host "  Step 0.5: User Style" -ForegroundColor Cyan
+            $styleLine = "  Estilo:   $($styleInfo.current)"
+            if ($styleInfo.current_secondary) { $styleLine += " + $($styleInfo.current_secondary)" }
+            Write-Host $styleLine -ForegroundColor Yellow
+            if ($styleInfo.history -and $styleInfo.history.Count -gt 0) {
+                Write-Host "  Aprendido: $($styleInfo.history -join ', ')" -ForegroundColor DarkGray
+            }
+            Write-Host ""
+        }
+    } catch {}
+}
+
 # Step 1: Detect quest type
 if (-not $Json) {
     Write-Host ""
@@ -108,6 +128,7 @@ if (-not $Json) {
     Write-Host "  Type:     $($questInfo.quest_type)" -ForegroundColor White
     Write-Host "  Party:    $($questInfo.suggested_party -join ', ')" -ForegroundColor White
     Write-Host "  L0:       $($questInfo.is_l0)" -ForegroundColor $(if ($questInfo.is_l0) { "Red" } else { "White" })
+    Write-Host "  Triage:   difficulty=$($questInfo.difficulty) | modelo=$($questInfo.recommended_model) (tier $($questInfo.model_tier)) | gate=$($questInfo.triage_gate)$(if ($questInfo.is_ambiguous) { " | AMBIGUO: Atlas complementa" }) " -ForegroundColor $(if ([int]$questInfo.difficulty -ge 3 -or $questInfo.is_ambiguous) { "Yellow" } else { "DarkGray" })
     Write-Host ""
 }
 
@@ -128,6 +149,9 @@ if ($resolvedGate -ne "off" -and -not $Json) {
         Write-Host ("║ {0,-41} ║" -f $costTxt) -ForegroundColor Yellow
         $l0Txt = "no"; if ($questInfo.is_l0) { $l0Txt = "sí" }
         Write-Host ("║ {0,-41} ║" -f (" Complejidad: $($questInfo.complexity) · L0: $l0Txt · Gate: $($rec.gate)")) -ForegroundColor White
+        $triageTxt = " Dificultad: $($questInfo.difficulty)/4 · Modelo rec.: $($questInfo.recommended_model)"
+        if ($triageTxt.Length -gt 41) { $triageTxt = $triageTxt.Substring(0, 38) + "..." }
+        Write-Host ("║ {0,-41} ║" -f $triageTxt) -ForegroundColor $(if ([int]$questInfo.difficulty -ge 3) { "Yellow" } else { "White" })
     } else {
         Write-Host ("║ {0,-41} ║" -f " (sin recommendation - detector sin -Recommend)") -ForegroundColor DarkGray
     }
@@ -150,11 +174,15 @@ if ($Json) {
 }
 
 # Gate decision: prompt or auto-proceed
+# Integra el Prompt Triage: triage_gate 'required' (L0/dificultad 4) y 'ask'
+# (dificultad 3) fuerzan confirmacion en modo auto; 'auto_pass' (1-2) ejecuta.
 $shouldPrompt = $false
 if ($resolvedGate -eq "always") {
     $shouldPrompt = $true
 } elseif ($resolvedGate -eq "auto") {
     if ($questInfo.recommendation -and $questInfo.recommendation.gate -eq "required") {
+        $shouldPrompt = $true
+    } elseif ($questInfo.triage_gate -in @("required","ask")) {
         $shouldPrompt = $true
     } else {
         Write-Host "  → Ejecutando (modo auto)" -ForegroundColor DarkGray
@@ -226,6 +254,15 @@ if ($questInfo.complexity -eq "boss") {
     $routeType = $questTypeLower
 }
 & $MR -Platform $Platform -Tier $Tier -QuestType $routeType -ArnesDir $ArnesDir | Out-Null
+
+# Prompt Triage: si el detector recomienda un tier mas alto que el CLI activo,
+# avisar (no bloquea; Atlas decide con informacion).
+if ($questInfo.model_tier -in @("pro","highest") -and $Tier -notin @("pro","highest")) {
+    Write-Host "  [TRIAGE] Detector recomienda $($questInfo.model_tier) ($($questInfo.recommended_model)) pero CLI va en tier '$Tier'." -ForegroundColor Yellow
+    Write-Host "           Considera: argos ... -Tier pro (o cambiar modelo en la sesion)." -ForegroundColor DarkGray
+} elseif ($questInfo.model_tier -eq "flash" -and $questInfo.difficulty -le 2) {
+    Write-Host "  [TRIAGE] Dificultad $($questInfo.difficulty)/4 -> flash es suficiente (economia)." -ForegroundColor DarkGray
+}
 Write-Host ""
 
 # Step 3: Start loop

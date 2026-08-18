@@ -22,7 +22,7 @@ argos init               -> inicializar proyecto
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('', 'menu', 'init', 'connect', 'connect-agent', 'configure', 'chat', 'status', 'stats', 'models', 'model', 'memory', 'osma-install', 'recommend', 'mode', 'doctor', 'verify', 'test-model', 'quest', 'party', 'xp', 'theme', 'code', 'opencode', 'target', 'goal', 'audit')]
+    [ValidateSet('', 'menu', 'init', 'connect', 'connect-agent', 'configure', 'chat', 'status', 'stats', 'triage-stats', 'style', 'models', 'model', 'memory', 'osma-install', 'recommend', 'mode', 'doctor', 'verify', 'test-model', 'quest', 'party', 'xp', 'theme', 'code', 'opencode', 'target', 'goal', 'audit')]
     [string]$Command = '',
 
     [Parameter(Position = 1)]
@@ -458,6 +458,23 @@ switch ($Command) {
     'chat' { Launch-Chat }
     'status' { Show-Status }
     'stats' { & (Join-Path $ScriptDir 'argos-stats.ps1') }
+    'triage-stats' { & (Join-Path $ScriptDir 'triage-stats.ps1') }
+    'style' {
+        $sub = if ($Args -and $Args.Count -gt 0) { $Args[0] } else { 'profile' }
+        if ($sub -in @('detect','remember','recall','profile')) {
+            $promptArg = ''
+            if ($Args.Count -gt 1) { $promptArg = ($Args[1..($Args.Count - 1)] -join ' ') }
+            if ($sub -eq 'profile') {
+                & (Join-Path $ScriptDir 'user-style.ps1') -Action profile
+            } elseif ($promptArg) {
+                & (Join-Path $ScriptDir 'user-style.ps1') -Action $sub -Prompt $promptArg
+            } else {
+                Write-Host "  Uso: argos style $sub \"<prompt>\"" -ForegroundColor Yellow
+            }
+        } else {
+            Write-Host "  Uso: argos style detect|remember|recall|profile \"<prompt>\"" -ForegroundColor Yellow
+        }
+    }
     'theme' {
         $cmd = if ($Args -and $Args.Count -gt 0) { $Args[0] } elseif ($Model) { $Model } else { 'list' }
         $name = if ($Args -and $Args.Count -gt 1) { $Args[1] } else { '' }

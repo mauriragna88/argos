@@ -189,6 +189,7 @@ function Show-InteractiveChat {
     Write-Host '    /skills       inventario de skills (Ragnarok)' -ForegroundColor DarkGray
     Write-Host '    /skills find  buscar skills externas' -ForegroundColor DarkGray
     Write-Host '    /allocate     Bran: party + modelo + presupuesto (datos reales)' -ForegroundColor DarkGray
+    Write-Host '    /contract     loop contracts por quest (limites de retry)' -ForegroundColor DarkGray
     Write-Host '    /quit         salir' -ForegroundColor DarkGray
     Write-Host ''
 
@@ -344,6 +345,10 @@ function Show-InteractiveChat {
             }
             '^\s*/allocate\s*$' {
                 & (Join-Path $PSScriptRoot 'argos-allocate.ps1') -Status
+                continue
+            }
+            '^\s*/contract\s*$' {
+                & (Join-Path $PSScriptRoot 'loop-contract.ps1') -Action list
                 continue
             }
             default {

@@ -94,6 +94,43 @@ Tywin opera en ciclo cerrado:
 [SAM] (recibe) Tywin verdict PASS. Procede a recommendation.
 ```
 
+## VERIFICATION LADDER (NUEVO 2026-08-17 - Fase 3)
+
+Tywin verifica en escalera de 6 niveles. El `verification_level` va SIEMPRE en el verdict:
+
+| Nivel | Nombre | Que verifica | Ejemplo de evidencia |
+|---|---|---|---|
+| **L1** | STATIC | Sintaxis, tipos, lint, estructura | `tsc --noEmit` pasa, sin `any` |
+| **L2** | MECHANICAL | Comportamiento mecanico: schemas, mocks, contracts | `zod` schema valida input, contrato API cumple |
+| **L3** | BEHAVIORAL | Tests unitarios/integración del comportamiento | test del bug pasa, suite verde |
+| **L4** | QUEST | El quest original esta satisfecho end-to-end | acceptance criteria del LOOP CONTRACT cumplidas |
+| **L5** | ADVERSARIAL | Prueba adversarial (edge cases, seguridad, romperlo) | RLS bypass intent falla, caso borde cubierto |
+| **L6** | REGRESSION | Los guards/regressions del dominio siguen verdes | suite de regresiones del dominio pasa |
+
+**Regla**: si existe forma determinista de verificar (L1/L2 ejecutables, test L3), Tywin
+NO puede dar PASS solo por inspección LLM — debe citar el comando/evidencia ejecutada
+(`evidence_command`). Cuanto mas profundo el nivel alcanzado, mas solido el PASS.
+
+### Nivel minimo por quest type
+
+| Quest type | Nivel minimo para PASS |
+|---|---|
+| trivial / fix acotado | L1 + L3 (test del fix) |
+| frontend / backend | L1 + L2 + L3 |
+| architecture | L1 + L4 (quest completo) + ADR |
+| L0 (produccion/RLS/deploy) | L1 + L2 + L3 + **L5** (adversarial security) |
+
+### Ejemplo en verdict JSON
+```json
+{
+  "type": "verdict",
+  "quest_id": "Q-040",
+  "verdict": "PASS",
+  "verification_level": "L3",
+  "evidence_command": "npx vitest run --testNamePattern='bug-404'"
+}
+```
+
 ## Criterios PASS / FAIL Concretos
 
 Tywin evalua contra checklist explicito segun el tipo de quest. **PASS = todos los checks pasan. FAIL = al menos uno falla**.
@@ -200,6 +237,8 @@ Tywin NO incluye codigo, diffs, asignacion de agente ni prioridades. Varys retra
   "quest_id": "Q-022",
   "verdict": "PASS | FAIL_PARTIAL | FAIL_TOTAL",
   "quest_type": "frontend | backend | fix | architecture | L0",
+  "verification_level": "L1 | L2 | L3 | L4 | L5 | L6",
+  "evidence_command": "comando determinista ejecutado (si aplica)",
   "checks": [
     {"category": "typescript_strict", "status": "PASS", "evidence": "tipos revisados con read"},
     {"category": "loading_state", "status": "PASS", "evidence": "LoginForm.tsx:18 Spinner component"},

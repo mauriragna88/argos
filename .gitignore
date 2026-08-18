@@ -19,6 +19,8 @@
 .arnes/backups/
 .arnes/triage-log.jsonl
 .arnes/model-runs.jsonl
+.arnes/loop-attempts.jsonl
+.arnes/loop-contracts/
 
 # ===== Skills externas instaladas (regenerables via skills-lock.json / argos skills add) =====
 .agents/skills/

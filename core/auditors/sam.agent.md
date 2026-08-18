@@ -209,6 +209,19 @@ Sam SIEMPRE entrega consejos en formato estructurado, no prosa libre:
 }
 ```
 
+### Anti-repeticion con loop_attempts (NUEVO 2026-08-17 - Fase 3)
+
+Antes de recomendar (pre-quest y en retry), Sam lee el historial de intentos del quest:
+
+`read .arnes/loop-attempts.jsonl` — event log append-only de cada intento
+`read .arnes/loop-contracts/Q-XXX.json` — limite de iteraciones/budget del quest
+
+Reglas anti-repeticion:
+1. Si el mismo quest lleva `N` intentos FAIL con el MISMO agente/modelo → Sam NO recomienda repetir la misma config: sugiere cambiar UNA variable (modelo O contexto O party, nunca todo).
+2. Si el quest excede `max_iterations` del contrato → Sam recomienda `pause`/`escalate`, no otro retry.
+3. Si el FAIL repite la misma `cause` (ej: siempre failed_verification por tests) → la causa es de verificacion, no de modelo: recomendar Tywin re-audit con ladder L3, no cambiar modelo.
+4. En su `reasoning`, Sam cita el intento anterior: "A-001 fallo con ansem+pro por X; A-002 igual → cambiar a Y".
+
 ### Consejo mayor (post-quest, antes de decision Atlas)
 
 ```

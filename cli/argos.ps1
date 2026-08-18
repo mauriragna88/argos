@@ -22,7 +22,7 @@ argos init               -> inicializar proyecto
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('', 'menu', 'init', 'connect', 'connect-agent', 'configure', 'chat', 'status', 'stats', 'triage-stats', 'style', 'skills', 'allocate', 'models', 'model', 'memory', 'osma-install', 'recommend', 'mode', 'doctor', 'verify', 'test-model', 'quest', 'party', 'xp', 'theme', 'code', 'opencode', 'target', 'goal', 'audit')]
+    [ValidateSet('', 'menu', 'init', 'connect', 'connect-agent', 'configure', 'chat', 'status', 'stats', 'triage-stats', 'style', 'skills', 'allocate', 'contract', 'models', 'model', 'memory', 'osma-install', 'recommend', 'mode', 'doctor', 'verify', 'test-model', 'quest', 'party', 'xp', 'theme', 'code', 'opencode', 'target', 'goal', 'audit')]
     [string]$Command = '',
 
     [Parameter(Position = 1)]
@@ -473,6 +473,22 @@ switch ($Command) {
             }
         } else {
             Write-Host "  Uso: argos style detect|remember|recall|profile \"<prompt>\"" -ForegroundColor Yellow
+        }
+    }
+    'contract' {
+        # argos contract list | get | check
+        $sub = if ($Args -and $Args.Count -gt 0) { $Args[0] } else { 'list' }
+        switch ($sub) {
+            'list'  { & (Join-Path $ScriptDir 'loop-contract.ps1') -Action list }
+            'get'   {
+                $qid = if ($Args.Count -gt 1) { $Args[1] } else { '' }
+                & (Join-Path $ScriptDir 'loop-contract.ps1') -Action get -QuestId $qid
+            }
+            'check' {
+                $qid = if ($Args.Count -gt 1) { $Args[1] } else { '' }
+                & (Join-Path $ScriptDir 'loop-contract.ps1') -Action check -QuestId $qid
+            }
+            default { Write-Host '  Uso: argos contract list | get [Q-XXX] | check [Q-XXX]' -ForegroundColor Yellow }
         }
     }
     'allocate' {

@@ -232,6 +232,17 @@ function Start-Quest($state, $questText) {
     $state.current_attempt_id = "A-001"
     $state.attempt_count = 1
 
+    # FASE 3: crear LOOP CONTRACT al iniciar el quest (si no existe ya)
+    try {
+        $contractScript = Join-Path $PSScriptRoot "loop-contract.ps1"
+        if (Test-Path $contractScript) {
+            $contractFile = Join-Path $ArnesDir (Join-Path "loop-contracts" "$($state.current_quest_id).json")
+            if (-not (Test-Path $contractFile)) {
+                $null = & $contractScript -Action create -QuestId $state.current_quest_id -Prompt $questText -ArnesDir $ArnesDir 2>&1
+            }
+        }
+    } catch {}
+
     return $state
 }
 
@@ -317,6 +328,25 @@ function Quest-Done($state, $questId, $verdict, $agent, $tokens, $evidencePath, 
 
     # Prompt Triage: cerrar el outcome PENDING con el veredicto real
     Update-TriageOutcome $questId $verdict $agent
+
+    # FASE 3: registrar loop_attempt (event log .arnes/loop-attempts.jsonl)
+    try {
+        $attemptLog = Join-Path $ArnesDir "loop-attempts.jsonl"
+        if (-not (Test-Path $ArnesDir)) { New-Item -ItemType Directory -Path $ArnesDir -Force | Out-Null }
+        $attempt = [ordered]@{
+            event = "loop_attempt"
+            ts = (Get-Date).ToString("o")
+            quest_id = $questId
+            attempt = $state.current_attempt_id
+            attempt_number = [int]$state.attempt_count
+            verdict = $verdict
+            agent = $agent
+            tokens_used = $tokens
+            cause = if ($verdict -eq "PASS") { "success" } else { "failed_verification" }
+            remediation = if ($verdict -eq "PASS") { $null } else { "re-audit_by_tywin (ver remediation brief)" }
+        } | ConvertTo-Json -Compress
+        Add-Content -LiteralPath $attemptLog -Value $attempt -Encoding UTF8
+    } catch {}
 
     # FASE 1 Telemetria: registrar run de modelo (event log .arnes/model-runs.jsonl)
     try {

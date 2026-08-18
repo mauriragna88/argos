@@ -467,6 +467,78 @@ Check "9 agentes sin patron -join roto" "agents" {
     return $true
 }
 
+# === FASE 3: LOOP CONTRACT + LADDER ===
+Check "loop-contract existe" "harness" {
+    Test-Path (Join-Path $ArnesRoot "cli\loop-contract.ps1")
+}
+
+Check "loop-contract create/get/list" "harness" {
+    $tmpArnes = Join-Path ([System.IO.Path]::GetTempPath()) ("arnes-lc-" + [guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Path $tmpArnes -Force | Out-Null
+    try {
+        $c = Run-Capture { & (Join-Path $ArnesRoot "cli\loop-contract.ps1") -Action create -QuestId Q-900 -Prompt "crea una api con auth y rls" -ArnesDir $tmpArnes -Json }
+        $g = Run-Capture { & (Join-Path $ArnesRoot "cli\loop-contract.ps1") -Action get -QuestId Q-900 -ArnesDir $tmpArnes -Json }
+        return ($c -match '"type":\s*"loop_contract"' -and $g -match 'acceptance_criteria')
+    } finally {
+        Remove-Item $tmpArnes -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Check "loop-contract check detecta fuera de limites" "harness" {
+    $tmpArnes = Join-Path ([System.IO.Path]::GetTempPath()) ("arnes-lc2-" + [guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Path $tmpArnes -Force | Out-Null
+    try {
+        & (Join-Path $ArnesRoot "cli\loop-contract.ps1") -Action create -QuestId Q-901 -Prompt "test" -MaxIterations 2 -TokenBudget 1000 -ArnesDir $tmpArnes | Out-Null
+        $ok = Run-Capture { & (Join-Path $ArnesRoot "cli\loop-contract.ps1") -Action check -QuestId Q-901 -Attempt 1 -TokensUsed 500 -ArnesDir $tmpArnes -Json }
+        $over = Run-Capture { & (Join-Path $ArnesRoot "cli\loop-contract.ps1") -Action check -QuestId Q-901 -Attempt 3 -TokensUsed 5000 -ArnesDir $tmpArnes -Json }
+        return ($ok -match '"within_limits":\s*true' -and $over -match '"within_limits":\s*false')
+    } finally {
+        Remove-Item $tmpArnes -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Check "quest-done registra loop_attempt" "harness" {
+    $tmpArnes = Join-Path ([System.IO.Path]::GetTempPath()) ("arnes-la-" + [guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Path $tmpArnes -Force | Out-Null
+    try {
+        $env:ARNES_ARTIFACT_HMAC_KEY = "smoke-test-only-key"
+        & (Join-Path $ArnesRoot "cli\loop-engine.ps1") -Action reset -ArnesDir $tmpArnes | Out-Null
+        & (Join-Path $ArnesRoot "cli\loop-engine.ps1") -Action start -Quest "crea boton" -ArnesDir $tmpArnes | Out-Null
+        $state = Get-Content (Join-Path $tmpArnes "loop-state.json") -Raw | ConvertFrom-Json
+        $qid = $state.current_quest_id; $aid = $state.current_attempt_id
+        $fx = Join-Path ([System.IO.Path]::GetTempPath()) ("arnes-lafx-" + [guid]::NewGuid().ToString("N"))
+        New-Item -ItemType Directory -Path $fx -Force | Out-Null
+        try {
+            $ev = Join-Path $fx "evidence.json"; $vd = Join-Path $fx "verdict.json"; $sc = Join-Path $fx "sam-counsel.json"; $ad = Join-Path $fx "atlas-decision.json"
+            @{ type="evidence_pack"; quest_id=$qid; attempt_id=$aid; quest_acceptance_criteria=@("t") } | ConvertTo-Json | Set-Content $ev -Encoding UTF8
+            @{ type="verdict"; quest_id=$qid; attempt_id=$aid; verdict="PASS" } | ConvertTo-Json | Set-Content $vd -Encoding UTF8
+            @{ type="sam_counsel"; quest_id=$qid; attempt_id=$aid; verdict="PASS"; recommendation=@{ action="finalize" } } | ConvertTo-Json -Depth 4 | Set-Content $sc -Encoding UTF8
+            @{ type="atlas_decision"; quest_id=$qid; attempt_id=$aid; decision="finalize"; rationale="smoke"; sam_counsel_path=$sc; counsel_action="finalize"; overrides_counsel=$false } | ConvertTo-Json -Depth 4 | Set-Content $ad -Encoding UTF8
+            . (Join-Path $ArnesRoot "cli\artifact-integrity.ps1")
+            @($ev,$vd,$sc,$ad) | ForEach-Object { Write-ArtifactHash $_ }
+            & (Join-Path $ArnesRoot "cli\loop-engine.ps1") -Action quest-done -Verdict PASS -AgentUsed vivi -TokensUsed 800 -EvidencePackPath $ev -AuditVerdictPath $vd -SamCounselPath $sc -AtlasDecisionPath $ad -ArnesDir $tmpArnes | Out-Null
+            $log = Join-Path $tmpArnes "loop-attempts.jsonl"
+            if (-not (Test-Path $log)) { return $false }
+            $content = Get-Content $log -Raw
+            return ($content -match "loop_attempt" -and $content -match '"verdict":\s*"PASS"')
+        } finally {
+            Remove-Item $fx -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    } finally {
+        Remove-Item $tmpArnes -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Check "tywin tiene verification ladder" "harness" {
+    $content = Get-Content (Join-Path $ArnesRoot "core\auditors\tywin.agent.md") -Raw
+    return ($content -match "VERIFICATION LADDER" -and $content -match "verification_level" -and $content -match "L5")
+}
+
+Check "sam usa loop_attempts anti-repeticion" "harness" {
+    $content = Get-Content (Join-Path $ArnesRoot "core\auditors\sam.agent.md") -Raw
+    return ($content -match "loop-attempts.jsonl" -and $content -match "Anti-repeticion")
+}
+
 # === BRAN ALLOCATE (datos reales) ===
 Check "argos-allocate existe" "harness" {
     Test-Path (Join-Path $ArnesRoot "cli\argos-allocate.ps1")

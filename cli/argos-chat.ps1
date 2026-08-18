@@ -188,6 +188,7 @@ function Show-InteractiveChat {
     Write-Host '    /style        perfil de estilo del usuario (como responde Atlas)' -ForegroundColor DarkGray
     Write-Host '    /skills       inventario de skills (Ragnarok)' -ForegroundColor DarkGray
     Write-Host '    /skills find  buscar skills externas' -ForegroundColor DarkGray
+    Write-Host '    /allocate     Bran: party + modelo + presupuesto (datos reales)' -ForegroundColor DarkGray
     Write-Host '    /quit         salir' -ForegroundColor DarkGray
     Write-Host ''
 
@@ -339,6 +340,10 @@ function Show-InteractiveChat {
             }
             '^\s*/skills\s+find\s+(.+)$' {
                 & (Join-Path $PSScriptRoot 'argos-skills.ps1') -Action find -Query $Matches[1]
+                continue
+            }
+            '^\s*/allocate\s*$' {
+                & (Join-Path $PSScriptRoot 'argos-allocate.ps1') -Status
                 continue
             }
             default {

@@ -22,11 +22,21 @@ Ver el estado real del proyecto y el harness con números, no con intuiciones.
 1. **RECALL**: `read .arnes/memory/export/atlas-memory.jsonl` — historial de quests
    `read .arnes/memory/export/*.jsonl` — estado del cerebro
    `read .arnes/graph/edges.jsonl` — mapa de relaciones
-2. **Analizar repo**: estructura, archivos, dead code (exports no usados, archivos huérfanos)
-3. **Calcular % completado**: basado en tasks del change activo (tasks.md) o hitos
-4. **Detectar oportunidades**: agente sub-utilizado, skill faltante, mejora de proceso
-5. **Emitir reporte**: números concretos + recomendación
-6. **GUARDAR**: `write` una linea en `.arnes/memory/export/bran-memory.jsonl` (topic `bran/completion-history`, type `discovery`)
+2. **ALLOCATE (TURN 0.5, con datos reales 2026-08-17)**: antes de todo Party Select,
+   Bran corre el comando real y decide con evidencia:
+   `pwsh cli/argos-allocate.ps1 -Prompt "<quest>"`  (o `argos allocate "<quest>"`)
+   → combina quest-detector (tipo/dificultad/L0) + telemetría de modelos
+   (success_rate real por quest_type en `.arnes/model-runs.jsonl`) + presupuesto
+   (weekly_tokens_remaining de quest-ledger) y emite:
+   `{ party_size, members, model_tier, estimated_cost, budget_ok, best_model }`
+   La telemetría INFORMA la elección de modelo, pero NUNCA baja el piso del
+   protocolo: L0/dificultad 3+ exigen mínimo pro/highest.
+3. **Analizar repo**: estructura, archivos, dead code (exports no usados, archivos huérfanos)
+4. **Calcular % completado**: basado en tasks del change activo (tasks.md) o hitos
+5. **Detectar oportunidades**: agente sub-utilizado, skill faltante, mejora de proceso
+6. **Emitir reporte**: números concretos + recomendación
+7. **GUARDAR**: `write` una linea en `.arnes/memory/export/bran-memory.jsonl` (topic `bran/completion-history`, type `discovery`)
+   + el resultado del allocate (topic `bran/allocate-history`)
 
 ## Output esperado
 - Reporte con % completado, dead code, growth hint (qué agente/skill usar más)

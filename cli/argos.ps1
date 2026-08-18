@@ -22,7 +22,7 @@ argos init               -> inicializar proyecto
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('', 'menu', 'init', 'connect', 'connect-agent', 'configure', 'chat', 'status', 'stats', 'triage-stats', 'style', 'skills', 'models', 'model', 'memory', 'osma-install', 'recommend', 'mode', 'doctor', 'verify', 'test-model', 'quest', 'party', 'xp', 'theme', 'code', 'opencode', 'target', 'goal', 'audit')]
+    [ValidateSet('', 'menu', 'init', 'connect', 'connect-agent', 'configure', 'chat', 'status', 'stats', 'triage-stats', 'style', 'skills', 'allocate', 'models', 'model', 'memory', 'osma-install', 'recommend', 'mode', 'doctor', 'verify', 'test-model', 'quest', 'party', 'xp', 'theme', 'code', 'opencode', 'target', 'goal', 'audit')]
     [string]$Command = '',
 
     [Parameter(Position = 1)]
@@ -473,6 +473,18 @@ switch ($Command) {
             }
         } else {
             Write-Host "  Uso: argos style detect|remember|recall|profile \"<prompt>\"" -ForegroundColor Yellow
+        }
+    }
+    'allocate' {
+        # argos allocate "<quest>" | argos allocate -Status
+        if ($Model -eq 'status' -or ($Args -and $Args[0] -eq 'status')) {
+            & (Join-Path $ScriptDir 'argos-allocate.ps1') -Status
+        } elseif ($Model) {
+            & (Join-Path $ScriptDir 'argos-allocate.ps1') -Prompt $Model
+        } elseif ($Args -and $Args.Count -gt 0) {
+            & (Join-Path $ScriptDir 'argos-allocate.ps1') -Prompt ($Args -join ' ')
+        } else {
+            Write-Host '  Uso: argos allocate "<quest>" | argos allocate status' -ForegroundColor Yellow
         }
     }
     'skills' {

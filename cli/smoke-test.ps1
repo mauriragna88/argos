@@ -467,6 +467,31 @@ Check "9 agentes sin patron -join roto" "agents" {
     return $true
 }
 
+# === BRAN ALLOCATE (datos reales) ===
+Check "argos-allocate existe" "harness" {
+    Test-Path (Join-Path $ArnesRoot "cli\argos-allocate.ps1")
+}
+
+Check "argos-allocate emite recomendacion" "harness" {
+    $c = Run-Capture { & (Join-Path $ArnesRoot "cli\argos-allocate.ps1") -Prompt "crea una api con auth" -Json }
+    return ($c -match '"party_size"' -and $c -match '"budget_ok"' -and $c -match '"model_tier"')
+}
+
+Check "argos-allocate respeta piso L0 (tier pro/highest)" "harness" {
+    $c = Run-Capture { & (Join-Path $ArnesRoot "cli\argos-allocate.ps1") -Prompt "deploy a produccion con migracion de rls" -Json }
+    return ($c -match '"model_tier":\s*"(pro|highest)"')
+}
+
+Check "bran-vision skill usa allocate real" "harness" {
+    $content = Get-Content (Join-Path $ArnesRoot "core\skills\v2\bran-vision\SKILL.md") -Raw
+    return ($content -match "argos-allocate.ps1" -and $content -match "ALLOCATE")
+}
+
+Check "quina-ledger skill usa telemetria" "harness" {
+    $content = Get-Content (Join-Path $ArnesRoot "core\skills\v2\quina-ledger\SKILL.md") -Raw
+    return ($content -match "model-telemetry.ps1")
+}
+
 # === RAGNAROK (skills externas) ===
 Check "argos-skills existe" "harness" {
     Test-Path (Join-Path $ArnesRoot "cli\argos-skills.ps1")

@@ -21,11 +21,17 @@ El departamento de finanzas del arnes: que los tokens alcancen todo el mes.
 ## Pasos (procedimiento PROPIO del arnes)
 1. **RECALL**: `read .arnes/memory/export/atlas-memory.jsonl` — quests con tokens_used
    (`read .arnes/memory/export/*.jsonl` si necesitas el historial completo)
-2. **Calcular**: gasto total, gasto por agente, gasto por tipo de quest, tendencia
-3. **Comparar con budget**: config.json (si hay budget semanal/mensual)
-4. **Emitir alerta**: 🟢 sano (gasto < 50%), 🟡 ojo (< 80%), 🔴 crítico (> 80%)
-5. **Recomendar**: qué ajustar (agente más barato, menos quests, etc.)
-6. **GUARDAR**: `write` una linea en `.arnes/memory/export/quina-memory.jsonl` (topic `quina/token-spent`, type `pattern`)
+2. **TELEMETRIA (2026-08-17)**: para presupuestar con datos reales, leer el costo
+   y rendimiento por modelo:
+   `pwsh cli/model-telemetry.ps1 -Action stats`  → tokens y success por modelo
+   `pwsh cli/argos-allocate.ps1 -Status`         → presupuesto semanal + resumen
+   Con esto Quina sabe NO solo cuánto se gastó, sino qué modelo gasta más/menos
+   por quest_type (para recomendar ahorro con evidencia, no intuición).
+3. **Calcular**: gasto total, gasto por agente, gasto por tipo de quest, tendencia
+4. **Comparar con budget**: config.json (si hay budget semanal/mensual)
+5. **Emitir alerta**: 🟢 sano (gasto < 50%), 🟡 ojo (< 80%), 🔴 crítico (> 80%)
+6. **Recomendar**: qué ajustar (agente más barato, modelo con mejor success/token, menos quests, etc.)
+7. **GUARDAR**: `write` una linea en `.arnes/memory/export/quina-memory.jsonl` (topic `quina/token-spent`, type `pattern`)
 
 ## Output esperado
 - Reporte de gasto con semáforo y recomendación de ahorro

@@ -102,6 +102,14 @@ $parties = @{
 }
 $suggestedParty = $parties[$bestType]
 
+# === Auron auto-join (SEGURIDAD): RLS/security keywords -> Auron al party ===
+# Misma regla que argos-party.ps1: si el quest toca auth/RLS/secrets/deploy,
+# Auron entra al party sugerido (consistencia detector <-> ejecucion).
+$securityKeywords = 'auth|login|password|token|secret|rls|row.level|supabase.*policy|apikey|api.key|ssl|https|cors|sanitize|inyeccion|injection|deploy|produccion|production|permisos|roles|encrypt|hash|migracion|migración|rollback'
+if ($promptLower -match $securityKeywords -and $suggestedParty -notcontains 'auron') {
+    $suggestedParty = @($suggestedParty) + @('auron')
+}
+
 # === Complexity heuristic ===
 $promptLen = $Prompt.Length
 $complexity = "simple"

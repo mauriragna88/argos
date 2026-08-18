@@ -267,6 +267,12 @@ Check "quest-detector ejecutable" "harness" {
     return ($c -match "quest_type")
 }
 
+Check "quest-detector Auron entra con RLS/security" "harness" {
+    $c = Run-Capture { & (Join-Path $ArnesRoot "cli\quest-detector.ps1") -Prompt "crea una api con auth y rls en supabase" -Json -NoLog }
+    $c2 = Run-Capture { & (Join-Path $ArnesRoot "cli\quest-detector.ps1") -Prompt "crea un boton rojo" -Json -NoLog }
+    return ($c -match "auron" -and $c2 -notmatch "auron")
+}
+
 Check "model-router ejecutable" "harness" {
     $c = Run-Capture { & (Join-Path $ArnesRoot "cli\model-router.ps1") -Platform opencode -Tier pro -QuestType frontend -ArnesDir $ArnesDir }
     return ($c -match "MODEL ROUTER")

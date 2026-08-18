@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildAgentCatalog } from "../../pi/extensions/argos-party.js";
 import { loadAgentModels, resolveModel } from "../../pi/extensions/argos-model-router.js";
-import { discoverSkills } from "../../pi/extensions/argos-skills.js";
+import { discoverSkills, readSkillFrontmatter } from "../../pi/extensions/argos-skills.js";
 import { existsSync, readFileSync } from "node:fs";
 import { join as joinPath } from "node:path";
 
@@ -37,6 +37,33 @@ test("discoverSkills: encuentra role-skills ARGOS y superpowers (si estan instal
   if (existsSync(SP_ROOT)) {
     assert.ok(skills.some((s) => s.name === "systematic-debugging"));
   }
+});
+
+test("discoverSkills: progressive disclosure expone metadata sin cargar el cuerpo", () => {
+  const skills = discoverSkills(REPO);
+  const atlas = skills.find((s) => s.name === "argos-atlas");
+  assert.ok(atlas, "argos-atlas con metadata");
+  assert.ok(atlas.description.length > 0, "description poblada desde frontmatter");
+  assert.ok(typeof atlas.trigger === "string", "trigger presente");
+  // la skill propia v2 usa descripcion YAML folded: debe resolverse
+  const vivi = skills.find((s) => s.name === "vivi-fireball");
+  if (vivi) assert.ok(vivi.description.length > 0, "vivi-fireball con folded description");
+});
+
+test("readSkillFrontmatter: parsea descripcion folded y single-line", () => {
+  const dir = mkdtempSync(join(tmpdir(), "argos-fm-"));
+  mkdirSync(join(dir, "s"), { recursive: true });
+  const folded = join(dir, "s", "folded.md");
+  writeFileSync(
+    folded,
+    "---\nname: folded\ndescription: >\n  Primera linea de la skill\n  Segunda linea con detalle\n---\n\n# Body\n## Propósito\n...\n"
+  );
+  const single = join(dir, "s", "single.md");
+  writeFileSync(single, "---\nname: single\ndescription: Use when x happens\n---\n\n# Body\n");
+  const a = readSkillFrontmatter(folded);
+  const b = readSkillFrontmatter(single);
+  assert.equal(a.description, "Primera linea de la skill Segunda linea con detalle");
+  assert.equal(b.description, "Use when x happens");
 });
 
 test("catalog: construye agentes desde fuentes canónicas", async () => {

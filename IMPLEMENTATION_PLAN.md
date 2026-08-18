@@ -83,6 +83,15 @@ Que el harness registre **qué modelo hizo qué, con qué resultado y a qué cos
 ### Objetivo concreto
 Construir el contexto óptimo del turno con presupuesto por fuente y scoring de utilidad, y estructurar los golden principles como fuente más del contexto.
 
+> **NOTA DE IMPLEMENTACIÓN (2026-08-17)**: implementado dentro de este repo sin tocar
+> el brain OSMA (extender `osma_context()` con budgets queda como extensión futura del
+> repo OSMA): `cli/argos-context.ps1` (compile con presupuesto por fuente + utility
+> score + degradación parcial, consumiendo `osma-memory recall`/`experience search`),
+> `.arnes/principles/` (6 archivos: general/architecture/frontend/backend/security/
+> testing), progressive disclosure de skills (`argos skills meta` + `readSkillFrontmatter`
+> en PI, `loadSkillContent` al activar), skill `bard-drift` (auditoría contra principios),
+> Step 1.7 en el orquestador y comandos `argos context` / `/context`. ADR-014/015/016.
+
 ### Componentes a tocar
 | Ruta | Cambio |
 |---|---|

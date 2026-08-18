@@ -10,17 +10,20 @@
 #   list [repo]       -> preview de skills de un repo (npx skills add --list)
 #   add <repo> <skill>-> instala UNA skill en .agents/skills/ (pide confirmacion)
 #   installed         -> skills instaladas en .agents/skills/ + propias core/skills/v2
+#   meta              -> metadata de skills (name/description/trigger) SIN cargar
+#                        el SKILL.md completo (progressive disclosure, Fase 2)
 #
 # Uso:
 #   .\cli\argos-skills.ps1 -Action find -Query "testing"
 #   .\cli\argos-skills.ps1 -Action list -Repo "obra/superpowers"
 #   .\cli\argos-skills.ps1 -Action add -Repo "obra/superpowers" -Skill "systematic-debugging"
 #   .\cli\argos-skills.ps1 -Action installed
+#   .\cli\argos-skills.ps1 -Action meta -Json
 
 #Requires -Version 5.1
 [CmdletBinding()]
 param(
-    [ValidateSet("find","list","add","installed")]
+    [ValidateSet("find","list","add","installed","meta")]
     [string]$Action = "find",
     [string]$Query = "",
     [string]$Repo = "",
@@ -39,10 +42,9 @@ if (-not $Root) {
 $skillsDir = Join-Path $Root ".agents\skills"
 $ownSkillsDir = Join-Path $Root "core\skills\v2"
 
-# Encoding-robust: UTF-8 antes del primer Write-Host
-if (-not $Json) {
-    try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
-}
+# Encoding-robust: UTF-8 antes de cualquier salida (humana o JSON).
+# Sin esto, -Json sale en OEM y los consumidores UTF-8 fallan al parsear.
+try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 
 function Invoke-Npx {
     param([string[]]$NpxArgs)
@@ -134,6 +136,73 @@ if ($Action -eq "add") {
     } else {
         Write-Host ""
         Write-Host "  [RAGNAROK] No se encontro SKILL.md en .agents/skills/$Skill - revisa la salida." -ForegroundColor Yellow
+    }
+    Write-Host ""
+    exit 0
+}
+
+# === META: metadata sin cargar SKILL.md (progressive disclosure) ===
+if ($Action -eq "meta") {
+    $all = @()
+    # propias core/skills/v2 + externas .agents/skills + pi/skills
+    $roots = @($ownSkillsDir, $skillsDir, (Join-Path $Root "pi\skills"))
+    foreach ($root in $roots) {
+        if (-not (Test-Path $root)) { continue }
+        $dirs = @(Get-ChildItem -Directory -Path $root | Where-Object { Test-Path (Join-Path $_.FullName "SKILL.md") })
+        foreach ($d in $dirs) {
+            $skPath = Join-Path $d.FullName "SKILL.md"
+            $meta = [ordered]@{ name = $d.Name; description = ""; trigger = ""; source = Split-Path $root -Leaf }
+            try {
+                # Solo frontmatter (bloque entre ---): nunca el cuerpo de la skill.
+                # Soporta YAML folded (description: > + lineas indentadas).
+                $head = Get-Content -LiteralPath $skPath -TotalCount 60 -Encoding UTF8
+                $inFm = $false
+                $curKey = $null
+                $foldBuf = @()
+                foreach ($line in $head) {
+                    if ($line -match '^---\s*$') {
+                        if ($inFm) { break }
+                        $inFm = $true
+                        continue
+                    }
+                    if (-not $inFm) { continue }
+                    if ($line -match '^\s{2,}(.+)$') {
+                        # linea indentada: continua el valor folded del key actual
+                        if ($curKey -and $foldBuf.Count -lt 6) { $foldBuf += $Matches[1].Trim() }
+                        continue
+                    }
+                    if ($line -match '^([a-zA-Z_]+):\s*(.*)$') {
+                        $curKey = $Matches[1].ToLower()
+                        $val = $Matches[2].Trim()
+                        if ($val -and $val -notin @('>','|','>-','|-')) {
+                            $meta[$curKey] = $val
+                            $foldBuf = @()
+                        } else {
+                            $foldBuf = @()
+                        }
+                        continue
+                    }
+                }
+                if ($foldBuf.Count -gt 0 -and $curKey -and $meta.Contains($curKey) -and -not $meta[$curKey]) {
+                    $meta[$curKey] = ($foldBuf -join ' ')
+                }
+                if (-not $meta.description) { $meta.description = "(sin description en frontmatter)" }
+            } catch {}
+            $all += $meta
+        }
+    }
+    if ($Json) {
+        @{ action = "meta"; count = $all.Count; skills = @($all) } | ConvertTo-Json -Depth 5
+        exit 0
+    }
+    Write-Host ""
+    Write-Host "  RAGNAROK - metadata de skills (progressive disclosure)" -ForegroundColor Cyan
+    Write-Host "  ====================================================" -ForegroundColor Cyan
+    Write-Host ("  {0} skills (solo metadata; SKILL.md se carga al activarse)" -f $all.Count) -ForegroundColor Yellow
+    foreach ($s in $all) {
+        Write-Host ("  - {0} [{1}]" -f $s.name, $s.source) -ForegroundColor White
+        if ($s.description) { Write-Host ("      {0}" -f $s.description) -ForegroundColor DarkGray }
+        if ($s.trigger) { Write-Host ("      trigger: {0}" -f $s.trigger) -ForegroundColor DarkGray }
     }
     Write-Host ""
     exit 0

@@ -191,6 +191,7 @@ function Show-InteractiveChat {
     Write-Host '    /allocate     Bran: party + modelo + presupuesto (datos reales)' -ForegroundColor DarkGray
     Write-Host '    /contract     loop contracts por quest (limites de retry)' -ForegroundColor DarkGray
     Write-Host '    /regression   guards de regresion (FAIL->fix permanente)' -ForegroundColor DarkGray
+    Write-Host '    /context      Context Compiler: contexto del turno por fuentes' -ForegroundColor DarkGray
     Write-Host '    /quit         salir' -ForegroundColor DarkGray
     Write-Host ''
 
@@ -354,6 +355,14 @@ function Show-InteractiveChat {
             }
             '^\s*/regression\s*$' {
                 & (Join-Path $PSScriptRoot 'regression.ps1') -Action list
+                continue
+            }
+            '^\s*/context\s*$' {
+                & (Join-Path $PSScriptRoot 'argos-context.ps1') -Action budgets
+                continue
+            }
+            '^\s*/context\s+(.+)$' {
+                & (Join-Path $PSScriptRoot 'argos-context.ps1') -Action compile -Prompt $Matches[1]
                 continue
             }
             default {

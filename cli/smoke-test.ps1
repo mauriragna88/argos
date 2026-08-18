@@ -522,6 +522,81 @@ Check "kuja y auron tienen regression factory" "harness" {
     return ($k -match "Regression Factory" -and $a -match "Regression Factory")
 }
 
+# === FASE 2: CONTEXT COMPILER ===
+Check "argos-context existe" "harness" {
+    Test-Path (Join-Path $ArnesRoot "cli\argos-context.ps1")
+}
+
+Check "argos-context compile emite JSON con budgets" "harness" {
+    $c = Run-Capture { & (Join-Path $ArnesRoot "cli\argos-context.ps1") -Action compile -Prompt "crea un boton rojo" -Json }
+    return ($c -match '"tokens_injected"' -and $c -match '"quest_type"' -and $c -match '"budgets"')
+}
+
+Check "argos-context respeta presupuestos por fuente" "harness" {
+    $c = Run-Capture { & (Join-Path $ArnesRoot "cli\argos-context.ps1") -Action compile -Prompt "crea una api con rls" -Json }
+    return ($c -match '"memory"' -and $c -match '"evidence"' -and $c -match '"tokens_used"')
+}
+
+Check "argos-context frontend != backend (principios por dominio)" "harness" {
+    $fe = Run-Capture { & (Join-Path $ArnesRoot "cli\argos-context.ps1") -Action compile -Prompt "crea un formulario de login" -Json }
+    $be = Run-Capture { & (Join-Path $ArnesRoot "cli\argos-context.ps1") -Action compile -Prompt "crea una api con rls en supabase" -Json }
+    return ($fe -match "frontend" -and $be -match "backend")
+}
+
+Check "argos-context degrada sin bloquear (ArnesDir vacio)" "harness" {
+    $tmpArnes = Join-Path ([System.IO.Path]::GetTempPath()) ("arnes-ctx-" + [guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Path $tmpArnes -Force | Out-Null
+    try {
+        $c = Run-Capture { & (Join-Path $ArnesRoot "cli\argos-context.ps1") -Action compile -Prompt "crea un boton rojo" -ArnesDir $tmpArnes -Json }
+        # sin .arnes de proyecto: memory/experience/evidence pueden ser 0 pero el compile sigue vivo
+        return ($c -match '"tokens_injected"' -and $c -match '"degradation"')
+    } finally {
+        Remove-Item $tmpArnes -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Check "principios existen (general + 5 dominios)" "harness" {
+    $pr = Join-Path $ArnesRoot ".arnes\principles"
+    $expected = @("general","architecture","frontend","backend","security","testing")
+    foreach ($e in $expected) {
+        if (-not (Test-Path (Join-Path $pr "$e.md"))) { return $false }
+    }
+    return $true
+}
+
+Check "bard-drift skill existe y usa argos-context" "harness" {
+    $sk = Join-Path $ArnesRoot "core\skills\v2\bard-drift\SKILL.md"
+    if (-not (Test-Path $sk)) { return $false }
+    $content = Get-Content $sk -Raw
+    return ($content -match "argos-context.ps1" -and $content -match "drift")
+}
+
+Check "argos-skills meta lista metadata sin cargar cuerpos" "harness" {
+    $c = Run-Capture { & (Join-Path $ArnesRoot "cli\argos-skills.ps1") -Action meta -Json }
+    return ($c -match '"action":\s*"meta"' -and $c -match '"description"' -and $c -match '"count"')
+}
+
+Check "orquestador integra Step 1.7 Context Compile" "harness" {
+    $c = Run-Capture { & (Join-Path $ArnesRoot "cli\atlas-orchestrator.ps1") -Quest "crea un boton rojo en el header" -ArnesDir $ArnesDir }
+    return ($c -match "Step 1.7" -and $c -match "Context Compile")
+}
+
+Check "argos.ps1 parsea sin errores (handlers con <prompt>)" "harness" {
+    # parsea el script completo SIN ejecutarlo: detecta strings rotos como
+    # '"\"<prompt>\""' que rompen todo argos.ps1 (regresion del handler style)
+    try {
+        $null = [scriptblock]::Create((Get-Content (Join-Path $ArnesRoot "cli\argos.ps1") -Raw))
+        return $true
+    } catch {
+        return $false
+    }
+}
+
+Check "argos context via CLI wrapper" "harness" {
+    $c = Run-Capture { & (Join-Path $ArnesRoot "cli\argos.ps1") context "crea un boton rojo" }
+    return ($c -match "CONTEXT COMPILER" -and $c -match "tokens inyectados|Tokens inyectados")
+}
+
 # === FASE 3: LOOP CONTRACT + LADDER ===
 Check "loop-contract existe" "harness" {
     Test-Path (Join-Path $ArnesRoot "cli\loop-contract.ps1")

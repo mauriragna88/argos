@@ -37,6 +37,16 @@ Bard domina:
 | **Epic Poem** | 3 | 50HP (refactor mayor) | 5K tkns | ballad x2 | module redesign |
 | **Song of Stories** | 4 | 35HP (DX improvement) | 3K tkns | ballad x2 | dev workflow |
 | **Legend** | 5 | 100HP (tech debt payoff) | 12K tkns | epic+legend | full cleanup |
+| **Drift Scan** (bard-drift) | 2 | 20HP (principle drift) | 1K tkns | nada | post-quest PASS / code review |
+
+### Drift Scan — Golden Principles audit (Fase 2)
+```
+Bard lanza Drift Scan (skill bard-drift):
+  - Compila contexto: argos-context (sabe que principios aplican)
+  - Revisa el diff contra .arnes/principles/ (general + dominio del quest)
+  - Clasifica drift: minor (no bloquea) / major (fix antes de cerrar) / critical (sube a Auron)
+  - Reporte: { quest_id, principles_checked, drifts[] } registrado en OSMA (bard/drift/*)
+```
 
 ### Refrain — Spell Signature
 ```

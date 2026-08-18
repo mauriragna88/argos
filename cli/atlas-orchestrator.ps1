@@ -132,6 +132,26 @@ if (-not $Json) {
     Write-Host ""
 }
 
+# Step 1.7: Context Compile (Fase 2 - presupuesto por fuente + utility)
+$contextScript = Join-Path $ScriptDir "argos-context.ps1"
+if (-not $Json -and (Test-Path $contextScript)) {
+    try {
+        Write-Host "  Step 1.7: Context Compile" -ForegroundColor Cyan
+        $ctxOut = (& $contextScript -Action compile -Prompt $Quest -QuestType $questInfo.quest_type -Json 2>$null) | Out-String
+        $ctx = $ctxOut.Trim() | ConvertFrom-Json
+        if ($ctx) {
+            Write-Host ("  Tokens inyectados: {0} (presupuesto por fuente)" -f $ctx.tokens_injected) -ForegroundColor Yellow
+            $ctxLine = @()
+            foreach ($s in $ctx.sources) {
+                if ($s.rows.Count -gt 0) { $ctxLine += "$($s.name):$($s.rows.Count)" }
+            }
+            if ($ctxLine.Count -gt 0) { Write-Host ("  Fuentes: {0}" -f ($ctxLine -join ' · ')) -ForegroundColor DarkGray }
+            if ($ctx.degradation.Count -gt 0) { Write-Host ("  Degradacion: {0}" -f ($ctx.degradation -join '; ')) -ForegroundColor Yellow }
+            Write-Host ""
+        }
+    } catch {}
+}
+
 # === Quest Recommendation Gate ===
 $gateCancelled = $false
 

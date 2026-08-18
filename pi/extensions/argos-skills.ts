@@ -10,6 +10,8 @@ export interface SkillInfo {
   source: string;
   hash: string;
   path: string;
+  description: string;
+  trigger: string;
 }
 
 const SP_ROOT = join(
@@ -23,6 +25,55 @@ const SP_ROOT = join(
   "skills"
 );
 
+/**
+ * Lee SOLO el frontmatter YAML de un SKILL.md (bloque entre ---).
+ * Progressive disclosure: el cuerpo completo se carga solo al activar la
+ * skill (loadSkillContent). Soporta descripciones YAML folded (>
+ * con lineas indentadas).
+ */
+export function readSkillFrontmatter(path: string): { description: string; trigger: string } {
+  const meta = { description: "", trigger: "" };
+  try {
+    const content = readFileSync(path, "utf-8");
+    const m = content.match(/^---\n([\s\S]*?)\n---/);
+    if (!m) return meta;
+    const fm = m[1];
+    let curKey: "description" | "trigger" | null = null;
+    const fold: string[] = [];
+    for (const line of fm.split("\n")) {
+      const folded = line.match(/^\s{2,}(.+)$/);
+      if (folded) {
+        if (curKey && fold.length < 6) fold.push(folded[1].trim());
+        continue;
+      }
+      const kv = line.match(/^([a-zA-Z_]+):\s*(.*)$/);
+      if (!kv) continue;
+      const key = kv[1].toLowerCase();
+      const val = kv[2].trim();
+      curKey = key === "description" || key === "trigger" ? key : null;
+      if (curKey && val && val !== ">" && val !== "|" && val !== ">-" && val !== "|-") {
+        meta[curKey] = val;
+        fold.length = 0;
+      }
+    }
+    if (curKey && fold.length > 0 && !meta[curKey]) {
+      meta[curKey] = fold.join(" ");
+    }
+  } catch {
+    // metadata nunca bloquea el discovery
+  }
+  return meta;
+}
+
+/** Carga el SKILL.md completo (al ACTIVAR la skill, no al listarla). */
+export function loadSkillContent(skill: SkillInfo): string {
+  try {
+    return readFileSync(skill.path, "utf-8");
+  } catch {
+    return "";
+  }
+}
+
 export function discoverSkills(cwd: string): SkillInfo[] {
   const out: SkillInfo[] = [];
   for (const root of [SP_ROOT, join(cwd, "core", "skills"), join(cwd, "pi", "skills")]) {
@@ -31,12 +82,20 @@ export function discoverSkills(cwd: string): SkillInfo[] {
       if (!d.isDirectory()) continue;
       const sk = join(root, d.name, "SKILL.md");
       if (!existsSync(sk)) continue;
-      const content = readFileSync(sk, "utf-8");
+      // Progressive disclosure: hash + metadata vienen del frontmatter (no del
+      // cuerpo completo). El SKILL.md entero solo se lee al activarse.
+      const meta = readSkillFrontmatter(sk);
+      const fmHash = createHash("sha1")
+        .update(`name=${d.name} description=${meta.description} trigger=${meta.trigger}`)
+        .digest("hex")
+        .slice(0, 12);
       out.push({
         name: d.name,
         source: basename(root),
-        hash: createHash("sha1").update(content).digest("hex").slice(0, 12),
+        hash: fmHash,
         path: sk,
+        description: meta.description,
+        trigger: meta.trigger,
       });
     }
   }

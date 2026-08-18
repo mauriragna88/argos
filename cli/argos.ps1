@@ -22,7 +22,7 @@ argos init               -> inicializar proyecto
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('', 'menu', 'init', 'connect', 'connect-agent', 'configure', 'chat', 'status', 'stats', 'triage-stats', 'style', 'skills', 'allocate', 'contract', 'regression', 'models', 'model', 'memory', 'osma-install', 'recommend', 'mode', 'doctor', 'verify', 'test-model', 'quest', 'party', 'xp', 'theme', 'code', 'opencode', 'target', 'goal', 'audit')]
+    [ValidateSet('', 'menu', 'init', 'connect', 'connect-agent', 'configure', 'chat', 'status', 'stats', 'triage-stats', 'style', 'skills', 'allocate', 'contract', 'regression', 'context', 'models', 'model', 'memory', 'osma-install', 'recommend', 'mode', 'doctor', 'verify', 'test-model', 'quest', 'party', 'xp', 'theme', 'code', 'opencode', 'target', 'goal', 'audit')]
     [string]$Command = '',
 
     [Parameter(Position = 1)]
@@ -469,10 +469,10 @@ switch ($Command) {
             } elseif ($promptArg) {
                 & (Join-Path $ScriptDir 'user-style.ps1') -Action $sub -Prompt $promptArg
             } else {
-                Write-Host "  Uso: argos style $sub \"<prompt>\"" -ForegroundColor Yellow
+                Write-Host ('  Uso: argos style {0} "<prompt>"' -f $sub) -ForegroundColor Yellow
             }
         } else {
-            Write-Host "  Uso: argos style detect|remember|recall|profile \"<prompt>\"" -ForegroundColor Yellow
+            Write-Host '  Uso: argos style detect|remember|recall|profile "<prompt>"' -ForegroundColor Yellow
         }
     }
     'regression' {
@@ -517,6 +517,18 @@ switch ($Command) {
             & (Join-Path $ScriptDir 'argos-allocate.ps1') -Prompt ($Args -join ' ')
         } else {
             Write-Host '  Uso: argos allocate "<quest>" | argos allocate status' -ForegroundColor Yellow
+        }
+    }
+    'context' {
+        # argos context "<quest>" | budgets
+        if ($Args -and $Args.Count -gt 0 -and $Args[0] -eq 'budgets') {
+            & (Join-Path $ScriptDir 'argos-context.ps1') -Action budgets
+        } elseif ($Model) {
+            & (Join-Path $ScriptDir 'argos-context.ps1') -Action compile -Prompt $Model
+        } elseif ($Args -and $Args.Count -gt 0) {
+            & (Join-Path $ScriptDir 'argos-context.ps1') -Action compile -Prompt ($Args -join ' ')
+        } else {
+            Write-Host '  Uso: argos context "<quest>" | argos context budgets' -ForegroundColor Yellow
         }
     }
     'skills' {

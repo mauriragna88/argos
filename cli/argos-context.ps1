@@ -174,6 +174,7 @@ function Get-MemoryRows {
                 relevance = $relevance
                 validation = 0.5
                 salience = $salience
+                cacheable = $false   # dinamico: cambia entre turnos
                 utility = Get-Utility -Relevance $relevance -Validation 0.5 -Salience $salience -Source "memory" -Tokens $tokens
             }
             $i++
@@ -207,6 +208,7 @@ function Get-ExperienceRows {
                 relevance = $relevance
                 validation = [math]::Round($validation, 3)
                 salience = $salience
+                cacheable = $false   # dinamico: depende del quest actual
                 utility = Get-Utility -Relevance $relevance -Validation $validation -Salience $salience -Source "experience" -Tokens $tokens
             }
             $i++
@@ -243,6 +245,7 @@ function Get-PrincipleRows {
             relevance = 1.0   # son reglas de oro del harness: siempre relevantes si aplican
             validation = 1.0
             salience = $salience
+            cacheable = $true    # ESTABLE: forma parte del cache prefix
             utility = Get-Utility -Relevance 1.0 -Validation 1.0 -Salience $salience -Source "principles" -Tokens $tokens
         }
         $i++
@@ -273,6 +276,7 @@ function Get-SkillRows {
                 relevance = 0.5
                 validation = 0.6
                 salience = $salience
+                cacheable = $true    # ESTABLE: metadata no cambia entre turnos
                 utility = Get-Utility -Relevance 0.5 -Validation 0.6 -Salience $salience -Source "skills" -Tokens $tokens
             }
             $i++
@@ -308,6 +312,7 @@ function Get-EvidenceRows {
                             relevance = 1.0
                             validation = 1.0
                             salience = 1.0
+                            cacheable = $false   # dinamico: contrato del quest actual
                             utility = Get-Utility -Relevance 1.0 -Validation 1.0 -Salience 1.0 -Source "evidence" -Tokens $tokens
                         }
                     }
@@ -336,6 +341,7 @@ function Get-EvidenceRows {
                         relevance = 0.8
                         validation = 1.0
                         salience = 0.7
+                        cacheable = $false   # dinamico
                         utility = Get-Utility -Relevance 0.8 -Validation 1.0 -Salience 0.7 -Source "evidence" -Tokens $tokens
                     }
                 }
@@ -404,11 +410,22 @@ foreach ($src in $DEFAULT_BUDGETS.Keys) {
     }
 }
 
+# Tokens cacheables (prefix estable) vs dinamicos (por quest)
+$tokensStable = 0
+$tokensDynamic = 0
+foreach ($srcOut in $sourcesOut) {
+    foreach ($r in @($srcOut.rows)) {
+        if ($r.cacheable) { $tokensStable += [int]$r.tokens } else { $tokensDynamic += [int]$r.tokens }
+    }
+}
+
 $result = [ordered]@{
     action           = "compile"
     quest_type       = $QuestType
     budgets          = $budgetMap
     tokens_injected  = $totalTokens
+    tokens_stable    = $tokensStable
+    tokens_dynamic   = $tokensDynamic
     sources          = @($sourcesOut)
     degradation      = @($degradation)
 }
@@ -429,6 +446,7 @@ Write-Host ""
 Write-Host "  CONTEXT COMPILER - turno compilado" -ForegroundColor Cyan
 Write-Host "  =================================" -ForegroundColor Cyan
 Write-Host ("  Quest type: {0} | Tokens inyectados: {1}" -f $QuestType, $totalTokens) -ForegroundColor Yellow
+Write-Host ("  Cache: {0} estables (prefix) + {1} dinamicos" -f $tokensStable, $tokensDynamic) -ForegroundColor DarkGray
 Write-Host ""
 foreach ($s in $sourcesOut) {
     $color = if ($s.rows.Count -gt 0) { "White" } else { "DarkGray" }

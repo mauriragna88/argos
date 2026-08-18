@@ -597,6 +597,64 @@ Check "argos context via CLI wrapper" "harness" {
     return ($c -match "CONTEXT COMPILER" -and $c -match "tokens inyectados|Tokens inyectados")
 }
 
+# === CACHE PREFIX (optimizacion de tokens) ===
+Check "cache-prefix existe" "harness" {
+    Test-Path (Join-Path $ArnesRoot "cli\cache-prefix.ps1")
+}
+
+Check "cache-prefix build genera hash + tokens" "harness" {
+    $tmpArnes = Join-Path ([System.IO.Path]::GetTempPath()) ("arnes-cp-" + [guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Path $tmpArnes -Force | Out-Null
+    try {
+        $c = Run-Capture { & (Join-Path $ArnesRoot "cli\cache-prefix.ps1") -Action build -ArnesDir $tmpArnes -Json }
+        $f = Join-Path $tmpArnes "cache-prefix.json"
+        return ($c -match '"prefix_tokens"' -and $c -match '"version"' -and (Test-Path $f))
+    } finally {
+        Remove-Item $tmpArnes -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Check "cache-prefix verify estable tras build" "harness" {
+    $tmpArnes = Join-Path ([System.IO.Path]::GetTempPath()) ("arnes-cp2-" + [guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Path $tmpArnes -Force | Out-Null
+    try {
+        & (Join-Path $ArnesRoot "cli\cache-prefix.ps1") -Action build -ArnesDir $tmpArnes | Out-Null
+        $c = Run-Capture { & (Join-Path $ArnesRoot "cli\cache-prefix.ps1") -Action verify -ArnesDir $tmpArnes -Json }
+        return ($c -match '"stable":\s*true')
+    } finally {
+        Remove-Item $tmpArnes -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Check "cache-prefix stats reporta ahorro" "harness" {
+    $tmpArnes = Join-Path ([System.IO.Path]::GetTempPath()) ("arnes-cp3-" + [guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Path $tmpArnes -Force | Out-Null
+    try {
+        & (Join-Path $ArnesRoot "cli\cache-prefix.ps1") -Action build -ArnesDir $tmpArnes | Out-Null
+        $c = Run-Capture { & (Join-Path $ArnesRoot "cli\cache-prefix.ps1") -Action stats -Turns 10 -ArnesDir $tmpArnes -Json }
+        return ($c -match '"tokens_saved"' -and $c -match '"saved_pct"')
+    } finally {
+        Remove-Item $tmpArnes -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Check "context compile marca cacheable (stable vs dynamic)" "harness" {
+    $c = Run-Capture { & (Join-Path $ArnesRoot "cli\argos-context.ps1") -Action compile -Prompt "crea una api con rls" -Json }
+    return ($c -match '"tokens_stable"' -and $c -match '"tokens_dynamic"' -and $c -match '"cacheable"')
+}
+
+Check "orquestador integra Step 1.8 Cache Prefix" "harness" {
+    $c = Run-Capture { & (Join-Path $ArnesRoot "cli\atlas-orchestrator.ps1") -Quest "crea un boton rojo en el header" -ArnesDir $ArnesDir }
+    return ($c -match "Step 1.8" -and $c -match "Cache")
+}
+
+Check "protocolo cache-prefix documenta reglas" "harness" {
+    $p = Join-Path $ArnesRoot "core\protocols\cache-prefix.md"
+    if (-not (Test-Path $p)) { return $false }
+    $content = Get-Content $p -Raw
+    return ($content -match "BYTE-IDENTICO" -and $content -match "cache-prefix.ps1")
+}
+
 # === FASE 3: LOOP CONTRACT + LADDER ===
 Check "loop-contract existe" "harness" {
     Test-Path (Join-Path $ArnesRoot "cli\loop-contract.ps1")

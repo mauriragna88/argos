@@ -22,7 +22,7 @@ argos init               -> inicializar proyecto
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('', 'menu', 'init', 'connect', 'connect-agent', 'configure', 'chat', 'status', 'stats', 'triage-stats', 'style', 'skills', 'allocate', 'contract', 'regression', 'context', 'models', 'model', 'memory', 'osma-install', 'recommend', 'mode', 'doctor', 'verify', 'test-model', 'quest', 'party', 'xp', 'theme', 'code', 'opencode', 'target', 'goal', 'audit')]
+    [ValidateSet('', 'menu', 'init', 'connect', 'connect-agent', 'configure', 'chat', 'status', 'stats', 'triage-stats', 'style', 'skills', 'allocate', 'contract', 'regression', 'context', 'cache', 'models', 'model', 'memory', 'osma-install', 'recommend', 'mode', 'doctor', 'verify', 'test-model', 'quest', 'party', 'xp', 'theme', 'code', 'opencode', 'target', 'goal', 'audit')]
     [string]$Command = '',
 
     [Parameter(Position = 1)]
@@ -517,6 +517,20 @@ switch ($Command) {
             & (Join-Path $ScriptDir 'argos-allocate.ps1') -Prompt ($Args -join ' ')
         } else {
             Write-Host '  Uso: argos allocate "<quest>" | argos allocate status' -ForegroundColor Yellow
+        }
+    }
+    'cache' {
+        # argos cache build | verify | stats [turns]
+        $sub = if ($Args -and $Args.Count -gt 0) { $Args[0] } else { 'stats' }
+        switch ($sub) {
+            'build'  { & (Join-Path $ScriptDir 'cache-prefix.ps1') -Action build }
+            'verify' { & (Join-Path $ScriptDir 'cache-prefix.ps1') -Action verify }
+            'stats' {
+                $turns = 10
+                if ($Args.Count -gt 1) { $turns = [int]$Args[1] }
+                & (Join-Path $ScriptDir 'cache-prefix.ps1') -Action stats -Turns $turns
+            }
+            default { Write-Host '  Uso: argos cache build | verify | stats [turns]' -ForegroundColor Yellow }
         }
     }
     'context' {

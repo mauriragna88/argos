@@ -192,6 +192,7 @@ function Show-InteractiveChat {
     Write-Host '    /contract     loop contracts por quest (limites de retry)' -ForegroundColor DarkGray
     Write-Host '    /regression   guards de regresion (FAIL->fix permanente)' -ForegroundColor DarkGray
     Write-Host '    /context      Context Compiler: contexto del turno por fuentes' -ForegroundColor DarkGray
+    Write-Host '    /cache        Cache prefix: prefix estable + ahorro de tokens' -ForegroundColor DarkGray
     Write-Host '    /quit         salir' -ForegroundColor DarkGray
     Write-Host ''
 
@@ -363,6 +364,18 @@ function Show-InteractiveChat {
             }
             '^\s*/context\s+(.+)$' {
                 & (Join-Path $PSScriptRoot 'argos-context.ps1') -Action compile -Prompt $Matches[1]
+                continue
+            }
+            '^\s*/cache\s*$' {
+                & (Join-Path $PSScriptRoot 'cache-prefix.ps1') -Action stats
+                continue
+            }
+            '^\s*/cache\s+build\s*$' {
+                & (Join-Path $PSScriptRoot 'cache-prefix.ps1') -Action build
+                continue
+            }
+            '^\s*/cache\s+verify\s*$' {
+                & (Join-Path $PSScriptRoot 'cache-prefix.ps1') -Action verify
                 continue
             }
             default {

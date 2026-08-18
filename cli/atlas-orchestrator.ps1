@@ -152,6 +152,25 @@ if (-not $Json -and (Test-Path $contextScript)) {
     } catch {}
 }
 
+# Step 1.8: Cache Prefix (optimizacion de tokens - prefix estable)
+$cacheScript = Join-Path $ScriptDir "cache-prefix.ps1"
+if (-not $Json -and (Test-Path $cacheScript)) {
+    try {
+        Write-Host "  Step 1.8: Cache Prefix" -ForegroundColor Cyan
+        $cvOut = (& $cacheScript -Action verify -Json 2>$null) | Out-String
+        $cv = $cvOut.Trim() | ConvertFrom-Json
+        if ($cv) {
+            if ($cv.stable) {
+                Write-Host ("  Cache ESTABLE ({0}) - el prefix se reusa entre turnos" -f $cv.version) -ForegroundColor Green
+            } else {
+                Write-Host ("  Cache CAMBIO ({0} != {1}) - prefix invalida, recarga proximo turno" -f $cv.version, $cv.previous_version) -ForegroundColor Yellow
+                Write-Host ("  Secciones: {0} - ejecuta 'argos cache build' para regenerar" -f ($cv.changed -join ', ')) -ForegroundColor DarkGray
+            }
+            Write-Host ""
+        }
+    } catch {}
+}
+
 # === Quest Recommendation Gate ===
 $gateCancelled = $false
 

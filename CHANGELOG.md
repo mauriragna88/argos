@@ -21,6 +21,7 @@ Todos los cambios relevantes de ARNES ARGOS se registran en este archivo.
   entorno ARNES cargado (personas/agentes/memoria). Default persistido en
   `~/.config/arnes/target.json`; `argos target set <nombre>`, `argos target list`,
   `argos target <nombre> [quest]`.
+- **Target Google CLI agy** (`argos target agy`): despliega la persona Atlas y el party a `AGENTS.md` del proyecto y `~/.gemini/GEMINI.md`, valida la conexión con OSMA y lanza `agy --model gemini-3.7-flash-high`.
 - **Freebuff como target** (`argos target freebuff`): despliega la persona Atlas + roster del
   party a `AGENTS.md` del proyecto y abre el CLI de Freebuff (gratuito, sin API keys),
   detectado automáticamente en `argos target list` / `auto` y reportado por `argos doctor`.

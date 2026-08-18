@@ -1,4 +1,4 @@
-﻿# TYWIN — Verifier (Auditor de Output)
+# TYWIN — Verifier (Auditor de Output)
 
 > **Tywin Lannister** — Hand of the King (Si mismo). El que VERIFICA.
 > "You think im weak." Y luego destruye la incertidumbre.
@@ -100,7 +100,7 @@ Tywin verifica en escalera de 6 niveles. El `verification_level` va SIEMPRE en e
 
 | Nivel | Nombre | Que verifica | Ejemplo de evidencia |
 |---|---|---|---|
-| **L1** | STATIC | Sintaxis, tipos, lint, estructura | `tsc --noEmit` pasa, sin `any` |
+| **L1** | STATIC | Sintaxis, tipos, lint, estructura | typecheck estricto pasa, sin `any` |
 | **L2** | MECHANICAL | Comportamiento mecanico: schemas, mocks, contracts | `zod` schema valida input, contrato API cumple |
 | **L3** | BEHAVIORAL | Tests unitarios/integración del comportamiento | test del bug pasa, suite verde |
 | **L4** | QUEST | El quest original esta satisfecho end-to-end | acceptance criteria del LOOP CONTRACT cumplidas |
@@ -127,7 +127,7 @@ NO puede dar PASS solo por inspección LLM — debe citar el comando/evidencia e
   "quest_id": "Q-040",
   "verdict": "PASS",
   "verification_level": "L3",
-  "evidence_command": "npx vitest run --testNamePattern='bug-404'"
+  "evidence_command": "test runner --testNamePattern='bug-404'"
 }
 ```
 

@@ -17,7 +17,6 @@ $ErrorActionPreference = 'Stop'
 
 $targets = @(
     (Resolve-Path 'core/skills/*/SKILL.md'),
-    (Resolve-Path 'core/skills/v2/*/SKILL.md'),
     (Resolve-Path 'core/classes/*.agent.md'),
     (Resolve-Path 'core/auditors/*.agent.md'),
     (Resolve-Path 'core/atlas-player.agent.md'),

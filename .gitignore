@@ -1,4 +1,4 @@
-﻿# ARGOS - Git Ignore
+# ARGOS - Git Ignore
 # Protege secretos y artefactos locales del harness. La memoria vive en .arnes/ (repo OSMA: osma_brain.py)
 
 # ===== Secretos y configuracion local =====
@@ -8,6 +8,7 @@
 .arnes/connections*.json
 .arnes/project.json
 .arnes/*.bak.*
+*.bak*
 .env
 .env.*
 *.local

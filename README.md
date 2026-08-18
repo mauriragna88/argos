@@ -222,12 +222,13 @@ con `-Resume`.
 ```powershell
 argos                    # menú: [9] Abrir entorno → usa tu default o muestra el selector
 argos target list        # CLIs instalados + target actual
-argos target set dsh        # fija el default (opencode | codex | claude | freebuff | dsh) — [9] ya no pregunta
+argos target set dsh        # fija el default (opencode | codex | claude | freebuff | dsh | agy) — [9] ya no pregunta
 argos target codex       # abre Codex con la persona Atlas cargada
 argos target claude "haz un login"   # abre Claude con un quest inicial
 argos target freebuff    # abre Freebuff con el arnés ARNES cargado (gratis, sin API keys)
 argos target opencode    # flujo original (16 agentes + modelos por agente)
 argos target dsh          # arranca DeepSeek Harness (pnpm dsh web) con ARGOS/OSMA cargado
+argos target agy          # abre Google CLI agy (Gemini 3.7 Flash High) con ARGOS/OSMA cargado
 ```
 
 - **opencode**: sincroniza los 16 agentes RPG con su modelo propio y abre `opencode --agent atlas-player`.
@@ -235,8 +236,9 @@ argos target dsh          # arranca DeepSeek Harness (pnpm dsh web) con ARGOS/OS
 - **claude**: despliega la persona Atlas a `~/.claude/CLAUDE.md` + los **16 agentes del party** como subagentes (`~/.claude/agents/*.md`) y abre `claude` (o `claude -p <quest>`).
 - **freebuff**: despliega la persona Atlas + roster del party a `AGENTS.md` del proyecto y abre `freebuff` (CLI gratuito con modelos de uso libre: DeepSeek V4 Flash/Pro, GPT-5.6 Luna, etc.).
 - **dsh**: valida que ARGOS/OSMA estén instalados y arranca **DeepSeek Harness** (pnpm dsh web en http://127.0.0.1:3080). No modifica el AGENTS.md del repo DSH: ARGOS/OSMA cargan vía el plugin. El modelo se elige por sesión en la Web UI (Settings → Models).
+- **agy**: despliega la persona Atlas + roster del party a `AGENTS.md` del proyecto y a `~/.gemini/GEMINI.md` (memoria global del usuario) y abre **Google CLI agy** (fork de Gemini CLI) con `--model gemini-3.7-flash-high`. OSMA se valida antes de abrir; ARGOS/OSMA cargan por AGENTS.md/GEMINI.md en cualquier proyecto.
 
-La memoria del proyecto (`.arnes/arnes.db`, exports JSONL) queda accesible en los cinco
+La memoria del proyecto (`.arnes/arnes.db`, exports JSONL) queda accesible en los seis
 entornos. Los modelos por agente y el motor OMO son capacidades exclusivas de OpenCode
 (formato del CLI); en Codex/Claude/Freebuff el modelo lo gestiona cada CLI.
 

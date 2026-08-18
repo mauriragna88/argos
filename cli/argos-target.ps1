@@ -1,7 +1,7 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-ARGOS TARGET - selecciona y lanza el CLI de trabajo (OpenCode, Codex, Claude o Freebuff)
+ARGOS TARGET - selecciona y lanza el CLI de trabajo (OpenCode, Codex, Claude, Freebuff, DSH o agy)
 cargando el entorno ARNES (agentes/personas).
 
 .DESCRIPTION
@@ -13,6 +13,9 @@ El puente entre ARNES y el CLI que quieras usar:
   dsh       -> despliega la persona Atlas a AGENTS.md del repo deepseek-harness, valida OSMA
                y arranca el servidor web de DeepSeek Harness (pnpm dsh web, http://127.0.0.1:3080).
                El modelo se elige por sesion dentro de la Web UI (Settings -> Models).
+  agy       -> despliega la persona Atlas + roster del party a AGENTS.md del proyecto y a
+               ~/.gemini/GEMINI.md (memoria global), valida OSMA y abre Google CLI agy
+               (fork de Gemini CLI) con --model gemini-3.7-flash-high.
 
 El default queda guardado en ~/.config/arnes/target.json (UNA vez por maquina).
 Para opencode/codex/claude, el modelo lo gestiona el propio CLI; ARNES aporta
@@ -33,7 +36,7 @@ param(
     [string]$Command = 'launch',
 
     [Parameter(Position = 1)]
-    [ValidateSet('', 'opencode', 'codex', 'claude', 'freebuff', 'dsh', 'auto')]
+    [ValidateSet('', 'opencode', 'codex', 'claude', 'freebuff', 'dsh', 'agy', 'auto')]
     [string]$Target = '',
 
     [string]$Name = '',
@@ -79,6 +82,7 @@ $TargetMeta = @{
     claude   = 'Claude Code (persona Atlas en CLAUDE.md)'
     freebuff = 'Freebuff CLI (persona Atlas + party en AGENTS.md del proyecto)'
     dsh      = 'DeepSeek Harness (web en :3080, ARGOS/OSMA precargado)'
+    agy      = 'Google CLI agy (Gemini 3.7 Flash, ARGOS/OSMA en AGENTS.md + GEMINI.md)'
 }
 
 function Get-InstalledTargets {
@@ -88,6 +92,7 @@ function Get-InstalledTargets {
     if (Get-Command claude -ErrorAction SilentlyContinue) { $result += 'claude' }
     if (Get-Command freebuff -ErrorAction SilentlyContinue) { $result += 'freebuff' }
     if (Test-Path $DshDir) { $result += 'dsh' }
+    if (Get-Command agy -ErrorAction SilentlyContinue) { $result += 'agy' }
     return $result
 }
 
@@ -203,7 +208,7 @@ switch ($Command) {
     'show' {
         $current = Get-CurrentTarget
         Write-Host ("  Target actual: {0} ({1})" -f $current, $TargetMeta[$current]) -ForegroundColor Cyan
-        Write-Host '  Para cambiar: argos target set <opencode|codex|claude|freebuff|dsh>' -ForegroundColor DarkGray
+        Write-Host '  Para cambiar: argos target set <opencode|codex|claude|freebuff|dsh|agy>' -ForegroundColor DarkGray
         exit 0
     }
     'list' {
@@ -211,7 +216,7 @@ switch ($Command) {
         Write-Host '  ARNES ARGOS - TARGETS' -ForegroundColor Cyan
         $current = Get-CurrentTarget
         $installed = Get-InstalledTargets
-        foreach ($k in @('opencode', 'codex', 'claude', 'freebuff', 'dsh')) {
+        foreach ($k in @('opencode', 'codex', 'claude', 'freebuff', 'dsh', 'agy')) {
             $mark = if ($k -eq $current) { ' *' } else { '  ' }
             $status = if ($k -in $installed) { 'instalado' } else { 'NO instalado' }
             Write-Host ("  {0} {1,-10} {2}  [{3}]" -f $mark, $k, $TargetMeta[$k], $status) -ForegroundColor White
@@ -223,11 +228,11 @@ switch ($Command) {
     }
     'set' {
         if (-not $Name) {
-            Write-Host '  Uso: argos target set <opencode|codex|claude|freebuff|dsh>' -ForegroundColor Yellow
+            Write-Host '  Uso: argos target set <opencode|codex|claude|freebuff|dsh|agy>' -ForegroundColor Yellow
             exit 1
         }
         if (-not $TargetMeta.ContainsKey($Name)) {
-            Write-Host "  [!] Target invalido: $Name. Usa opencode, codex, claude, freebuff o dsh." -ForegroundColor Yellow
+            Write-Host "  [!] Target invalido: $Name. Usa opencode, codex, claude, freebuff, dsh o agy." -ForegroundColor Yellow
             exit 1
         }
         if (-not (Test-Path $ConfigDir)) { New-Item -ItemType Directory -Path $ConfigDir -Force | Out-Null }
@@ -384,6 +389,51 @@ switch ($Command) {
                         & pnpm dsh web
                     }
                 } finally { Pop-Location }
+            }
+            'agy' {
+                # Google CLI (agy, fork de Gemini CLI): despliega la persona Atlas + party
+                # a AGENTS.md del proyecto y a ~/.gemini/GEMINI.md (memoria global del usuario),
+                # valida OSMA y abre agy con Gemini 3.7 Flash (High) para codear.
+                Write-Host '  [1/3] Desplegando entorno a Google CLI agy (AGENTS.md + GEMINI.md)...' -ForegroundColor Cyan
+                $agyDir = if ($PSBoundParameters.ContainsKey('TargetDir')) { $TargetDir } else { (Get-Location).Path }
+                $agyOut = Join-Path $agyDir 'AGENTS.md'
+                if (Test-Path $agyOut) {
+                    $ts = Get-Date -Format 'yyyyMMdd-HHmmss'
+                    $bak = Join-Path $agyDir "AGENTS.md.bak-$ts"
+                    Copy-Item $agyOut $bak -Force
+                    Write-Host ("  [~] AGENTS.md existente respaldado: {0}" -f (Split-Path $bak -Leaf)) -ForegroundColor DarkGray
+                }
+                [void](Write-RosterBundle -Target 'agy' -Out $agyOut)
+                # Memoria global del usuario: ARGOS/OSMA cargan en cualquier proyecto de agy
+                $geminiHome = Join-Path (Get-ArnesHome) '.gemini'
+                if (-not (Test-Path $geminiHome)) { New-Item -ItemType Directory -Path $geminiHome -Force | Out-Null }
+                $geminiOut = Join-Path $geminiHome 'GEMINI.md'
+                if (Test-Path $geminiOut) {
+                    $ts = Get-Date -Format 'yyyyMMdd-HHmmss'
+                    $bak = Join-Path $geminiHome "GEMINI.md.bak-$ts"
+                    Copy-Item $geminiOut $bak -Force
+                    Write-Host ("  [~] GEMINI.md existente respaldado: {0}" -f (Split-Path $bak -Leaf)) -ForegroundColor DarkGray
+                }
+                [void](Write-RosterBundle -Target 'agy' -Out $geminiOut)
+                Write-Host '  [2/3] Validando OSMA (memoria)...' -ForegroundColor Cyan
+                . (Join-Path $PSScriptRoot 'osma-resolve.ps1')
+                if (Get-OsmaBrain) {
+                    Write-Host ('  [OK] OSMA resuelto: {0}' -f (Get-OsmaBrain)) -ForegroundColor Green
+                } else {
+                    Write-Host '  [!] OSMA no encontrado. Instala: osma/install.ps1 o clona https://github.com/mauriragna88/osma' -ForegroundColor Yellow
+                }
+                Write-Host '  [3/3] Abriendo Google CLI agy (Gemini 3.7 Flash High)...' -ForegroundColor Cyan
+                if ($NoLaunch) { exit 0 }
+                $agyCmd = Get-Command agy -ErrorAction SilentlyContinue
+                if (-not $agyCmd) {
+                    Write-Host '  [!] agy no encontrado. Instala: npm install -g @google/gemini-cli (o el binario agy)' -ForegroundColor Red
+                    exit 1
+                }
+                if ($Quest) {
+                    & agy --model gemini-3.7-flash-high --prompt-interactive $Quest
+                } else {
+                    & agy --model gemini-3.7-flash-high
+                }
             }
         }
     }

@@ -1,4 +1,4 @@
-# ARNES ARGOS - Atlas (entorno generado por 'argos target freebuff')
+# ARNES ARGOS - Atlas (entorno generado por 'argos target agy')
 
 # Atlas â€” Player Orquestador RPG
 
@@ -172,44 +172,6 @@ Atlas clasifica el quest por keywords y contexto:
 | "investiga", "compara", "busca" | research | Ranger | No |
 | "deploy", "CI", "production", "rollback" | devops | Eiko | Si (L0) |
 | "feature completa", "nueva area", "modulo" | boss | Monk + Vivi + Paladin + Rogue + Eiko | Si |
-
-## Prompt Triage Protocol (NUEVO 2026-08-17)
-
-TODO prompt del usuario se clasifica ANTES de ejecutar (detalle completo: `core/protocols/prompt-triage.md`). **El nivel final se decide con prompt del usuario + complemento de Atlas**: si el prompt es ambiguo, Atlas primero enriquece la idea (interpreta la intencion, propone 2-3 alternativas, arma planeacion minima) y re-clasifica con la idea ya enriquecida — el complemento puede subir el nivel y activar el gate. Atlas emite dificultad + modelo recomendado + gate si aplica, y registra la decision + resultado en memoria para aprender en modo automatico.
-
-| Nivel | Nombre | Cuando | Modelo | Gate |
-|---|---|---|---|---|
-| 1 | Trivial | 1 archivo, patron conocido, sin ambiguedad | Flash sobra | No |
-| 2 | Rutina | 1-3 archivos, logica directa, librerias ya usadas | Flash bien | No |
-| 3 | Complejo | arquitectura, refactor multi-archivo, bug no evidente, seguridad, integracion, razonamiento multi-paso | **Recomendar pro/reasoning** | Si (ask_user: cambiar / seguir / dividir) |
-| 4 | Boss | diseno de sistema, migracion, debugging profundo, SDD + verificacion adversarial | **Insistir en modelo fuerte** | Si (inalterable) |
-
-Reglas:
-1. Nivel 1-2 → ejecutar directo. Nivel 3-4 → preguntar al usuario (excepto nivel 3 en agresividad `aggressive`, que solo avisa).
-2. **Prompt ambiguo → complemento primero**: si el prompt del usuario es ambiguo (requisitos incompletos, alcance abierto, "como creas mejor", pocas keywords), Atlas enriquece antes de clasificar: interpretacion de intencion + 2-3 alternativas + planeacion minima. El nivel FINAL = prompt + complemento; si el complemento revela multi-archivo/integracion/razonamiento, el nivel sube y el gate se activa.
-3. L0 (produccion/destructivo/auth/RLS/secrets) gana SIEMPRE sobre cualquier nivel: gate obligatorio.
-4. Sesion locked: el modelo actual no se cambia en caliente. El triage recomienda; el switch lo hace el usuario (1 clic) o en sesion nueva. Si una tarea 1-2 se estanca (3 fallos/60 min), re-clasificar a 3-4 y recomendar switch.
-5. Memoria: cada triage se registra en `.arnes/triage-log.jsonl` (append-only) y se sincroniza a OSMA (`osma-experience-record` con reward; lectura previa con `osma-experience-search`). La señal `ambiguity` se registra cuando el prompt era abierto y Atlas complemento (con `notes` indicando el complemento).
-
-## User Response Adaptation (NUEVO 2026-08-17)
-
-Atlas adapta SU respuesta al ESTILO del usuario (detalle: `core/protocols/user-response-adaptation.md`). Cada prompt revela como le gusta que le respondan; la memoria vive en OSMA (`user/style/*`), el comportamiento en Atlas.
-
-| Estilo | Senales | Como responde Atlas |
-|---|---|---|
-| directo | corto, imperativo ("haz", "dale", "sigue") | accion directa, compacto, sin gate en niveles 1-2 |
-| detallado | largo, contexto, requisitos | estructura: plan → pasos → verificacion, con detalle |
-| ambiguo | abierto ("como creas mejor", "recomiendame") | complementa: interpreta + 2-3 alternativas + planeacion minima, gate |
-| incremental | iterativo ("sigue", "continua", "adelante") | avanza por pasos, confirmacion ligera, mantiene el hilo |
-| pregunta | interrogativo ("es posible?", "como?") | explica primero con opciones; no ejecuta hasta confirmar direccion |
-| urgente | ("ya", "rapido", "urgente") | minima friccion, prioridad, resultado primero |
-
-Reglas:
-1. Cada turno: `user-style.ps1` detecta estilo del prompt + consulta OSMA (`user/style/*`) lo aprendido del usuario, y Atlas adapta tono/formato/friccion.
-2. El estilo informa, NO sobreescribe: dificultad del triage y L0 siguen mandando (produccion/destructivo = gate siempre).
-3. La memoria del perfil va en OSMA (`user/style/*`), nunca en JSON del repo (memoria paralela prohibida).
-4. Sin historial → usar estilo del prompt actual + neutral. El estilo se refuerza con cada `remember`.
-5. Comando manual: `argos style` (detect/remember/recall/profile).
 
 ## Quest Similarity Engine (NUEVO 2026-08-04)
 

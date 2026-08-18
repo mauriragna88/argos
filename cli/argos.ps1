@@ -346,7 +346,7 @@ function Show-Menu {
     Write-Host '  [7] Memoria (/memory)' -ForegroundColor White
     Write-Host '  [O] Instalar memoria OSMA (/osma-install)' -ForegroundColor White
     Write-Host '  [8] Diagnostico de prerequisitos (/doctor)' -ForegroundColor White
-    Write-Host '  [9] Abrir entorno (OpenCode / Codex / Claude / Freebuff) (/target)' -ForegroundColor White
+    Write-Host '  [9] Abrir entorno (OpenCode / Codex / Claude / Freebuff / DSH / agy) (/target)' -ForegroundColor White
     Write-Host '  [A] Contract Audit DB<->Frontend (/audit)' -ForegroundColor White
     Write-Host '  [Q] Salir' -ForegroundColor White
     Write-Host '  ================================================' -ForegroundColor DarkGray
@@ -724,9 +724,9 @@ switch ($Command) {
         & (Join-Path $ScriptDir 'argos-opencode.ps1') -Quest $q
     }
     'target' {
-        # argos target [opencode|codex|claude|freebuff|auto|show|list|set <nombre>]
+        # argos target [opencode|codex|claude|freebuff|dsh|agy|auto|show|list|set <nombre>]
         $verb = if ($Model) { $Model } elseif ($Args -and $Args.Count -gt 0) { $Args[0] } else { '' }
-        if ($verb -in @('opencode', 'codex', 'claude', 'freebuff', 'dsh', 'auto')) {
+        if ($verb -in @('opencode', 'codex', 'claude', 'freebuff', 'dsh', 'agy', 'auto')) {
             # El quest es TODO lo que sigue al target (PowerShell parte el string en palabras)
             $quest = if ($Args -and $Args.Count -gt 0) { ($Args -join ' ') } else { '' }
             & (Join-Path $ScriptDir 'argos-target.ps1') -Target $verb -Quest $quest

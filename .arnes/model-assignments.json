@@ -1,21 +1,21 @@
 ﻿{
-    "timestamp":  "2026-08-14T18:46:28.1927834-06:00",
-    "quest_type":  "trivial",
+    "timestamp":  "2026-08-18T16:52:04.5299125-06:00",
+    "quest_type":  "frontend",
     "platform":  "opencode",
     "assignments":  {
-                        "varys":  "deepseek-v4-flash",
-                        "amarant":  "deepseek-v4-flash",
+                        "varys":  "qwen-3.6-plus",
+                        "amarant":  "kimi-k2.6",
                         "eremez":  "deepseek-v4-flash",
-                        "kuja":  "deepseek-v4-flash",
-                        "atlas":  "deepseek-v4-flash",
-                        "quina":  "deepseek-v4-flash",
-                        "tywin":  "deepseek-v4-flash",
-                        "eiko":  "deepseek-v4-flash",
-                        "sam":  "deepseek-v4-flash",
-                        "ansem":  "deepseek-v4-flash",
-                        "vivi":  "deepseek-v4-flash",
-                        "bran":  "deepseek-v4-flash",
-                        "auron":  "deepseek-v4-flash"
+                        "kuja":  "glm-5.2",
+                        "atlas":  "mimo-v2.5-pro",
+                        "quina":  "glm-5.2",
+                        "tywin":  "deepseek-v4-pro",
+                        "eiko":  "qwen-3.6-plus",
+                        "sam":  "kimi-k2.6",
+                        "ansem":  "deepseek-v4-pro",
+                        "vivi":  "mimo-v2.5-pro",
+                        "bran":  "kimi-k2.6",
+                        "auron":  "deepseek-v4-pro"
                     },
     "tier":  "pro"
 }

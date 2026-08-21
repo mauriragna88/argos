@@ -4,14 +4,15 @@
 # T9.4 - Pre-commit hook integration.
 # Corre Varys Documentalist antes de cada commit para detectar:
 #   - Secrets leaked (apiKey, token, password en diff)
-#   - Typos criticos en archivos clave
-#   - Stale references (paths/nombres que ya no existen)
+#   - Tokens/keys reales (JWT supabase, sb_secret_, ghp_, conekta, mercadopago...)
+#   - Rutas sensibles commiteadas (.env, settings.local.json, .commandcode/, auth.json, *.db)
+#   - JSON invalidos en el staging
 #
 # Instalacion:
-#   cp deploy/hooks/pre-commit .git/hooks/pre-commit
-#   chmod +x .git/hooks/pre-commit
+#   powershell -NoProfile -ExecutionPolicy Bypass -File tests/repo-secure.ps1
+#   (o manual: cp deploy/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit)
 #
-# O con husky:
+# Con husky:
 #   npx husky add .husky/pre-commit "sh deploy/hooks/pre-commit"
 
 set -e
@@ -39,7 +40,8 @@ fi
 echo -e "  ${GRAY}[VARYS-DOC] Mis pajaritos estan volando sobre tu diff...${NC}"
 
 # === 1. Detectar secrets en el diff staged ===
-SECRETS_PATTERNS='(apiKey|api_key|API_KEY|password|passwd|secret|token|aws_secret|stripe_|sk_live_|sk_test_)[[:space:]]*[:=][[:space:]]*["'"'"'][^"'"'"']{8,}'
+SECRETS_PATTERNS='(apiKey|api_key|API_KEY|password|passwd|secret)[[:space:]]*[:=][[:space:]]*["'"'"'][^"'"'"']{8,}'
+SECRETS_TOKEN_PATTERNS='(eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9|sb_secret_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{16,}|sk_live_[A-Za-z0-9]{10,}|sk_test_[A-Za-z0-9]{10,}|key_live_[A-Za-z0-9]{10,}|key_test_[A-Za-z0-9]{10,}|APP_USR-[A-Za-z0-9_-]{16,}|ghp_[A-Za-z0-9]{20,}|gho_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}|user_[A-Za-z0-9]{20,}|BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY)'
 
 STAGED=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null)
 SECRET_HITS=0
@@ -57,41 +59,78 @@ for file in $STAGED; do
     DIFF_CONTENT=$(git diff --cached -- "$file" 2>/dev/null | grep '^+' | grep -v '^+++')
     if [ -n "$DIFF_CONTENT" ]; then
         HITS=$(echo "$DIFF_CONTENT" | grep -iE "$SECRETS_PATTERNS" 2>/dev/null || true)
+        TOKEN_HITS=$(echo "$DIFF_CONTENT" | grep -E "$SECRETS_TOKEN_PATTERNS" 2>/dev/null || true)
         if [ -n "$HITS" ]; then
             while IFS= read -r line; do
                 [ -z "$line" ] && continue
+                # Ignorar placeholders y referencias a variables de entorno
+                case "$line" in
+                    *xxxx*|*XXXX*|*example*|*YOUR_*|*your_*|*REPLACE_*|*change_me*|*placeholder*) continue ;;
+                esac
                 echo -e "  ${RED}[CRITICAL] Secret detected in $file${NC}"
                 echo -e "    ${GRAY}$line${NC}"
                 SECRET_HITS=$((SECRET_HITS + 1))
                 CRITICAL_FINDINGS=$((CRITICAL_FINDINGS + 1))
             done <<< "$HITS"
         fi
+        if [ -n "$TOKEN_HITS" ]; then
+            while IFS= read -r line; do
+                [ -z "$line" ] && continue
+                case "$line" in
+                    *xxxx*|*example*|*YOUR_*|*REPLACE_*) continue ;;
+                esac
+                echo -e "  ${RED}[CRITICAL] Token/key real detectado en $file${NC}"
+                echo -e "    ${GRAY}$(echo "$line" | cut -c1-80)...${NC}"
+                SECRET_HITS=$((SECRET_HITS + 1))
+                CRITICAL_FINDINGS=$((CRITICAL_FINDINGS + 1))
+            done <<< "$TOKEN_HITS"
+        fi
     fi
 done
 
-# === 2. Verificar .env no staged ===
-for envfile in .env .env.local .env.production .env.staging; do
-    if git diff --cached --name-only 2>/dev/null | grep -q "^$envfile$"; then
-        echo -e "  ${RED}[CRITICAL] $envfile esta en el commit. Debe estar en .gitignore${NC}"
-        CRITICAL_FINDINGS=$((CRITICAL_FINDINGS + 1))
-    fi
+# === 2. Verificar archivos/rutas sensibles NO commiteados ===
+for file in $STAGED; do
+    case "$file" in
+        .env|.env.local|.env.production|.env.staging|.env.development)
+            echo -e "  ${RED}[CRITICAL] $file esta en el commit. Debe estar en .gitignore${NC}"
+            CRITICAL_FINDINGS=$((CRITICAL_FINDINGS + 1))
+            ;;
+        *.db)
+            echo -e "  ${RED}[CRITICAL] Base de datos en el commit: $file${NC}"
+            CRITICAL_FINDINGS=$((CRITICAL_FINDINGS + 1))
+            ;;
+        .claude/settings.local.json|.commandcode/*|.commandcode/settings.json)
+            echo -e "  ${RED}[CRITICAL] Config local con posibles credenciales: $file${NC}"
+            CRITICAL_FINDINGS=$((CRITICAL_FINDINGS + 1))
+            ;;
+        */auth.json|.arnes/connections.json|.arnes/agent-models.json)
+            echo -e "  ${RED}[CRITICAL] Archivo de credenciales en el commit: $file${NC}"
+            CRITICAL_FINDINGS=$((CRITICAL_FINDINGS + 1))
+            ;;
+    esac
 done
 
 # === 3. Verificar archivos agent.md no tienen secrets ===
 for f in core/classes/*.agent.md core/auditors/*.agent.md core/atlas-player.agent.md; do
     [ -f "$f" ] || continue
     if grep -qiE "$SECRETS_PATTERNS" "$f" 2>/dev/null; then
-        echo -e "  ${RED}[CRITICAL] Secret-like pattern in $f${NC}"
-        CRITICAL_FINDINGS=$((CRITICAL_FINDINGS + 1))
+        HITS=$(grep -iE "$SECRETS_PATTERNS" "$f" 2>/dev/null | grep -viE 'xxxx|example|YOUR_|env\(|\[hidden\]' || true)
+        if [ -n "$HITS" ]; then
+            echo -e "  ${RED}[CRITICAL] Secret-like pattern in $f${NC}"
+            CRITICAL_FINDINGS=$((CRITICAL_FINDINGS + 1))
+        fi
     fi
 done
 
-# === 4. Verificar config.json no tiene secrets ===
+# === 4. Verificar .arnes/config.json no tiene secrets ===
 CONFIG_FILE=".arnes/config.json"
 if [ -f "$CONFIG_FILE" ]; then
     if grep -qiE "$SECRETS_PATTERNS" "$CONFIG_FILE" 2>/dev/null; then
-        echo -e "  ${RED}[CRITICAL] Secret-like pattern in $CONFIG_FILE${NC}"
-        CRITICAL_FINDINGS=$((CRITICAL_FINDINGS + 1))
+        HITS=$(grep -iE "$SECRETS_PATTERNS" "$CONFIG_FILE" 2>/dev/null | grep -viE 'xxxx|example|YOUR_|env\(|\[hidden\]' || true)
+        if [ -n "$HITS" ]; then
+            echo -e "  ${RED}[CRITICAL] Secret-like pattern in $CONFIG_FILE${NC}"
+            CRITICAL_FINDINGS=$((CRITICAL_FINDINGS + 1))
+        fi
     fi
 fi
 
@@ -100,8 +139,10 @@ for f in $STAGED; do
     [ -f "$f" ] || continue
     case "$f" in
         *.json)
-            if ! python3 -m json.tool "$f" >/dev/null 2>&1 && ! jq empty "$f" 2>/dev/null; then
-                echo -e "  ${YELLOW}[HIGH] $f no es JSON valido${NC}"
+            if ! node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" 2>/dev/null; then
+                if ! python3 -m json.tool "$f" >/dev/null 2>&1 && ! jq empty "$f" 2>/dev/null; then
+                    echo -e "  ${YELLOW}[HIGH] $f no es JSON valido${NC}"
+                fi
             fi
             ;;
     esac
@@ -113,12 +154,10 @@ if [ $CRITICAL_FINDINGS -gt 0 ]; then
     echo -e "  ${RED}VARYS-DOC VERDICT: FAIL${NC}"
     echo -e "  ${RED}$CRITICAL_FINDINGS CRITICAL finding(s). Commit bloqueado.${NC}"
     echo ""
-    echo -e "  ${GRAY}Para bypass (NO RECOMENDADO):${NC}"
-    echo -e "  ${GRAY}  git commit --no-verify${NC}"
-    echo ""
     echo -e "  ${GRAY}Fix sugerido:${NC}"
-    echo -e "  ${GRAY}  - Mueve secrets a .env (y agrega .env a .gitignore)${NC}"
-    echo -e "  ${GRAY}  - Borra el secret del commit${NC}"
+    echo -e "  ${GRAY}  - Mueve secrets a .env (y agrega el archivo a .gitignore)${NC}"
+    echo -e "  ${GRAY}  - Quita del staging: git restore --staged <archivo>${NC}"
+    echo -e "  ${GRAY}  - Si ya se habia publicado antes: ROTAR la credencial expuesta${NC}"
     exit 1
 fi
 

@@ -60,3 +60,10 @@ Desktop.ini
 # ===== Imagenes basura =====
 imagen10.jpg
 Sin título.jpg
+
+.commandcode/
+.claude/settings.local.json
+.arnes/
+.env.local
+.env.*.local
+.env.production

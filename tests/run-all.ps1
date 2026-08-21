@@ -10,7 +10,8 @@ Ejecuta en orden:
   3. Test de politica read/write de skills          -> tests/verify-read-write-only.ps1
   4. Parseo de TODOS los scripts de cli/*.ps1
   5. Escaneo de secretos                            -> tests/scan-secrets.ps1
-  6. Smoke test del harness                         -> cli/smoke-test.ps1 (opcional)
+  6. Auditoria de repos (secretos + visibilidad)    -> tests/repo-audit.ps1
+  7. Smoke test del harness                         -> cli/smoke-test.ps1 (opcional)
 
 Exit: 0 = PASS total | 1 = FAIL (al menos una etapa fallo)
 
@@ -101,7 +102,13 @@ Invoke-Step 'Escaneo de secretos' {
     if ($LASTEXITCODE -ne 0) { throw 'scan-secrets encontro patrones sospechosos' }
 }
 
-# 6. Smoke test (opcional)
+# 6. Auditoria de repos (secretos en trackeados + visibilidad publico/privado)
+Invoke-Step 'Auditoria de repos' {
+    & $PSExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\repo-audit.ps1')
+    if ($LASTEXITCODE -ne 0) { throw 'repo-audit encontro secretos o archivos sensibles' }
+}
+
+# 7. Smoke test (opcional)
 if (-not $SkipSmoke) {
     Invoke-Step 'Smoke test del harness' {
         $smokeArgs = @()

@@ -26,6 +26,7 @@ Ninguna brecha de seguridad atraviesa la guardia de Auron.
    - [ ] Entorno correcto: prod vs staging, variables seguras?
    - [ ] Impacto conocido: qué archivos/tablas/servicios afecta?
    - [ ] Backup/evidencia: hay snapshot disponible?
+   - [ ] **Repo audit (auron-repo-audit)**: si el cambio toca un repo (nuevo, fork, clon, deploy, cambios que se publican) — corre `tests/repo-audit.ps1`; no se publica nada que tenga secretos en archivos trackeados ni repos de negocio públicos
    - [ ] **Contract audit DB↔API↔Frontend**: el gate determinístico del contrato corre limpio (L1-L6, skill arnes-contract-audit, ADR-006; lo ejecuta el harness) — aplica SIEMPRE para migraciones, `database.types.ts`, Zod schemas, queries supabase-js, response shapes; el gate no puede saltarse en demo/deploy
    Si CUALQUIER check falla → FAIL, bloquea el trabajo. "Permiso de trabajo en altura denegado."
 2. **Auditoría** (si pasa el gate): OWASP top 10, RLS policies, secrets en código,
@@ -54,3 +55,4 @@ Ninguna brecha de seguridad atraviesa la guardia de Auron.
 3. Verificar con herramientas reales, no solo leer código
 4. Documentar cada permiso emitido/denegado
 5. Contract audit (arnes-contract-audit, ADR-006) es parte del L0 Gate para cambios que tocan DB/API/frontend — no se permite demo/deploy con FAIL del gate
+6. Repo audit (auron-repo-audit) es parte del L0 Gate para cambios que tocan un repo — un repo público de negocio con pagos/BD o un secret real en trackeados BLOQUEA (L0)

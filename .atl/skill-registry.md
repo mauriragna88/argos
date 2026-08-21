@@ -1,4 +1,4 @@
-﻿# Skill Registry — Harness RPG Atlas (v2 - 2026-08-05)
+# Skill Registry — Harness RPG Atlas (v2 - 2026-08-05)
 
 ## Registry Structure
 Este archivo mapea las skills de cada clase RPG a las **skills PROPIAS del arnes (v2)**.
@@ -57,6 +57,7 @@ son **complemento de poder** — potencian la ejecución, nunca son dependencia 
 | Agente | Skill v2 | Trigger |
 |---|---|---|
 | Auron | auron-bulwark | L0 Gate + OWASP audit |
+| Auron | auron-repo-audit | Secretos expuestos en trackeados + visibilidad público/privada del repo |
 | Bran | bran-vision | % completado, dead code, growth |
 | Quina | quina-ledger | Token economy, /status |
 | Varys | varys-whisper | Observar party, evidence_pack, write-back |
@@ -79,6 +80,7 @@ Cuando Atlas selecciona un party, resuelve skills así:
 - Architecture docs → amarant-foresight (clean-architecture, arnes-sdd-*)
 - Unknown library → eremez-mark (context7, web-search)
 - L0 / deploy / RLS → auron-bulwark (L0 Gate obligatorio)
+- repo nuevo / fork / clon / ver si repo tiene secrets o está público → auron-repo-audit (secretos en trackeados + visibilidad)
 - migraciones / `database.types.ts` / contratos DB↔Frontend → arnes-contract-audit (gate determinístico, ADR-006)
 - Queries Supabase / RLS / auth → arnes-contract-audit (leer patrones de auth del proyecto antes de codificar)
 - "¿cómo vamos?" / análisis → bran-vision
@@ -111,8 +113,36 @@ Audita el contrato de datos DB↔API↔Frontend. Es **MANDATORY pre-verdict** pa
 | owasp, security | Auron |
 | superpowers (258K⭐), ui-ux-pro-max (79K⭐), taste-skill (66K⭐) | Party (arsenal extra) |
 
+## Skills instaladas (.agents/skills/) — AUTO-CARGA por agente (2026-08-20)
+
+Estas skills viven en `.agents/skills/<nombre>/SKILL.md` y se inyectan AUTOMATICAMENTE
+en el system prompt del agente (argos-code.ps1 y argos-party.ps1 via Get-AgentSkills).
+Es la experticia de cada rol hecha checklist obligatoria.
+
+| Skill | Agente | Trigger | Origen |
+|---|---|---|---|
+| systematic-debugging | Kuja (QA), todos | Cualquier bug/fallo antes de proponer fix | obra/superpowers |
+| verification-before-completion | Tywin, Kuja | Antes de cualquier PASS/veredicto: evidencia por criterio | obra/superpowers |
+| writing-plans | Amarant (Monk) | Plan por fases con acceptance criteria antes de codear | obra/superpowers |
+| postgres-best-practices | Ansem (Paladin) | Schemas, RLS, queries, migraciones Supabase/Postgres | supabase docs |
+| ui-ux-pro-max | Vivi (Mage) | Toda UI: jerarquía, spacing, tipografía, componentes | nextlevelbuilder (79K⭐) |
+| taste-skill | Vivi (Mage) | Anti-slop: sin gradientes genéricos ni copy de IA | Leonxln (66K⭐) |
+| handoff | Atlas, Eiko (cross-party) | Pausar/reanudar quests: compresión de estado accionable | mattpocock (88K⭐) |
+
+**Mapa de auto-carga** (mantener sincronizado con Get-AgentSkills en argos-code.ps1 / argos-party.ps1):
+```powershell
+'vivi'    = @('ui-ux-pro-max', 'taste-skill')
+'ansem'   = @('postgres-best-practices')
+'kuja'    = @('verification-before-completion')
+'tywin'   = @('verification-before-completion')
+'amarant' = @('writing-plans')
+'atlas'   = @('handoff')
+'eiko'    = @('handoff')
+```
+
 ## GAPs (oportunidades para Ragnarok)
 - Contract validation DB↔Frontend: **CERRADO** (arnes-contract-audit, ADR-006)
 - Bard: mejorar DX/docs (parcialmente cubierto)
 - Performance: query-optimization (Alchemist futuro)
 - Marketing/Ventas: vacante (futuro)
+- Ranger web-search vivo: pendiente API key DEEPSEEK_API_KEY o Firecrawl MCP

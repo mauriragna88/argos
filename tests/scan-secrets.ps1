@@ -13,14 +13,22 @@ $Root = Resolve-Path (Join-Path $PSScriptRoot '..')
 # Archivos rastreados por git (lo que realmente se publicaria)
 $files = @(& git -C $Root ls-files) | Where-Object {
     $_ -notmatch '(^|/)(\.git|node_modules)/' -and
-    $_ -notmatch '\.(png|jpg|jpeg|gif|ico|woff2?|ttf|db)$'
+    $_ -notmatch '\.(png|jpg|jpeg|gif|ico|woff2?|ttf|db)$' -and
+    # Excluir los propios scripts de auditoría de secretos (definen los patrones)
+    $_ -notmatch '(^|/)tests/(scan-secrets|repo-audit)\.ps1$'
 }
 
 $patterns = @(
     'sk-[A-Za-z0-9]{16,}',                       # claves OpenAI/Anthropic-style
     'ghp_[A-Za-z0-9]{20,}',                      # GitHub PAT
+    'gho_[A-Za-z0-9]{20,}',                      # GitHub OAuth token
     'github_pat_[A-Za-z0-9_]{20,}',              # GitHub fine-grained PAT
     'AKIA[0-9A-Z]{16}',                          # AWS access key
+    'sb_secret_[A-Za-z0-9]{20,}',                # Supabase service role key (formato nuevo)
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9',     # Supabase / JWT hardcoded
+    'key_(live|test)_[A-Za-z0-9]{10,}',          # Conekta / Stripe
+    'APP_USR-[A-Za-z0-9_-]{16,}',                # MercadoPago access token
+    'user_[A-Za-z0-9]{20,}',                     # commandcode/opencode bearer token
     'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY',     # claves privadas
     '(?i)api_key["'']?\s*[:=]\s*["''][^"'']{16,}["'']'  # api_key con valor largo
 )

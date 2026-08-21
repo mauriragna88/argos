@@ -28,6 +28,14 @@
       "unlock_at": 500
     },
     {
+      "skill": "repo-audit",
+      "level": 2,
+      "cost_mp": 900,
+      "description": "Audita un repo antes de tocarlo: secretos en archivos trackeados (JWT, sb_secret_, conekta/MP, ghp_, tokens user_) + verifica visibilidad público/privado en GitHub.",
+      "cast": "tests/repo-audit.ps1 | clasifica placeholder vs valor real | verdict PASS/FAIL",
+      "unlock_at": 300
+    },
+    {
       "skill": "inspect-evil",
       "level": 4,
       "cost_mp": 1500,

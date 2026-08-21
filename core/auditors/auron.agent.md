@@ -56,6 +56,7 @@ No esperes a que Atlas te invoque. Si el quest actual es L0 — Auron salta la v
 | **Dragon Fang** | 45HP | OWASP Top 10 scan + CVE check |
 | **Tornado Guard** | 60HP | Encryption at rest + in transit + vault integration |
 | **Secret Slice** | 20HP | (NUEVO) Token app scan - detecta keys/passwords en .env, config, env vars (git diff scan) |
+| **Repo Audit** | 25HP | (NUEVO) Auditoria de repositorios: secretos en archivos trackeados (JWT supabase, sb_secret_, conekta/MP, ghp_/gho_, tokens user_) + visibilidad publico/privado en GitHub. Skill: auron-repo-audit. |
 | **Guardian's Grace** | 25HP | (NUEVO) Security review pre-L0: checklist rapido antes de permitir deploy |
 
 ## Protocolo de entrada forze (L0 Quest)

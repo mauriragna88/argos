@@ -55,6 +55,12 @@ for file in $STAGED; do
         continue
     fi
 
+    # Los propios archivos de auditoria definen los patrones como strings:
+    # excluirlos de la busqueda para no autodetectarse.
+    case "$file" in
+        deploy/hooks/pre-commit|tests/scan-secrets.ps1|tests/repo-audit.ps1) continue ;;
+    esac
+
     # Buscar patrones de secret en el diff staged del archivo
     DIFF_CONTENT=$(git diff --cached -- "$file" 2>/dev/null | grep '^+' | grep -v '^+++')
     if [ -n "$DIFF_CONTENT" ]; then

@@ -52,7 +52,8 @@ if (-not (Test-Path (Join-Path $root '.git'))) {
         $_ -notmatch '\.(png|jpg|jpeg|gif|ico|woff2?|ttf|db|lock)$' -and
         $_ -notmatch '(^|/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock)$' -and
         # Excluir los propios scripts de auditoría de secretos (definen los patrones)
-        $_ -notmatch '(^|/)tests/(scan-secrets|repo-audit)\.ps1$'
+        $_ -notmatch '(^|/)tests/(scan-secrets|repo-audit|repo-secure)\.ps1$' -and
+        $_ -notmatch '(^|/)deploy/hooks/pre-commit$'
     }
 
     $patterns = @(

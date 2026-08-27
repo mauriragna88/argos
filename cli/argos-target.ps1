@@ -1,4 +1,4 @@
-﻿#Requires -Version 5.1
+#Requires -Version 5.1
 <#
 .SYNOPSIS
 ARGOS TARGET - selecciona y lanza el CLI de trabajo (OpenCode, Codex, Claude, Freebuff, DSH o agy)
@@ -36,7 +36,7 @@ param(
     [string]$Command = 'launch',
 
     [Parameter(Position = 1)]
-    [ValidateSet('', 'opencode', 'codex', 'claude', 'freebuff', 'dsh', 'agy', 'auto')]
+    [ValidateSet('', 'opencode', 'codex', 'claude', 'freebuff', 'dsh', 'agy', 'cmdc', 'auto')]
     [string]$Target = '',
 
     [string]$Name = '',
@@ -83,6 +83,7 @@ $TargetMeta = @{
     freebuff = 'Freebuff CLI (persona Atlas + party en AGENTS.md del proyecto)'
     dsh      = 'DeepSeek Harness (web en :3080, ARGOS/OSMA precargado)'
     agy      = 'Google CLI agy (Gemini 3.7 Flash, ARGOS/OSMA en AGENTS.md + GEMINI.md)'
+    cmdc     = 'Command Code CLI (contexto minimo: respeta motor nativo + memoria OSMA)'
 }
 
 function Get-InstalledTargets {
@@ -93,6 +94,7 @@ function Get-InstalledTargets {
     if (Get-Command freebuff -ErrorAction SilentlyContinue) { $result += 'freebuff' }
     if (Test-Path $DshDir) { $result += 'dsh' }
     if (Get-Command agy -ErrorAction SilentlyContinue) { $result += 'agy' }
+    if (Get-Command cmdc -ErrorAction SilentlyContinue) { $result += 'cmdc' }
     return $result
 }
 
@@ -204,6 +206,78 @@ function Write-RosterBundle {
     return $true
 }
 
+function Write-CmdcBundle {
+    # cmdc (Command Code): contexto MINIMO para no interferir con su motor optimizado.
+    # No metemos persona Atlas ni roster: cmdc ya trae su propio modelo (minimax/minimax-m3-free
+    # + deepseek-v4-flash-vision para vision) y su propia optimizacion de tokens.
+    # Solo un puntero a la memoria ARGOS/OSMA por si el usuario la quiere consultar.
+    param([string]$Target, [string]$Out)
+    $projectRoot = (Get-Location).Path
+    $content = @"
+# ARNES ARGOS (entorno minimo para cmdc - comando code)
+
+Este proyecto tiene ARGOS/OSMA instalado en:
+  - Memoria SQLite: .arnes/arnes.db (cues, experiences, observations, patterns)
+  - Exports JSONL: .arnes/memory/export/ (por agente)
+  - Config proyecto: .arnes/config.json
+  - Perfil: .arnes/project.json
+
+cmdc mantiene su motor nativo y su modelo por defecto. No se inyecta
+persona Atlas ni roster: respeta la optimizacion de tokens de Command Code.
+
+Si necesitas consultar la memoria ARGOS, los agentes del party o la
+configuracion del proyecto, lee los archivos listados arriba bajo demanda.
+
+"@
+    Write-Utf8NoBom -Path $Out -Content $content
+    Write-Host ("  [OK] Contexto minimo desplegado: {0}" -f $Out) -ForegroundColor Green
+    return $true
+}
+
+function Write-DomainBundle {
+    # Bundle ligero por dominio: en vez de inyectar el party completo de 16 agentes
+    # (50 KB de system prompt), metemos SOLO el agente del dominio + puntero a OSMA.
+    # Aplica el principio #5 (Context Budget) y #7 (no repetir exploracion).
+    # Los agentes adicionales se cargan BAJO DEMANDA leyendo core/classes/*.agent.md.
+    param(
+        [string]$Target,
+        [string]$Out,
+        [string[]]$Domains   # ej: @('atlas'), @('atlas','vivi'), @('atlas','ansem','auron')
+    )
+    $persona = Get-Content $PersonaFile -Raw
+    # Compactar la persona: solo las primeras 30 lineas (identidad + rol) sin secciones largas
+    $personaShort = ($persona -split "`n" | Select-Object -First 30) -join "`n"
+    $agentBlocks = @()
+    foreach ($d in $Domains) {
+        $file = $null
+        if ($d -eq 'atlas') { $file = Join-Path $Root 'core\atlas-player.agent.md' }
+        else {
+            $file = Get-ChildItem (Join-Path $Root "core\classes\*.agent.md") -ErrorAction SilentlyContinue |
+                    Where-Object { $_.BaseName -like "*$d*" } | Select-Object -First 1
+            if (-not $file) {
+                $file = Get-ChildItem (Join-Path $Root "core\auditors\*.agent.md") -ErrorAction SilentlyContinue |
+                        Where-Object { $_.BaseName -like "*$d*" } | Select-Object -First 1
+            }
+        }
+        if ($file) {
+            $display = Get-AgentDisplayName $file.FullName
+            $roleLine = (Get-Content $file.FullName -TotalCount 1) -replace '^#\s+', ''
+            $agentBlocks += "  - **$display** - $roleLine  (ruta: $($file.FullName.Replace($Root + '\', '')))"
+        }
+    }
+    $header = "# ARNES ARGOS - Bundle ligero (target: $Target)`n`n"
+    $personaBlock = "## Atlas (orquestador activo)`n`n$personaShort`n`n"
+    $rosterBlock = if ($agentBlocks.Count -gt 0) {
+        "## Agentes del dominio`n`nEste target prioriza: $($Domains -join ', ').`nPara tareas fuera de este dominio, lee el agente correspondiente bajo demanda en core/classes/ o core/auditors/.`n`n" + ($agentBlocks -join "`n") + "`n`n"
+    } else { '' }
+    $osmaBlock = "## Memoria OSMA`n`nAntes de explorar el repositorio, consulta OSMA (`.arnes/arnes.db`).`n- Comando: ver `cli/osma-resolve.ps1` (Get-OsmaMemoryCli / osma-memory.ps1).`n- Stats: `osma-memory.ps1 stats`. Recall: `osma-memory.ps1 recall <query>`.`n- Repositorio es fuente de verdad: revalida memorias antiguas antes de reusar.`n`n"
+    $footer = "## Protocolo`n`nAplica el principio OSMA-FIRST: primero memoria, despues busqueda, despues inspeccion, despues modificacion, despues verificacion, despues actualizacion de memoria.`n"
+    $content = $header + $personaBlock + $rosterBlock + $osmaBlock + $footer
+    Write-Utf8NoBom -Path $Out -Content $content
+    Write-Host ("  [OK] Bundle ligero ({0} dominios, {1} bytes) -> {2}" -f $Domains.Count, $content.Length, $Out) -ForegroundColor Green
+    return $true
+}
+
 switch ($Command) {
     'show' {
         $current = Get-CurrentTarget
@@ -216,7 +290,7 @@ switch ($Command) {
         Write-Host '  ARNES ARGOS - TARGETS' -ForegroundColor Cyan
         $current = Get-CurrentTarget
         $installed = Get-InstalledTargets
-        foreach ($k in @('opencode', 'codex', 'claude', 'freebuff', 'dsh', 'agy')) {
+        foreach ($k in @('opencode', 'codex', 'claude', 'freebuff', 'dsh', 'agy', 'cmdc')) {
             $mark = if ($k -eq $current) { ' *' } else { '  ' }
             $status = if ($k -in $installed) { 'instalado' } else { 'NO instalado' }
             Write-Host ("  {0} {1,-10} {2}  [{3}]" -f $mark, $k, $TargetMeta[$k], $status) -ForegroundColor White
@@ -228,11 +302,11 @@ switch ($Command) {
     }
     'set' {
         if (-not $Name) {
-            Write-Host '  Uso: argos target set <opencode|codex|claude|freebuff|dsh|agy>' -ForegroundColor Yellow
+            Write-Host '  Uso: argos target set <opencode|codex|claude|freebuff|dsh|agy|cmdc>' -ForegroundColor Yellow
             exit 1
         }
         if (-not $TargetMeta.ContainsKey($Name)) {
-            Write-Host "  [!] Target invalido: $Name. Usa opencode, codex, claude, freebuff, dsh o agy." -ForegroundColor Yellow
+            Write-Host "  [!] Target invalido: $Name. Usa opencode, codex, claude, freebuff, dsh, agy o cmdc." -ForegroundColor Yellow
             exit 1
         }
         if (-not (Test-Path $ConfigDir)) { New-Item -ItemType Directory -Path $ConfigDir -Force | Out-Null }
@@ -282,6 +356,18 @@ switch ($Command) {
             exit 1
         }
 
+        # ==== AUTO-VERIFICADOR ARNES + OSMA (antes de abrir cualquier entorno) ====
+        # Garantiza que el proyecto actual tenga ARNES (.arnes/) + OSMA (memoria) precargados.
+        # Idempotente: si ya estan, solo confirma; si falta algo, lo inicializa.
+        $autoInit = Join-Path $PSScriptRoot 'argos-auto-init.ps1'
+        if (Test-Path $autoInit) {
+            try {
+                & $autoInit
+            } catch {
+                Write-Host ("  [!] Auto-verificador fallo (continua de todos modos): {0}" -f $_.Exception.Message) -ForegroundColor Yellow
+            }
+        }
+
         Write-Host ''
         Write-Host ("  ARNES -> {0}  |  {1}" -f $resolved.ToUpper(), $TargetMeta[$resolved]) -ForegroundColor DarkRed
         Write-Host ''
@@ -297,7 +383,31 @@ switch ($Command) {
             }
             'codex' {
                 Write-Host '  [1/2] Desplegando entorno a Codex...' -ForegroundColor Cyan
-                [void](Write-RosterBundle -Target 'codex' -Out (Join-Path $TargetDir 'AGENTS.md'))
+                $codexOut = Join-Path $TargetDir 'AGENTS.md'
+                $codexBundle = @"
+# ARNES ARGOS - Bundle ligero (target: codex)
+
+Dominio: backend / API / Supabase / DB / QA / seguridad.
+
+Este proyecto tiene ARGOS/OSMA:
+  - Memoria SQLite: .arnes/arnes.db
+  - Exports JSONL: .arnes/memory/export/
+  - Config: .arnes/config.json
+  - Perfil: .arnes/project.json
+
+Antes de explorar el repositorio, consulta OSMA (.arnes/arnes.db).
+Repositorio es fuente de verdad: revalida memorias antiguas.
+
+Atlas orquesta, no codea. Para tareas del dominio:
+  - Backend/APIs/Supabase -> Ansem
+  - QA/testing -> Kuja
+  - Seguridad/RLS/migrations -> Auron
+
+Otros agentes disponibles en core/classes/ y core/auditors/ (carga bajo demanda).
+
+"@
+                Write-Utf8NoBom -Path $codexOut -Content $codexBundle
+                Write-Host ("  [OK] Bundle ligero codex -> {0} ({1} bytes)" -f $codexOut, $codexBundle.Length) -ForegroundColor Green
                 Write-Host '  [2/2] Abriendo Codex...' -ForegroundColor Cyan
                 if ($NoLaunch) { exit 0 }
                 if (-not (Get-Command codex -ErrorAction SilentlyContinue)) {
@@ -322,7 +432,29 @@ switch ($Command) {
                     Copy-Item $fbOut $bak -Force
                     Write-Host ("  [~] AGENTS.md existente respaldado: {0}" -f (Split-Path $bak -Leaf)) -ForegroundColor DarkGray
                 }
-                [void](Write-RosterBundle -Target 'freebuff' -Out $fbOut)
+                $fbBundle = @"
+# ARNES ARGOS - Bundle ligero (target: freebuff)
+
+Dominio: frontend / UI / design / devops.
+
+Este proyecto tiene ARGOS/OSMA:
+  - Memoria SQLite: .arnes/arnes.db
+  - Exports JSONL: .arnes/memory/export/
+  - Config: .arnes/config.json
+  - Perfil: .arnes/project.json
+
+Antes de explorar el repositorio, consulta OSMA (.arnes/arnes.db).
+Repositorio es fuente de verdad: revalida memorias antiguas.
+
+Atlas orquesta, no codea. Para tareas del dominio:
+  - Frontend/UI/React -> Vivi
+  - DevOps/Infra -> Tidus + Eiko
+
+Otros agentes disponibles en core/classes/ y core/auditors/ (carga bajo demanda).
+
+"@
+                Write-Utf8NoBom -Path $fbOut -Content $fbBundle
+                Write-Host ("  [OK] Bundle ligero freebuff -> {0} ({1} bytes)" -f $fbOut, $fbBundle.Length) -ForegroundColor Green
                 Write-Host '  [2/2] Abriendo Freebuff (gratis, sin API keys)...' -ForegroundColor Cyan
                 if ($NoLaunch) { exit 0 }
                 if (-not (Get-Command freebuff -ErrorAction SilentlyContinue)) {
@@ -340,10 +472,60 @@ switch ($Command) {
                 if (-not $PSBoundParameters.ContainsKey('TargetDir')) {
                     $TargetDir = Join-Path (Get-ArnesHome) '.claude'
                 }
-                Write-Host '  [1/3] Persona Atlas a CLAUDE.md...' -ForegroundColor Cyan
-                [void](Write-AtlasPersona -Target 'claude')
-                Write-Host '  [2/3] Desplegando party a Claude agents...' -ForegroundColor Cyan
-                [void](Write-ClaudeParty)
+                Write-Host '  [1/3] Bundle ligero (atlas + dominio) a CLAUDE.md...' -ForegroundColor Cyan
+                $claudeOut = Join-Path $TargetDir 'CLAUDE.md'
+                $claudeBundle = @"
+# ARNES ARGOS - Bundle ligero (target: claude)
+
+Dominio: backend / API / Supabase / DB / QA / seguridad.
+
+Este proyecto tiene ARGOS/OSMA:
+  - Memoria SQLite: .arnes/arnes.db
+  - Exports JSONL: .arnes/memory/export/
+  - Config: .arnes/config.json
+  - Perfil: .arnes/project.json
+
+Antes de explorar el repositorio, consulta OSMA (.arnes/arnes.db).
+Repositorio es fuente de verdad: revalida memorias antiguas.
+
+Atlas orquesta, no codea. Para tareas del dominio:
+  - Backend/APIs/Supabase -> Ansem
+  - Frontend/UI -> Vivi
+  - Seguridad/RLS/migrations -> Auron
+
+Otros agentes disponibles en core/classes/ y core/auditors/ (carga bajo demanda).
+
+"@
+                Write-Utf8NoBom -Path $claudeOut -Content $claudeBundle
+                Write-Host ("  [OK] Bundle ligero claude -> {0} ({1} bytes)" -f $claudeOut, $claudeBundle.Length) -ForegroundColor Green
+                Write-Host '  [2/3] Subagentes del dominio en Claude agents/...' -ForegroundColor Cyan
+                # Solo 4 subagentes (frontend+backend+seguridad+QA) en vez de 17
+                $claudeAgentDomains = @('atlas','vivi','ansem','auron')
+                $claudeAgentsDir = Join-Path $TargetDir 'agents'
+                New-Item -ItemType Directory -Path $claudeAgentsDir -Force | Out-Null
+                $claudeCount = 0
+                foreach ($d in $claudeAgentDomains) {
+                    $file = $null
+                    if ($d -eq 'atlas') { $file = Get-Item (Join-Path $Root 'core\atlas-player.agent.md') -ErrorAction SilentlyContinue }
+                    else {
+                        $file = Get-ChildItem (Join-Path $Root "core\classes\*.agent.md") -ErrorAction SilentlyContinue |
+                                Where-Object { $_.BaseName -like "*$d*" } | Select-Object -First 1
+                        if (-not $file) {
+                            $file = Get-ChildItem (Join-Path $Root "core\auditors\*.agent.md") -ErrorAction SilentlyContinue |
+                                    Where-Object { $_.BaseName -like "*$d*" } | Select-Object -First 1
+                        }
+                    }
+                    if ($file) {
+                        $display = Get-AgentDisplayName $file.FullName
+                        $desc = Get-AgentDescription $file.FullName
+                        $body = Get-Content $file.FullName -Raw
+                        $front = "---`nname: $display`ndescription: $desc`n---`n`n"
+                        $out = Join-Path $claudeAgentsDir "$display.md"
+                        Write-Utf8NoBom -Path $out -Content ($front + $body)
+                        $claudeCount++
+                    }
+                }
+                Write-Host ("  [OK] {0} subagentes desplegados a Claude: {1}" -f $claudeCount, $claudeAgentsDir) -ForegroundColor Green
                 Write-Host '  [3/3] Abriendo Claude...' -ForegroundColor Cyan
                 if ($NoLaunch) { exit 0 }
                 if (-not (Get-Command claude -ErrorAction SilentlyContinue)) {
@@ -403,7 +585,29 @@ switch ($Command) {
                     Copy-Item $agyOut $bak -Force
                     Write-Host ("  [~] AGENTS.md existente respaldado: {0}" -f (Split-Path $bak -Leaf)) -ForegroundColor DarkGray
                 }
-                [void](Write-RosterBundle -Target 'agy' -Out $agyOut)
+                $agyBundle = @"
+# ARNES ARGOS - Bundle ligero (target: agy)
+
+Dominio: frontend / UI / design / devops.
+
+Este proyecto tiene ARGOS/OSMA:
+  - Memoria SQLite: .arnes/arnes.db
+  - Exports JSONL: .arnes/memory/export/
+  - Config: .arnes/config.json
+  - Perfil: .arnes/project.json
+
+Antes de explorar el repositorio, consulta OSMA (.arnes/arnes.db).
+Repositorio es fuente de verdad: revalida memorias antiguas.
+
+Atlas orquesta, no codea. Para tareas del dominio:
+  - Frontend/UI/React -> Vivi
+  - DevOps/Infra -> Tidus + Eiko
+
+Otros agentes disponibles en core/classes/ y core/auditors/ (carga bajo demanda).
+
+"@
+                Write-Utf8NoBom -Path $agyOut -Content $agyBundle
+                Write-Host ("  [OK] Bundle ligero agy -> {0} ({1} bytes)" -f $agyOut, $agyBundle.Length) -ForegroundColor Green
                 # Memoria global del usuario: ARGOS/OSMA cargan en cualquier proyecto de agy
                 $geminiHome = Join-Path (Get-ArnesHome) '.gemini'
                 if (-not (Test-Path $geminiHome)) { New-Item -ItemType Directory -Path $geminiHome -Force | Out-Null }
@@ -414,7 +618,29 @@ switch ($Command) {
                     Copy-Item $geminiOut $bak -Force
                     Write-Host ("  [~] GEMINI.md existente respaldado: {0}" -f (Split-Path $bak -Leaf)) -ForegroundColor DarkGray
                 }
-                [void](Write-RosterBundle -Target 'agy' -Out $geminiOut)
+                $geminiBundle = @"
+# ARNES ARGOS - Bundle ligero (target: agy - GEMINI.md global)
+
+Dominio: frontend / UI / design / devops.
+
+Este proyecto tiene ARGOS/OSMA:
+  - Memoria SQLite: .arnes/arnes.db
+  - Exports JSONL: .arnes/memory/export/
+  - Config: .arnes/config.json
+  - Perfil: .arnes/project.json
+
+Antes de explorar el repositorio, consulta OSMA (.arnes/arnes.db).
+Repositorio es fuente de verdad: revalida memorias antiguas.
+
+Atlas orquesta, no codea. Para tareas del dominio:
+  - Frontend/UI/React -> Vivi
+  - DevOps/Infra -> Tidus + Eiko
+
+Otros agentes disponibles en core/classes/ y core/auditors/ (carga bajo demanda).
+
+"@
+                Write-Utf8NoBom -Path $geminiOut -Content $geminiBundle
+                Write-Host ("  [OK] Bundle ligero agy GEMINI -> {0} ({1} bytes)" -f $geminiOut, $geminiBundle.Length) -ForegroundColor Green
                 Write-Host '  [2/3] Validando OSMA (memoria)...' -ForegroundColor Cyan
                 . (Join-Path $PSScriptRoot 'osma-resolve.ps1')
                 if (Get-OsmaBrain) {
@@ -433,6 +659,51 @@ switch ($Command) {
                     & agy --model gemini-3.7-flash-high --prompt-interactive $Quest
                 } else {
                     & agy --model gemini-3.7-flash-high
+                }
+            }
+            'cmdc' {
+                # Command Code CLI (cmdc): despliega la persona Atlas + party
+                # a AGENTS.md del proyecto y a ~/.commandcode/CLAUDE.md (memoria global del usuario),
+                # valida OSMA y abre cmdc para codear.
+                Write-Host '  [1/3] Desplegando entorno a Command Code CLI cmdc (AGENTS.md + CLAUDE.md global)...' -ForegroundColor Cyan
+                $cmdcDir = if ($PSBoundParameters.ContainsKey('TargetDir')) { $TargetDir } else { (Get-Location).Path }
+                $cmdcOut = Join-Path $cmdcDir 'AGENTS.md'
+                if (Test-Path $cmdcOut) {
+                    $ts = Get-Date -Format 'yyyyMMdd-HHmmss'
+                    $bak = Join-Path $cmdcDir "AGENTS.md.bak-$ts"
+                    Copy-Item $cmdcOut $bak -Force
+                    Write-Host ("  [~] AGENTS.md existente respaldado: {0}" -f (Split-Path $bak -Leaf)) -ForegroundColor DarkGray
+                }
+                [void](Write-CmdcBundle -Target 'cmdc' -Out $cmdcOut)
+                # Memoria global del usuario: ARGOS/OSMA cargan en cualquier proyecto de cmdc
+                $cmdcHome = Join-Path (Get-ArnesHome) '.commandcode'
+                if (-not (Test-Path $cmdcHome)) { New-Item -ItemType Directory -Path $cmdcHome -Force | Out-Null }
+                $cmdcHomeOut = Join-Path $cmdcHome 'CLAUDE.md'
+                if (Test-Path $cmdcHomeOut) {
+                    $ts = Get-Date -Format 'yyyyMMdd-HHmmss'
+                    $bak = Join-Path $cmdcHome "CLAUDE.md.bak-$ts"
+                    Copy-Item $cmdcHomeOut $bak -Force
+                    Write-Host ("  [~] CLAUDE.md existente respaldado: {0}" -f (Split-Path $bak -Leaf)) -ForegroundColor DarkGray
+                }
+                [void](Write-CmdcBundle -Target 'cmdc' -Out $cmdcHomeOut)
+                Write-Host '  [2/3] Validando OSMA (memoria)...' -ForegroundColor Cyan
+                . (Join-Path $PSScriptRoot 'osma-resolve.ps1')
+                if (Get-OsmaBrain) {
+                    Write-Host ('  [OK] OSMA resuelto: {0}' -f (Get-OsmaBrain)) -ForegroundColor Green
+                } else {
+                    Write-Host '  [!] OSMA no encontrado. Instala: osma/install.ps1 o clona https://github.com/mauriragna88/osma' -ForegroundColor Yellow
+                }
+                Write-Host '  [3/3] Abriendo Command Code CLI cmdc...' -ForegroundColor Cyan
+                if ($NoLaunch) { exit 0 }
+                $cmdcCmd = Get-Command cmdc -ErrorAction SilentlyContinue
+                if (-not $cmdcCmd) {
+                    Write-Host '  [!] cmdc no encontrado. Instala: npm install -g command-code' -ForegroundColor Red
+                    exit 1
+                }
+                if ($Quest) {
+                    & cmdc $Quest
+                } else {
+                    & cmdc
                 }
             }
         }

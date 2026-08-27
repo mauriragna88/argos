@@ -5,6 +5,16 @@
 
 ---
 
+## ⚠️ POLITICA DEL USUARIO (2026-08-16) — DEEPSEEK-ONLY
+
+**TODOS los agentes usan exclusivamente `opencode-go/deepseek-v4-flash`.**
+Prohibido GPT, Claude, GLM, MiniMax, Qwen, Kimi, MiMo y cualquier otro modelo.
+No hay fallback a otros modelos ni otros proveedores. Ante fallo/estancamiento:
+esperar cooldown y reintentar con deepseek-v4-flash. Las tablas de catalogo abajo
+quedan como referencia historica y NO se aplican mientras este vigente esta politica.
+
+---
+
 ## Catalogo de Modelos 2026 (Validados)
 
 ### OpenCode Go ($5-$10/mes)
@@ -61,19 +71,19 @@ opencode_free:
   sam:     deepseek-v4-flash
 
 opencode_pro:
-  atlas:   mimo-v2.5-pro
-  vivi:    mimo-v2.5-pro          # Frontend premium
-  eiko:    qwen-3.6-plus
-  paladin: deepseek-v4-pro        # Backend premium
-  rogue:   glm-5.2                # QA especializado
-  monk:    kimi-k2.6              # Arquitectura/razonamiento
+  atlas:   deepseek-v4-flash
+  vivi:    deepseek-v4-flash
+  eiko:    deepseek-v4-flash
+  paladin: deepseek-v4-flash
+  rogue:   deepseek-v4-flash
+  monk:    deepseek-v4-flash
   ranger:  deepseek-v4-flash
-  auron:   deepseek-v4-pro
-  bran:    kimi-k2.6
-  quina:   glm-5.2
-  varys:   qwen-3.6-plus
-  tywin:   deepseek-v4-pro
-  sam:     kimi-k2.6
+  auron:   deepseek-v4-flash
+  bran:    deepseek-v4-flash
+  quina:   deepseek-v4-flash
+  varys:   deepseek-v4-flash
+  tywin:   deepseek-v4-flash
+  sam:     deepseek-v4-flash
 ```
 
 ### Codex (OpenAI)
@@ -275,15 +285,12 @@ En cualquier momento el usuario puede:
 
 ## Fallback Chain
 
-Si el modelo asignado falla o responde lento:
+**POLITICA DEL USUARIO (2026-08-16): NO existe cambio de modelo.**
+Solo `deepseek-v4-flash` para todos los agentes.
 
-1. **Intent 1** → modelo asignado (espera 2s)
-2. **Retry 1** → mismo modelo (espera 4s)
-3. **Fallback** → siguiente en cadena:
-   - `vivi`:      [mimo-v2.5-pro → qwen-3.6-plus → deepseek-v4-flash]
-   - `paladin`:   [deepseek-v4-pro → gpt-5.6-terra → claude-sonnet-5]
-   - `monk`:      [kimi-k2.6 → gpt-5.6-sol → claude-opus-5]
-   - `atlas`:     [mimo-v2.5-pro → gpt-5.6-terra → claude-opus-4.8]
-4. **Si solo 1 plano activo** y el modelo falla: pausa party, notifica user
+1. **Intent 1** → deepseek-v4-flash (espera 2s)
+2. **Retry 1** → deepseek-v4-flash (espera 4s)
+3. **Retry 2** → deepseek-v4-flash (espera cooldown 30min si hubo 429/401)
+4. **Si persiste el fallo** → pausa party y notifica al usuario (NO cambiar de modelo)
 5. **Vivi falling 2x seguidas** → delegar a Paladin + Eiko (front-end tank)
 6. **Eiko failing**: pausa critica, party debe detenerse

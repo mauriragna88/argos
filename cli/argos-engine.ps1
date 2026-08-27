@@ -13,14 +13,14 @@ Las keys vienen de ~/.config/arnes/connections.json (o auth.json como fallback).
 Devuelve la respuesta + uso de tokens (prompt/completion).
 
 .EXAMPLE
-.\argos-engine.ps1 -Model nvidia/deepseek-ai/deepseek-v4-flash -Message "hola"
-.\argos-engine.ps1 -Model opencode-go/gpt-5.6-luna -System "Eres Atlas" -Session @(@{role='user';content='hi'}) -Message "continua"
+.\argos-engine.ps1 -Model opencode-go/deepseek-v4-flash -Message "hola"
+.\argos-engine.ps1 -Model opencode-go/deepseek-v4-flash -System "Eres Atlas" -Session @(@{role='user';content='hi'}) -Message "continua"
 .\argos-engine.ps1 -Model opencode-go/deepseek-v4-flash -System "Identidad RPG y skills cacheable" -SystemDynamic "Memoria y contexto del quest" -Message "haz login"
 #>
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [string]$Model,           # id completo: nvidia/deepseek-ai/deepseek-v4-flash
+    [string]$Model,           # id completo: opencode-go/deepseek-v4-flash (politica usuario 2026-08-16)
 
     [string]$System = '',     # system prompt LEGACY (un solo bloque). Se envia como system
                               # estatico si no se pasa $SystemDynamic; si se pasa ambos,

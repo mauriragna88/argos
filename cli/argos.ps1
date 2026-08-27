@@ -22,7 +22,7 @@ argos init               -> inicializar proyecto
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('', 'menu', 'init', 'connect', 'connect-agent', 'configure', 'chat', 'status', 'stats', 'triage-stats', 'style', 'skills', 'allocate', 'contract', 'regression', 'context', 'cache', 'models', 'model', 'memory', 'osma-install', 'recommend', 'mode', 'doctor', 'verify', 'test-model', 'quest', 'party', 'xp', 'theme', 'code', 'opencode', 'target', 'goal', 'audit')]
+    [ValidateSet('', 'menu', 'init', 'connect', 'connect-agent', 'configure', 'chat', 'status', 'stats', 'triage-stats', 'style', 'skills', 'allocate', 'contract', 'regression', 'context', 'cache', 'models', 'model', 'memory', 'osma-install', 'recommend', 'mode', 'doctor', 'verify', 'test-model', 'quest', 'party', 'xp', 'theme', 'code', 'opencode', 'target', 'goal', 'audit', 'refine', 'cmdc')]
     [string]$Command = '',
 
     [Parameter(Position = 1)]
@@ -137,22 +137,22 @@ function Init-Project {
                 version = '1.0'
                 updated_at = (Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
                 agents = [ordered]@{
-                    atlas = 'opencode-go/qwen3.8-max'
-                    vivi = 'openai/gpt-5.6-luna'
-                    ansem = 'nvidia/deepseek-ai/deepseek-v4-flash'
-                    kuja = 'nvidia/deepseek-ai/deepseek-v4-flash'
+                    atlas = 'opencode-go/deepseek-v4-flash'
+                    vivi = 'opencode-go/deepseek-v4-flash'
+                    ansem = 'opencode-go/deepseek-v4-flash'
+                    kuja = 'opencode-go/deepseek-v4-flash'
                     eiko = 'opencode-go/deepseek-v4-flash'
-                    amarant = 'openai/gpt-5.6-luna'
-                    eremez = 'nvidia/deepseek-ai/deepseek-v4-flash'
-                    auron = 'nvidia/deepseek-ai/deepseek-v4-pro'
-                    bran = 'openai/gpt-5.6-luna'
+                    amarant = 'opencode-go/deepseek-v4-flash'
+                    eremez = 'opencode-go/deepseek-v4-flash'
+                    auron = 'opencode-go/deepseek-v4-flash'
+                    bran = 'opencode-go/deepseek-v4-flash'
                     quina = 'opencode-go/deepseek-v4-flash'
-                    varys = 'openai/gpt-5.6-luna'
-                    tywin = 'nvidia/deepseek-ai/deepseek-v4-flash'
-                    sam = 'openai/gpt-5.6-luna'
-                    bard = 'openai/gpt-5.6-luna'
+                    varys = 'opencode-go/deepseek-v4-flash'
+                    tywin = 'opencode-go/deepseek-v4-flash'
+                    sam = 'opencode-go/deepseek-v4-flash'
+                    bard = 'opencode-go/deepseek-v4-flash'
                     tidus = 'opencode-go/deepseek-v4-flash'
-                    ragnarok = 'openai/gpt-5.6-luna'
+                    ragnarok = 'opencode-go/deepseek-v4-flash'
                 }
             }
             $defaults | ConvertTo-Json -Depth 6 | Set-Content -Path $AgentModelsPath -Encoding UTF8
@@ -346,7 +346,7 @@ function Show-Menu {
     Write-Host '  [7] Memoria (/memory)' -ForegroundColor White
     Write-Host '  [O] Instalar memoria OSMA (/osma-install)' -ForegroundColor White
     Write-Host '  [8] Diagnostico de prerequisitos (/doctor)' -ForegroundColor White
-    Write-Host '  [9] Abrir entorno (OpenCode / Codex / Claude / Freebuff / DSH / agy) (/target)' -ForegroundColor White
+    Write-Host '  [9] Abrir entorno (OpenCode / Codex / Claude / Freebuff / DSH / agy / cmdc) (/target)' -ForegroundColor White
     Write-Host '  [A] Contract Audit DB<->Frontend (/audit)' -ForegroundColor White
     Write-Host '  [Q] Salir' -ForegroundColor White
     Write-Host '  ================================================' -ForegroundColor DarkGray
@@ -459,6 +459,22 @@ switch ($Command) {
     'status' { Show-Status }
     'stats' { & (Join-Path $ScriptDir 'argos-stats.ps1') }
     'triage-stats' { & (Join-Path $ScriptDir 'triage-stats.ps1') }
+    'refine' {
+        # argos refine "<texto crudo>" -> Maestro (Prompt Architect) lo convierte en quest profesional
+        $rawText = ''
+        if ($Args -and $Args.Count -gt 0) { $rawText = ($Args -join ' ') }
+        elseif ($Model) { $rawText = $Model }   # argos refine texto-sin-comillas llega en -Model
+        if (-not $rawText) {
+            Write-Host '  Uso: argos refine "<tu idea o pedido tal cual>"' -ForegroundColor Yellow
+            Write-Host '  Ej:  argos refine "orale ponle notificaciones al sistema de clientes"' -ForegroundColor DarkGray
+            exit 0
+        }
+        Write-Host ''
+        Write-Host '  ╔════════════════════════════════════════════════╗' -ForegroundColor Magenta
+        Write-Host '  ║   MAESTRO — Prompt Architect (refine)          ║' -ForegroundColor Magenta
+        Write-Host '  ╚════════════════════════════════════════════════╝' -ForegroundColor Magenta
+        & (Join-Path $ScriptDir 'argos-code.ps1') -Quest ("Refina este pedido del usuario en un prompt profesional con formato OBJETIVO/CONTEXTO/ALCANCE/CRITERIOS DE ACEPTACION/RESTRICCIONES/QUEST TYPE/PARTY SUGERIDO. Marca vacios con [ACLARAR: pregunta]. No inventes requisitos. Pedido del usuario: " + $rawText) -Agent maestro
+    }
     'style' {
         $sub = if ($Args -and $Args.Count -gt 0) { $Args[0] } else { 'profile' }
         if ($sub -in @('detect','remember','recall','profile')) {
@@ -613,8 +629,8 @@ switch ($Command) {
             }
             Write-Host ''
             Write-Host '  Uso: argos model <agente> <modelo>' -ForegroundColor DarkGray
-            Write-Host '  Ej:  argos model vivi opencode-go/gpt-5.6-luna' -ForegroundColor Cyan
-            Write-Host '       argos model atlas opencode-go/gpt-5.6-luna' -ForegroundColor Cyan
+            Write-Host '  Ej:  argos model vivi opencode-go/deepseek-v4-flash' -ForegroundColor Cyan
+            Write-Host '       argos model atlas opencode-go/deepseek-v4-flash' -ForegroundColor Cyan
             Write-Host '  (aplica a agents/*.md + oh-my-opencode.jsonc + opencode.json)' -ForegroundColor DarkGray
             exit 0
         }
@@ -634,7 +650,7 @@ switch ($Command) {
         $newModel = ($extra -join ' ').Trim()
         # Validar formato proveedor/modelo
         if ($newModel -notmatch '^[^/]+/[^/]+$') {
-            Write-Host "  [!] Modelo invalido: $newModel (formato: proveedor/modelo, ej: opencode-go/gpt-5.6-luna)" -ForegroundColor Yellow
+            Write-Host "  [!] Modelo invalido: $newModel (formato: proveedor/modelo, ej: opencode-go/deepseek-v4-flash)" -ForegroundColor Yellow
             exit 1
         }
         $am.agents.$agentKey = $newModel
@@ -723,10 +739,16 @@ switch ($Command) {
         $q = $q -join ' '
         & (Join-Path $ScriptDir 'argos-opencode.ps1') -Quest $q
     }
+    'cmdc' {
+        # Atajo: argos cmdc [quest]  ->  argos target cmdc [quest]
+        $q = @($Model) + @($Args) | Where-Object { $_ } | ForEach-Object { [string]$_ }
+        $q = $q -join ' '
+        & (Join-Path $ScriptDir 'argos-target.ps1') -Target 'cmdc' -Quest $q
+    }
     'target' {
-        # argos target [opencode|codex|claude|freebuff|dsh|agy|auto|show|list|set <nombre>]
+        # argos target [opencode|codex|claude|freebuff|dsh|agy|cmdc|auto|show|list|set <nombre>]
         $verb = if ($Model) { $Model } elseif ($Args -and $Args.Count -gt 0) { $Args[0] } else { '' }
-        if ($verb -in @('opencode', 'codex', 'claude', 'freebuff', 'dsh', 'agy', 'auto')) {
+        if ($verb -in @('opencode', 'codex', 'claude', 'freebuff', 'dsh', 'agy', 'cmdc', 'auto')) {
             # El quest es TODO lo que sigue al target (PowerShell parte el string en palabras)
             $quest = if ($Args -and $Args.Count -gt 0) { ($Args -join ' ') } else { '' }
             & (Join-Path $ScriptDir 'argos-target.ps1') -Target $verb -Quest $quest
@@ -762,8 +784,8 @@ switch ($Command) {
     'test-model' {
         if (-not $Model) {
             Write-Host '  Uso: argos test-model <modelo>' -ForegroundColor Yellow
-            Write-Host '  Ej:  argos test-model nvidia/deepseek-ai/deepseek-v4-flash' -ForegroundColor Cyan
-            Write-Host '       argos test-model openai/gpt-5.6-luna' -ForegroundColor Cyan
+            Write-Host '  Ej:  argos test-model opencode-go/deepseek-v4-flash' -ForegroundColor Cyan
+            Write-Host '       argos test-model opencode-go/deepseek-v4-flash' -ForegroundColor Cyan
         } else {
             & (Join-Path $ScriptDir 'argos-test-model.ps1') -Model $Model
         }

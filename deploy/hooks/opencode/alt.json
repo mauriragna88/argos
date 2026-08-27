@@ -1,19 +1,19 @@
 {
-  "_comment": "Oh-My-OpenCode model mapping para Atlas RPG. Mergear con oh-my-opencode.jsonc existente.",
+  "_comment": "Oh-My-OpenCode model mapping para Atlas RPG. POLITICA DEL USUARIO (2026-08-16): TODOS los agentes usan exclusivamente opencode-go/deepseek-v4-flash. Prohibido GPT, Claude, GLM, MiniMax, Qwen, Kimi, MiMo.",
   "agents": {
-    "atlas": { "model": "openai/gpt-5.5", "description": "Orquestador RPG Atlas — Player que comanda el party" },
-    "vivi":  { "model": "opencode-go/mimo-v2.5-pro", "description": "Mage Frontend DPS" },
-    "paladin": { "model": "opencode-go/deepseek-v4-pro", "description": "Backend Tank" },
-    "rogue": { "model": "opencode-go/glm-5.1", "description": "QA/Security DPS" },
-    "eiko":  { "model": "opencode-go/qwen3.6-plus", "description": "Healer/DevOps Support" },
-    "monk":  { "model": "openai/gpt-5.5", "description": "Architecture Strategist" },
+    "atlas": { "model": "opencode-go/deepseek-v4-flash", "description": "Orquestador RPG Atlas — Player que comanda el party" },
+    "vivi":  { "model": "opencode-go/deepseek-v4-flash", "description": "Mage Frontend DPS" },
+    "paladin": { "model": "opencode-go/deepseek-v4-flash", "description": "Backend Tank" },
+    "rogue": { "model": "opencode-go/deepseek-v4-flash", "description": "QA/Security DPS" },
+    "eiko":  { "model": "opencode-go/deepseek-v4-flash", "description": "Healer/DevOps Support" },
+    "monk":  { "model": "opencode-go/deepseek-v4-flash", "description": "Architecture Strategist" },
     "ranger": { "model": "opencode-go/deepseek-v4-flash", "description": "Research Librarian" }
   },
   "categories": {
-    "visual-engineering": { "model": "opencode-go/mimo-v2.5-pro" },
-    "deep": { "model": "openai/gpt-5.5" },
-    "ultrabrain": { "model": "openai/gpt-5.5" },
+    "visual-engineering": { "model": "opencode-go/deepseek-v4-flash" },
+    "deep": { "model": "opencode-go/deepseek-v4-flash" },
+    "ultrabrain": { "model": "opencode-go/deepseek-v4-flash" },
     "quick": { "model": "opencode-go/deepseek-v4-flash" },
-    "unspecified-high": { "model": "opencode-go/qwen3.6-plus" }
+    "unspecified-high": { "model": "opencode-go/deepseek-v4-flash" }
   }
 }

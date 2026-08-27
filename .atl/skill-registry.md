@@ -128,21 +128,33 @@ Es la experticia de cada rol hecha checklist obligatoria.
 | ui-ux-pro-max | Vivi (Mage) | Toda UI: jerarquía, spacing, tipografía, componentes | nextlevelbuilder (79K⭐) |
 | taste-skill | Vivi (Mage) | Anti-slop: sin gradientes genéricos ni copy de IA | Leonxln (66K⭐) |
 | handoff | Atlas, Eiko (cross-party) | Pausar/reanudar quests: compresión de estado accionable | mattpocock (88K⭐) |
+| need-info-escalation | Todos los ejecutores + Atlas | Agente sin info → NEED_INFO → Atlas pregunta al usuario UNA vez | ARNES propio |
+| ceo-vision | Ragnarok | Nuevo proyecto/feature: variantes de plataforma (web/desktop/móvil/offline) y si vale la pena | ARNES propio (rol CEO) |
+| prompt-refinement | Maestro | Texto crudo del usuario → quest profesional estructurado; docs de repos desde código real | ARNES propio (rol Prompt Architect) |
+
+**Maestro — Prompt Architect & Docs** (`core/classes/maestro.agent.md`, 2026-08-21):
+Refina prompts crudos del usuario a formato OBJETIVO/CONTEXTO/ALCANCE/CRITERIOS DE ACEPTACIÓN/
+RESTRICCIONES/QUEST TYPE/PARTY antes de que Atlas orqueste. Genera documentación de repos leyendo
+el código real. Comando directo: `argos refine "<texto>"`. Tywin verifica contra LOS CRITERIOS
+QUE MAESTRO DEFINE (contrato texto→verificación cerrado).
 
 **Mapa de auto-carga** (mantener sincronizado con Get-AgentSkills en argos-code.ps1 / argos-party.ps1):
 ```powershell
-'vivi'    = @('ui-ux-pro-max', 'taste-skill')
-'ansem'   = @('postgres-best-practices')
-'kuja'    = @('verification-before-completion')
-'tywin'   = @('verification-before-completion')
-'amarant' = @('writing-plans')
-'atlas'   = @('handoff')
-'eiko'    = @('handoff')
+'vivi'     = @('ui-ux-pro-max', 'taste-skill', 'need-info-escalation')
+'ansem'    = @('postgres-best-practices', 'need-info-escalation')
+'kuja'     = @('verification-before-completion', 'need-info-escalation')
+'tywin'    = @('verification-before-completion')
+'amarant'  = @('writing-plans', 'need-info-escalation')
+'ragnarok' = @('ceo-vision')
+'maestro'  = @('prompt-refinement', 'need-info-escalation')
+'bard'     = @('taste-skill')
+'atlas'    = @('handoff', 'need-info-escalation')
+'eiko'     = @('handoff', 'need-info-escalation')
 ```
 
 ## GAPs (oportunidades para Ragnarok)
 - Contract validation DB↔Frontend: **CERRADO** (arnes-contract-audit, ADR-006)
-- Bard: mejorar DX/docs (parcialmente cubierto)
+- Bard: mejorar DX/docs (parcialmente cubierto — Maestro cubre docs de repos)
 - Performance: query-optimization (Alchemist futuro)
 - Marketing/Ventas: vacante (futuro)
 - Ranger web-search vivo: pendiente API key DEEPSEEK_API_KEY o Firecrawl MCP

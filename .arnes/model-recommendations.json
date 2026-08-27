@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
-  "version": "2026.07",
-  "generated_at": "2026-07-26",
+  "version": "2026.08",
+  "generated_at": "2026-08-16",
+  "policy": "POLITICA DEL USUARIO (2026-08-20): rotacion libre de proveedores. Atlas elige el modelo mas eficiente y barato disponible segun quest y suscripcion activa. Este catalogo es referencia viva para recomendar; nada esta deshabilitado.",
   "sources": [
-    "Web search 2026-07-26: OpenAI GPT-5.6 Sol/Luna/Terra",
-    "Web search 2026-07-26: Anthropic Claude Opus 5 / Sonnet 5 / Haiku 4.5",
-    "Web search 2026-07-26: OpenCode Go provider catalog"
+    "Politica del usuario 2026-08-20: rotacion libre de proveedores (multi-proveedor)",
+    "Web search 2026-07-26: OpenCode Go provider catalog (referencia historica)"
   ],
   "platforms": {
     "opencode": {
@@ -14,46 +14,46 @@
         "free": {
           "price_usd_month": 0,
           "rate_limit": "5K req/5h",
-          "best_models": ["deepseek-v4-flash", "qwen-3.6-plus", "glm-5.2"],
-          "notes": "Tier economico. DeepSeek V4 Flash = 31K req/5h siaram"
+          "best_models": ["deepseek-v4-flash"],
+          "notes": "Tier economico. Rotacion libre: elegir modelo eficiente"
         },
         "pro": {
           "price_usd_month": 10,
           "rate_limit": "30K req/5h",
-          "best_models": ["deepseek-v4-flash", "gpt-5.6-luna", "qwen3.8-max", "mimo-v2.5"],
-          "notes": "DeepSeek V4 Flash = workhorse 75% (158K req/mes). GPT-5.6 Luna = razonamiento medio. Qwen3.8 Max = Atlas orquestador"
+          "best_models": ["deepseek-v4-flash"],
+          "notes": "Rotacion libre: elegir modelo eficiente para cada agente"
         }
       },
       "recommended_party": {
         "free": {
           "atlas": "deepseek-v4-flash",
-          "vivi": "qwen-3.6-plus",
-          "eiko": "qwen-3.6-plus",
+          "vivi": "deepseek-v4-flash",
+          "eiko": "deepseek-v4-flash",
           "paladin": "deepseek-v4-flash",
-          "rogue": "glm-5.2",
+          "rogue": "deepseek-v4-flash",
           "monk": "deepseek-v4-flash",
           "ranger": "deepseek-v4-flash",
           "auron": "deepseek-v4-flash",
           "bran": "deepseek-v4-flash",
-          "quina": "glm-5.2",
-          "varys": "qwen-3.6-plus",
+          "quina": "deepseek-v4-flash",
+          "varys": "deepseek-v4-flash",
           "tywin": "deepseek-v4-flash",
           "sam": "deepseek-v4-flash"
         },
         "pro": {
-          "atlas": "qwen3.8-max",
-          "vivi": "gpt-5.6-luna",
+          "atlas": "deepseek-v4-flash",
+          "vivi": "deepseek-v4-flash",
           "eiko": "deepseek-v4-flash",
           "paladin": "deepseek-v4-flash",
           "rogue": "deepseek-v4-flash",
-          "monk": "gpt-5.6-luna",
+          "monk": "deepseek-v4-flash",
           "ranger": "deepseek-v4-flash",
           "auron": "deepseek-v4-flash",
-          "bran": "gpt-5.6-luna",
+          "bran": "deepseek-v4-flash",
           "quina": "deepseek-v4-flash",
-          "varys": "gpt-5.6-luna",
+          "varys": "deepseek-v4-flash",
           "tywin": "deepseek-v4-flash",
-          "sam": "gpt-5.6-luna"
+          "sam": "deepseek-v4-flash"
         }
       }
     },
@@ -63,72 +63,72 @@
         "free": {
           "price_usd_month": 0,
           "rate_limit": "5K req/5h",
-          "best_models": ["gpt-5.4", "gpt-5.4-mini"],
-          "notes": "Limitado. GPT-5.4-mini para tasks rutinarios"
+          "best_models": ["deepseek-v4-flash"],
+          "notes": "Disponible segun suscripcion"
         },
         "plus": {
           "price_usd_month": 20,
           "rate_limit": "5x Free",
-          "best_models": ["gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.5"],
-          "notes": "GPT-5.6 Luna = velocidad/valor (50-280 msg/5h). Terra = balanceado default"
+          "best_models": ["deepseek-v4-flash"],
+          "notes": "Disponible segun suscripcion"
         },
         "pro": {
           "price_usd_month": 200,
           "rate_limit": "20x Free",
-          "best_models": ["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"],
-          "notes": "GPT-5.6 Sol = deep reasoning (15-90 msg/5h). Para boss fights y arquitectura"
+          "best_models": ["deepseek-v4-flash"],
+          "notes": "Disponible segun suscripcion"
         }
       },
       "reasoning_levels": {
-        "low": "Sol - trivial, fix rutina",
-        "medium": "Luna - features normales, refactor",
-        "high": "Terra - arquitectura, algoritmos complejos"
+        "low": "deepseek-v4-flash",
+        "medium": "deepseek-v4-flash",
+        "high": "deepseek-v4-flash"
       },
       "recommended_party": {
         "free": {
-          "atlas": "gpt-5.4",
-          "vivi": "gpt-5.4",
-          "eiko": "gpt-5.4-mini",
-          "paladin": "gpt-5.4",
-          "rogue": "gpt-5.4-mini",
-          "monk": "gpt-5.4",
-          "ranger": "gpt-5.4-mini",
-          "auron": "gpt-5.4",
-          "bran": "gpt-5.4",
-          "quina": "gpt-5.4-mini",
-          "varys": "gpt-5.4-mini",
-          "tywin": "gpt-5.4",
-          "sam": "gpt-5.4"
+          "atlas": "deepseek-v4-flash",
+          "vivi": "deepseek-v4-flash",
+          "eiko": "deepseek-v4-flash",
+          "paladin": "deepseek-v4-flash",
+          "rogue": "deepseek-v4-flash",
+          "monk": "deepseek-v4-flash",
+          "ranger": "deepseek-v4-flash",
+          "auron": "deepseek-v4-flash",
+          "bran": "deepseek-v4-flash",
+          "quina": "deepseek-v4-flash",
+          "varys": "deepseek-v4-flash",
+          "tywin": "deepseek-v4-flash",
+          "sam": "deepseek-v4-flash"
         },
         "plus": {
-          "atlas": "gpt-5.6-terra",
-          "vivi": "gpt-5.6-luna",
-          "eiko": "gpt-5.5",
-          "paladin": "gpt-5.6-terra",
-          "rogue": "gpt-5.6-luna",
-          "monk": "gpt-5.6-terra",
-          "ranger": "gpt-5.5",
-          "auron": "gpt-5.6-terra",
-          "bran": "gpt-5.6-terra",
-          "quina": "gpt-5.5",
-          "varys": "gpt-5.5",
-          "tywin": "gpt-5.6-terra",
-          "sam": "gpt-5.6-terra"
+          "atlas": "deepseek-v4-flash",
+          "vivi": "deepseek-v4-flash",
+          "eiko": "deepseek-v4-flash",
+          "paladin": "deepseek-v4-flash",
+          "rogue": "deepseek-v4-flash",
+          "monk": "deepseek-v4-flash",
+          "ranger": "deepseek-v4-flash",
+          "auron": "deepseek-v4-flash",
+          "bran": "deepseek-v4-flash",
+          "quina": "deepseek-v4-flash",
+          "varys": "deepseek-v4-flash",
+          "tywin": "deepseek-v4-flash",
+          "sam": "deepseek-v4-flash"
         },
         "pro": {
-          "atlas": "gpt-5.6-sol",
-          "vivi": "gpt-5.6-luna",
-          "eiko": "gpt-5.6-terra",
-          "paladin": "gpt-5.6-sol",
-          "rogue": "gpt-5.6-sol",
-          "monk": "gpt-5.6-sol",
-          "ranger": "gpt-5.6-terra",
-          "auron": "gpt-5.6-sol",
-          "bran": "gpt-5.6-sol",
-          "quina": "gpt-5.6-terra",
-          "varys": "gpt-5.6-terra",
-          "tywin": "gpt-5.6-sol",
-          "sam": "gpt-5.6-sol"
+          "atlas": "deepseek-v4-flash",
+          "vivi": "deepseek-v4-flash",
+          "eiko": "deepseek-v4-flash",
+          "paladin": "deepseek-v4-flash",
+          "rogue": "deepseek-v4-flash",
+          "monk": "deepseek-v4-flash",
+          "ranger": "deepseek-v4-flash",
+          "auron": "deepseek-v4-flash",
+          "bran": "deepseek-v4-flash",
+          "quina": "deepseek-v4-flash",
+          "varys": "deepseek-v4-flash",
+          "tywin": "deepseek-v4-flash",
+          "sam": "deepseek-v4-flash"
         }
       }
     },
@@ -138,95 +138,98 @@
         "free": {
           "price_usd_month": 0,
           "rate_limit": "limitado",
-          "best_models": ["claude-haiku-4.5", "claude-sonnet-4.5"],
-          "notes": "Haiku 4.5 = $1/MTok, speed"
+          "best_models": ["deepseek-v4-flash"],
+          "notes": "Disponible segun suscripcion"
         },
         "pro": {
           "price_usd_month": 17,
           "rate_limit": "5x Free",
-          "best_models": ["claude-sonnet-5", "claude-opus-4.8"],
-          "notes": "Balance calidad/precio"
+          "best_models": ["deepseek-v4-flash"],
+          "notes": "Disponible segun suscripcion"
         },
         "max": {
           "price_usd_month": 100,
           "rate_limit": "20x Pro",
-          "best_models": ["claude-opus-5", "claude-opus-4.8"],
-          "notes": "Opus 5 = $5/MTok, razonamiento profundo. Para boss fights"
+          "best_models": ["deepseek-v4-flash"],
+          "notes": "Disponible segun suscripcion"
         }
       },
       "recommended_party": {
         "free": {
-          "atlas": "claude-sonnet-4.5",
-          "vivi": "claude-sonnet-4.5",
-          "eiko": "claude-haiku-4.5",
-          "paladin": "claude-sonnet-4.5",
-          "rogue": "claude-haiku-4.5",
-          "monk": "claude-sonnet-4.5",
-          "ranger": "claude-haiku-4.5",
-          "auron": "claude-sonnet-4.5",
-          "bran": "claude-sonnet-4.5",
-          "quina": "claude-haiku-4.5",
-          "varys": "claude-haiku-4.5",
-          "tywin": "claude-sonnet-4.5",
-          "sam": "claude-sonnet-4.5"
+          "atlas": "deepseek-v4-flash",
+          "vivi": "deepseek-v4-flash",
+          "eiko": "deepseek-v4-flash",
+          "paladin": "deepseek-v4-flash",
+          "rogue": "deepseek-v4-flash",
+          "monk": "deepseek-v4-flash",
+          "ranger": "deepseek-v4-flash",
+          "auron": "deepseek-v4-flash",
+          "bran": "deepseek-v4-flash",
+          "quina": "deepseek-v4-flash",
+          "varys": "deepseek-v4-flash",
+          "tywin": "deepseek-v4-flash",
+          "sam": "deepseek-v4-flash"
         },
         "pro": {
-          "atlas": "claude-opus-4.8",
-          "vivi": "claude-opus-4.8",
-          "eiko": "claude-sonnet-5",
-          "paladin": "claude-sonnet-5",
-          "rogue": "claude-sonnet-5",
-          "monk": "claude-opus-4.8",
-          "ranger": "claude-sonnet-5",
-          "auron": "claude-opus-4.8",
-          "bran": "claude-opus-4.8",
-          "quina": "claude-sonnet-5",
-          "varys": "claude-sonnet-5",
-          "tywin": "claude-opus-4.8",
-          "sam": "claude-opus-4.8"
+          "atlas": "deepseek-v4-flash",
+          "vivi": "deepseek-v4-flash",
+          "eiko": "deepseek-v4-flash",
+          "paladin": "deepseek-v4-flash",
+          "rogue": "deepseek-v4-flash",
+          "monk": "deepseek-v4-flash",
+          "ranger": "deepseek-v4-flash",
+          "auron": "deepseek-v4-flash",
+          "bran": "deepseek-v4-flash",
+          "quina": "deepseek-v4-flash",
+          "varys": "deepseek-v4-flash",
+          "tywin": "deepseek-v4-flash",
+          "sam": "deepseek-v4-flash"
         },
         "max": {
-          "atlas": "claude-opus-5",
-          "vivi": "claude-opus-5",
-          "eiko": "claude-sonnet-5",
-          "paladin": "claude-opus-4.8",
-          "rogue": "claude-opus-5",
-          "monk": "claude-opus-5",
-          "ranger": "claude-sonnet-5",
-          "auron": "claude-opus-5",
-          "bran": "claude-opus-5",
-          "quina": "claude-sonnet-5",
-          "varys": "claude-sonnet-5",
-          "tywin": "claude-opus-5",
-          "sam": "claude-opus-5"
+          "atlas": "deepseek-v4-flash",
+          "vivi": "deepseek-v4-flash",
+          "eiko": "deepseek-v4-flash",
+          "paladin": "deepseek-v4-flash",
+          "rogue": "deepseek-v4-flash",
+          "monk": "deepseek-v4-flash",
+          "ranger": "deepseek-v4-flash",
+          "auron": "deepseek-v4-flash",
+          "bran": "deepseek-v4-flash",
+          "quina": "deepseek-v4-flash",
+          "varys": "deepseek-v4-flash",
+          "tywin": "deepseek-v4-flash",
+          "sam": "deepseek-v4-flash"
         }
       }
     }
   },
   "quest_type_overrides": {
     "boss_fight": {
-      "atlas": "highest_reasoning_available",
-      "monk": "highest_reasoning_available",
-      "tywin": "highest_reasoning_available",
-      "sam": "highest_reasoning_available"
+      "_rule": "rotacion libre: subir a mejor modelo de razonamiento disponible segun suscripcion.",
+      "atlas": "deepseek-v4-flash",
+      "monk": "deepseek-v4-flash",
+      "tywin": "deepseek-v4-flash",
+      "sam": "deepseek-v4-flash"
     },
     "frontend_quest": {
-      "vivi": "best_frontend_model_available",
-      "eiko": "best_frontend_model_available"
+      "_rule": "rotacion libre: mejor modelo frontend disponible.",
+      "vivi": "deepseek-v4-flash",
+      "eiko": "deepseek-v4-flash"
     },
     "backend_quest": {
-      "paladin": "best_backend_model_available",
-      "auron": "best_security_model_available"
+      "_rule": "rotacion libre: mejor modelo backend disponible.",
+      "paladin": "deepseek-v4-flash",
+      "auron": "deepseek-v4-flash"
     },
     "trivial_quest": {
-      "_rule": "use cheapest tier for all party members",
+      "_rule": "usar el modelo mas barato/eficiente disponible",
       "notes": "Economia de tokens prioritaria"
     }
   },
   "fallback_chain": {
-    "vivi": ["gpt-5.6-luna", "deepseek-v4-flash", "qwen3.7-plus"],
-    "paladin": ["deepseek-v4-flash", "deepseek-v4-pro", "gpt-5.6-luna"],
-    "monk": ["gpt-5.6-luna", "qwen3.8-max", "deepseek-v4-flash"],
-    "atlas": ["qwen3.8-max", "gpt-5.6-luna", "deepseek-v4-flash"]
+    "vivi": ["deepseek-v4-flash", "deepseek/deepseek-v4-flash"],
+    "paladin": ["deepseek-v4-flash", "deepseek/deepseek-v4-pro"],
+    "monk": ["deepseek-v4-flash", "deepseek/deepseek-v4-pro"],
+    "atlas": ["deepseek-v4-flash", "deepseek/deepseek-v4-flash"]
   }
 }

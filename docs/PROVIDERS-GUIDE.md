@@ -79,24 +79,26 @@ setx NVIDIA_API_KEY "nvapi-XXXX..."    # PowerShell (persistente)
 
 ## 🎯 Asignación actual de modelos por agente (config.json)
 
+> **POLITICA DEL USUARIO (2026-08-16)**: TODOS los agentes usan exclusivamente `opencode-go/deepseek-v4-flash`.
+
 | Agente | Modelo | Proveedor | Costo |
 |---|---|---|---|
-| Atlas | qwen3.8-max | OpenCode Go / B.AI | plan |
-| Vivi | gpt-5.6-luna | OpenAI (OAuth) | plan GPT |
-| Ansem | deepseek-v4-flash | NVIDIA | GRATIS |
-| Kuja | deepseek-v4-flash | NVIDIA | GRATIS |
+| Atlas | deepseek-v4-flash | OpenCode Go | plan |
+| Vivi | deepseek-v4-flash | OpenCode Go | plan |
+| Ansem | deepseek-v4-flash | OpenCode Go | plan |
+| Kuja | deepseek-v4-flash | OpenCode Go | plan |
 | Eiko | deepseek-v4-flash | OpenCode Go | plan |
-| Amarant | gpt-5.6-luna | OpenAI | plan GPT |
-| Eremez | deepseek-v4-flash | NVIDIA | GRATIS |
-| Auron | deepseek-v4-pro | NVIDIA | GRATIS |
-| Bran | gpt-5.6-luna | OpenAI | plan GPT |
+| Amarant | deepseek-v4-flash | OpenCode Go | plan |
+| Eremez | deepseek-v4-flash | OpenCode Go | plan |
+| Auron | deepseek-v4-flash | OpenCode Go | plan |
+| Bran | deepseek-v4-flash | OpenCode Go | plan |
 | Quina | deepseek-v4-flash | OpenCode Go | plan |
 | Tidus | deepseek-v4-flash | OpenCode Go | plan |
-| Bard | gpt-5.6-luna | OpenAI | plan GPT |
-| Ragnarok | gpt-5.6-luna | OpenAI / B.AI | plan |
-| Varys | gpt-5.6-luna | OpenAI | plan GPT |
-| Tywin | deepseek-v4-flash | NVIDIA | GRATIS |
-| Sam | gpt-5.6-luna | OpenAI | plan GPT |
+| Bard | deepseek-v4-flash | OpenCode Go | plan |
+| Ragnarok | deepseek-v4-flash | OpenCode Go | plan |
+| Varys | deepseek-v4-flash | OpenCode Go | plan |
+| Tywin | deepseek-v4-flash | OpenCode Go | plan |
+| Sam | deepseek-v4-flash | OpenCode Go | plan |
 
 **Cambiar**: `atlas` → opción 2 (wizard con flechas) → actualiza `.arnes/config.json`.
 

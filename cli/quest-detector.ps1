@@ -50,7 +50,7 @@ $patterns = @{
     "architecture" = @("arquitectura","architecture","plan","redisen","refactor mayor","migrar","migration","monorepo","design system","project structure","adr","module","module boundary","clean architecture","hexagonal","microservice","monolith","serverless","event-driven","cqrs","event sourcing")
     "research" = @("investiga","busca","compara","que libreria","best practice","mejor forma","docs","documentation","como se hace","how to","tutorial","benchmark","comparison","library comparison","alternatives","vs")
     "devops" = @("deploy","ci","cd","docker","production","prod","rollback","vercel","netlify","railway","fly","github actions","pipeline","workflow","build","release","tag","semver","infrastructure","k8s","kubernetes","terraform","ansible","helm")
-    "boss" = @("feature completa","nueva area","modulo entero","v1","mvp","from scratch","build a","rebuild","new project","greenfield","kickstart","bootstrap","launch","go-live","prod-ready","complete feature","end to end")
+    "boss" = @("feature completa","nueva area","nueva área","modulo entero","módulo entero","v1","mvp","from scratch","desde cero","build a","rebuild","new project","proyecto nuevo","greenfield","kickstart","bootstrap","launch","go-live","prod-ready","complete feature","end to end","plataforma completa","app completa","sistema completo")
 }
 
 # L0 indicators (require user confirmation)
@@ -101,6 +101,25 @@ $parties = @{
     "unknown"       = @("amarant")
 }
 $suggestedParty = $parties[$bestType]
+
+# === Justificacion del party (retroalimentacion explicita: POR QUE este party) ===
+# El "para esta tarea trabajamos con X porque..." — cada rol es experto en su dominio.
+# Analogia del usuario: no mandas a un ingeniero a hacer trabajo de secretaria.
+$partyReasons = @{
+    "frontend"     = "Vivi (Mage) es la experta UI/UX (React, Tailwind); Eiko la acompana (regla fija: soporte y QA de builds)."
+    "backend"      = "Ansem (Paladin) es el backend tank (APIs, Supabase, Zod, RLS); Eiko da soporte devops."
+    "fix"          = "Kuja (Rogue) caza bugs con precision quirurgica; Eiko repara builds si algo se rompe."
+    "architecture" = "Amarant (Monk) disena la arquitectura (SDD, clean-arch); Eremez (Ranger) investiga referencias."
+    "research"     = "Eremez (Ranger) es el investigador/librarian: rapido, cita fuentes, no inventa."
+    "devops"       = "Eiko (Cleric) es la healer/devops: deploy, CI/CD, builds, rollback."
+    "boss"         = "Quest completa: todo el party (Vivi+Ansem+Eiko+Kuja+Amarant+Eremez) con sus especialidades."
+    "unknown"      = "Tipo no claro: Amarant (Monk) planifica primero y Atlas decide tras complementar."
+}
+$partyReason = $partyReasons[$bestType]
+# Auron se une por seguridad: anadir su justificacion
+if ($suggestedParty -contains 'auron') {
+    $partyReason += " Auron (Warden) se une: el quest toca auth/RLS/secrets/deploy (superficie de seguridad)."
+}
 
 # === Auron auto-join (SEGURIDAD): RLS/security keywords -> Auron al party ===
 # Misma regla que argos-party.ps1: si el quest toca auth/RLS/secrets/deploy,
@@ -185,6 +204,7 @@ $result = @{
     confidence = $bestScore
     complexity = $complexity
     suggested_party = $suggestedParty
+    party_reason = $partyReason
     is_l0 = $isL0
     has_chain = $hasChain
     sub_quests = $subQuests
@@ -210,18 +230,13 @@ if ($isL0 -and $difficulty -lt 3) { $difficulty = 3 }  # L0 manda: minimo comple
 
 $modelTier = 'flash'
 $recommendedModel = 'opencode-go/deepseek-v4-flash'
+# POLITICA DEL USUARIO (2026-08-16): todos los agentes usan deepseek-v4-flash, sin importar dificultad.
 if ($difficulty -ge 4) {
-    $modelTier = 'highest'
-    $recommendedModel = 'opencode-go/qwen3.8-max'
+    $modelTier = 'flash'
+    $recommendedModel = 'opencode-go/deepseek-v4-flash'
 } elseif ($difficulty -eq 3) {
-    $modelTier = 'pro'
-    $recommendedModel = switch ($bestType) {
-        'frontend'      { 'opencode-go/gpt-5.6-luna' }
-        'architecture'  { 'opencode-go/kimi-k2.6' }
-        'research'      { 'opencode-go/deepseek-v4-flash' }  # ranger: workhorse basta
-        'devops'        { 'opencode-go/deepseek-v4-pro' }
-        default         { 'opencode-go/deepseek-v4-pro' }    # backend / fix / unknown
-    }
+    $modelTier = 'flash'
+    $recommendedModel = 'opencode-go/deepseek-v4-flash'
 }
 
 $triageGate = if ($difficulty -ge 4 -or $isL0) { 'required' } elseif ($difficulty -eq 3) { 'ask' } else { 'auto_pass' }
@@ -237,6 +252,66 @@ foreach ($ap in $ambiguityPatterns) {
 }
 if ($isAmbiguous -and $triageGate -eq 'auto_pass') {
     $triageGate = 'ask'   # Atlas va a complementar; el nivel puede subir -> confirmar
+}
+
+# === TRIAGE V2: VAGUENESS SCORE + INFO GAPS + CLARIFY QUESTIONS ===
+# Retroalimentacion EXACTA cuando el prompt es vago o ambiguo. En vez de solo
+# marcar "ambiguo", medimos QUE falta y generamos las preguntas exactas que
+# Atlas debe hacer al usuario ANTES de trabajar (NEED_INFO protocol).
+# 0-30 claro | 31-60 mejorable | 61-100 muy vago (clarificacion obligatoria)
+$vaguenessScore = 0
+$infoGaps = @()
+$clarifyQuestions = @()
+
+# 1. Longitud del prompt (muy corto = poco contexto)
+if ($Prompt.Length -lt 20) { $vaguenessScore += 25 }
+elseif ($Prompt.Length -lt 40) { $vaguenessScore += 15 }
+elseif ($Prompt.Length -lt 80) { $vaguenessScore += 5 }
+
+# 2. Tipo de quest desconocido (ni una keyword de dominio)
+if ($bestScore -eq 0) { $vaguenessScore += 30 }
+
+# 3. Sin objetivo tecnico detectable (no menciona archivo/feature/bug/lib)
+$hasTechTarget = $promptLower -match '\.(tsx|ts|jsx|js|py|sql|json|css)|componente|api|endpoint|tabla|schema|funcion|función|clase|pagina|página|test|bug|error|deploy|migracion|migración'
+if (-not $hasTechTarget) { $vaguenessScore += 15; $infoGaps += 'objetivo_tecnico' }
+
+# 4. Gaps especificos por tipo de quest (que le falta a CADA dominio)
+switch ($bestType) {
+    'frontend' {
+        if (-not ($promptLower -match 'componente|pagina|página|seccion|sección|modal|formulario|form')) { $infoGaps += 'que_ui_exacta' ; $clarifyQuestions += '¿Que pantalla o componente exactamente? (ej: formulario de login, tabla de clientes)' }
+        if (-not ($promptLower -match 'tailwind|css|estilo|color|dark|tema')) { $infoGaps += 'estilo_deseado' ; $clarifyQuestions += '¿Tiene diseño/referencia visual o lo diseño yo? (si hay Figma/mockup, pasalo)' }
+    }
+    'backend' {
+        if (-not ($promptLower -match 'tabla|schema|entidad|modelo|endpoint|api|ruta')) { $infoGaps += 'que_backend_exacto'; $clarifyQuestions += '¿Que endpoint/tabla/entidad exactamente? (nombre y campos si los tienes)' }
+        if (-not ($promptLower -match 'rls|permiso|rol|auth|validacion|validación|zod')) { $infoGaps += 'reglas_negocio'; $clarifyQuestions += '¿Quien puede usar esto? (roles/permisos) ¿Hay validaciones especiales?' }
+    }
+    'fix' {
+        if (-not ($promptLower -match 'error|excepción|excepcion|stack|trace|log|mensaje')) { $infoGaps += 'mensaje_error'; $clarifyQuestions += '¿Cual es el mensaje de error EXACTO? (pegalo completo si puedes)' }
+        if (-not ($promptLower -match 'cuando|al |pasos|reproduc')) { $infoGaps += 'pasos_reproduccion'; $clarifyQuestions += '¿Cuando pasa? (pasos para reproducirlo)' }
+    }
+    'architecture' {
+        if (-not ($promptLower -match 'porque|motivo|problema|necesito|goal|objetivo')) { $infoGaps += 'motivacion'; $clarifyQuestions += '¿Que problema real resuelve este cambio? (el "para qué")' }
+        if (-not ($promptLower -match 'alcance|solo|incluye|excluye')) { $infoGaps += 'alcance'; $clarifyQuestions += '¿Alcance? (que incluye y que queda fuera)' }
+    }
+    'devops' {
+        if (-not ($promptLower -match 'vercel|netlify|docker|aws|github|servidor|hosting')) { $infoGaps += 'plataforma_deploy'; $clarifyQuestions += '¿A donde se despliega? (Vercel, Docker, servidor propio...)' }
+    }
+}
+# 5. Sin criterio de exito (como sabremos que quedo bien)
+if (-not ($promptLower -match 'debe|tiene que|criterio|aceptacion|aceptación|esperado|correcto')) { $vaguenessScore += 10; $infoGaps += 'criterio_exito' }
+
+# Pregunta universal si todo lo demas es vago
+if ($vaguenessScore -ge 60 -and $clarifyQuestions.Count -eq 0) {
+    $clarifyQuestions += '¿Puedes describir con mas detalle que quieres lograr? (objetivo, alcance, como se usara)'
+}
+
+# Normalizar score a 0-100 (cap)
+if ($vaguenessScore -gt 100) { $vaguenessScore = 100 }
+
+# Clarificacion obligatoria: score alto -> gate sube a 'required' (Atlas DEBE preguntar)
+$needsClarification = ($vaguenessScore -ge 61 -and $clarifyQuestions.Count -gt 0)
+if ($needsClarification -and $triageGate -in @('auto_pass','ask')) {
+    $triageGate = 'ask'
 }
 
 # OSMA consulta (best-effort): experiencias similares para afinar la clasificacion
@@ -272,6 +347,11 @@ $result.recommended_model = $recommendedModel
 $result.triage_gate = $triageGate
 $result.is_ambiguous = $isAmbiguous
 $result.osma_hint = $osmaHint
+# TRIAGE V2: vagueness + info gaps + preguntas de clarificacion
+$result.vagueness_score = $vaguenessScore
+$result.info_gaps = $infoGaps
+$result.clarify_questions = $clarifyQuestions
+$result.needs_clarification = $needsClarification
 
 # Memoria: append a .arnes/triage-log.jsonl (event log append-only, no memoria paralela)
 if (-not $NoLog) {
@@ -362,6 +442,7 @@ if (-not $Silent) {
     Write-Host "  Quest type:    $bestType (score: $bestScore)" -ForegroundColor White
     Write-Host "  Complexity:    $complexity" -ForegroundColor White
     Write-Host "  Party:         $($suggestedParty -join ', ')" -ForegroundColor Yellow
+    Write-Host "  Por que:       $partyReason" -ForegroundColor DarkGray
     Write-Host "  L0 quest:      $isL0" -ForegroundColor $(if ($isL0) { "Red" } else { "DarkGray" })
     Write-Host "  Has chain:     $hasChain" -ForegroundColor DarkGray
     Write-Host "  Estimated HP:  $estimatedHP" -ForegroundColor DarkGray
@@ -383,6 +464,20 @@ if ($Recommend -and -not $Silent) {
     Write-Host ("║ {0,-41} ║" -f (" Party sugerido: $shortParty")) -ForegroundColor Yellow
     Write-Host ("║ {0,-41} ║" -f (" Costo est.: $mpK" + "K tokens · ~$" + ("{0:N2}" -f $estimatedCostUsd))) -ForegroundColor Yellow
     Write-Host ("║ {0,-41} ║" -f (" Complejidad: $complexity · L0: $l0Txt")) -ForegroundColor White
+    # TRIAGE V2: clarificacion si el prompt es vago (retroalimentacion exacta)
+    if ($needsClarification) {
+        Write-Host ("╠" + ("═" * 43) + "╣") -ForegroundColor Yellow
+        Write-Host ("║ {0,-41} ║" -f (" ⚠ PROMPT VAGO (vagueness $vaguenessScore/100)")) -ForegroundColor Yellow
+        foreach ($q in ($clarifyQuestions | Select-Object -First 3)) {
+            $qt = $q
+            while ($qt.Length -gt 41) {
+                Write-Host ("║ {0,-41} ║" -f $qt.Substring(0, 41)) -ForegroundColor White
+                $qt = "   " + $qt.Substring(41)
+            }
+            if ($qt) { Write-Host ("║ {0,-41} ║" -f $qt) -ForegroundColor White }
+        }
+        Write-Host ("║ {0,-41} ║" -f " → Responde y Atlas arma el quest bien.") -ForegroundColor Yellow
+    }
     Write-Host ("║ {0,-41} ║" -f " → ¿Ejecutar? (sí / ajustar / no)") -ForegroundColor Yellow
     Write-Host ("╚" + ("═" * 43) + "╝") -ForegroundColor Cyan
     Write-Host ""

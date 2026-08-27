@@ -1,4 +1,4 @@
-# model-telemetry.ps1 - FASE 1: telemetria formal por modelo (osma-model-run / osma-model-stats)
+﻿# model-telemetry.ps1 - FASE 1: telemetria formal por modelo (osma-model-run / osma-model-stats)
 # =============================================================================================
 # Registra y consulta QUE modelo hizo QUE, con QUE resultado y a QUE costo.
 # Event log append-only: .arnes/model-runs.jsonl (no es memoria paralela — es registro
@@ -10,12 +10,12 @@
 #   stats   -> agregados: success_rate, avg_tokens, cost estimado por model x quest_type
 #
 # Uso:
-#   .\cli\model-telemetry.ps1 -Action record -Agent vivi -Model opencode-go/deepseek-v4-pro `
+#   .\cli\model-telemetry.ps1 -Action record -Agent vivi -Model opencode-go/deepseek-v4-flash `
 #       -Provider opencode -QuestId Q-001 -QuestType frontend -Difficulty 3 -Route pro `
 #       -Party "vivi,eiko" -TokensUsed 4500 -Verdict PASS -Reward 0.9
 #   .\cli\model-telemetry.ps1 -Action stats
 #   .\cli\model-telemetry.ps1 -Action stats -Json
-#   .\cli\model-telemetry.ps1 -Action stats -Model opencode-go/deepseek-v4-pro
+#   .\cli\model-telemetry.ps1 -Action stats -Model opencode-go/deepseek-v4-flash
 
 #Requires -Version 5.1
 [CmdletBinding()]

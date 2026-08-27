@@ -17,7 +17,12 @@ param(
 
     [int]$WindowMinutes = 60,
 
-    [int]$CooldownMinutes = 30
+    [int]$CooldownMinutes = 30,
+
+    # "Empujon" (retroalimentacion justa): si el agente tiene buen historial (trust alto)
+    # y falla una vez, este fallo NO cuenta con el peso completo contra el circuit breaker.
+    # Uso: record-fail -Agent vivi -SoftFail  -> fallo puntual de agente confiable.
+    [switch]$SoftFail
 )
 
 $ErrorActionPreference = "Continue"
@@ -118,6 +123,21 @@ function Purge-Expired($state) {
     return $state
 }
 
+function Get-AgentTrust {
+    param([string]$AgentName)
+    # Lee el trust score del agente desde shared-blackboard.json (retroalimentacion historica).
+    # Devuelve 0.0 si no hay dato (desconocido = no asumir confianza alta).
+    $bbPath = Join-Path $ArnesDir "shared-blackboard.json"
+    if (-not (Test-Path $bbPath)) { return 0.0 }
+    try {
+        $bb = Get-Content -LiteralPath $bbPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ($bb.trust_scores -and $bb.trust_scores.$AgentName) {
+            return [double]$bb.trust_scores.$AgentName.score
+        }
+    } catch {}
+    return 0.0
+}
+
 function Record-Fail($agentName, $state) {
     $now = (Get-Date).ToString("o")
     if (-not $state.agents.ContainsKey($agentName)) {
@@ -130,6 +150,27 @@ function Record-Fail($agentName, $state) {
         }
     }
     $entry = $state.agents[$agentName]
+
+    # "EMPujon": fallo puntual de un agente confiable no cuenta con peso completo.
+    # Un agente con trust >= 0.8 que falla 1 vez (SoftFail) NO se bloquea: el fallo
+    # se registra pero se le da otra oportunidad (el historial habla por el).
+    if ($SoftFail) {
+        $trust = Get-AgentTrust $agentName
+        if ($trust -ge 0.8) {
+            Write-Host "  [PUSH] $agentName fallo puntual (trust $([math]::Round($trust,2))) - empujon: no cuenta contra el breaker." -ForegroundColor Green
+            # Registrar el fallo suave en memoria (aprende sin castigar)
+            try {
+                $memScript = (Get-OsmaMemoryCli)
+                if (Test-Path $memScript) {
+                    & $memScript save -Agent $agentName -Topic "circuit-breaker/soft-fail" -Type "verdict" -Content "Soft fail (trust alto): fallo puntual, no bloqueado. Se le dio otra oportunidad." 2>$null
+                }
+            } catch {}
+            return $state
+        }
+        # trust bajo o desconocido: el fallo cuenta normal
+        Write-Host "  [WARN] $agentName SoftFail pero trust bajo/desconocido - cuenta normal." -ForegroundColor Yellow
+    }
+
     $entry.fails += @(@{ timestamp = $now; reason = "quest_failed" })
     $entry.fail_count = $entry.fails.Count
 

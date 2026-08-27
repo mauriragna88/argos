@@ -1,4 +1,4 @@
-﻿// ARGOS/OSMA memory bridge for DeepSeek Harness (Cordis plugin).
+// ARGOS/OSMA memory bridge for DeepSeek Harness (Cordis plugin).
 //
 // Goals (user requirement):
 //  1. OSMA es la memoria compartida per-proyecto: <project>/.arnes/arnes.db.
@@ -28,19 +28,10 @@ const TRIAGE_PATTERNS = {
 
 const TRIAGE_L0 = ['delete', 'bulk delete', 'destroy', 'drop table', 'rm -rf', 'production deploy', 'prod deploy', 'force push', 'git reset', 'schema migration', 'rls change', 'rls policy', 'auth change', 'rollback prod', 'rollback production', 'secret rotation', 'database migration', 'breaking change', 'produccion', 'producción', 'rollback', 'migracion', 'migración', 'rls', 'borrar', 'rotacion de secrets', 'rotación de secrets']
 
-// Modelo recomendado por dificultad/dominio (espejo de quest-detector.ps1)
+// Modelo recomendado por dificultad/dominio
+// POLITICA DEL USUARIO (2026-08-16): todos los niveles usan opencode-go/deepseek-v4-flash.
 function recommendModel(difficulty, questType) {
-  if (difficulty >= 4) return { model: 'opencode-go/qwen3.8-max', tier: 'highest', gate: 'required' }
-  if (difficulty === 3) {
-    const byType = {
-      frontend: 'opencode-go/gpt-5.6-luna',
-      architecture: 'opencode-go/kimi-k2.6',
-      research: 'opencode-go/deepseek-v4-flash',
-      devops: 'opencode-go/deepseek-v4-pro',
-    }
-    return { model: byType[questType] || 'opencode-go/deepseek-v4-pro', tier: 'pro', gate: 'ask' }
-  }
-  return { model: 'opencode-go/deepseek-v4-flash', tier: 'flash', gate: 'auto_pass' }
+  return { model: 'opencode-go/deepseek-v4-flash', tier: 'flash', gate: difficulty >= 4 ? 'required' : difficulty === 3 ? 'ask' : 'auto_pass' }
 }
 
 function classifyPrompt(prompt) {
@@ -152,7 +143,11 @@ const triageTool = defineTool({
 export const name = 'argos-osma'
 export const inject = ['tools']
 
-const text = (value) => ({ content: [{ type: 'text', text: value }], details: {} })
+// Contrato del harness: execute DEBE devolver el valor canonico declarado por
+// output.schema (string plano aqui); render lo proyecta a content blocks.
+// Antes esto devolvia { content, details } y el validador de salida del harness
+// rechazaba el objeto contra schema {type:'string'} con '"value" must be a string'.
+const text = (value) => String(value)
 
 function resolveCwd(args, exec) {
   if (args?.cwd) return args.cwd

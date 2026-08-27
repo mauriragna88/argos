@@ -50,7 +50,7 @@ if (Test-Path $ModelsPath) {
 }
 function Get-AgentModel($key) {
     if ($am.ContainsKey($key) -and $am[$key]) { return $am[$key] }
-    return 'opencode-go/gpt-5.6-luna'
+    return 'opencode-go/deepseek-v4-flash'
 }
 
 # === Persona RPG del agente (con reparacion de mojibake) ===

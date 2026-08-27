@@ -1,5 +1,5 @@
 {
-  "_comment": "Claude desktop config para Atlas RPG. Mergear con claude_desktop_config.json existente.",
+  "_comment": "Claude desktop config para Atlas RPG. POLITICA DEL USUARIO (2026-08-16): plataforma Claude DESHABILITADA. Solo se trabaja con deepseek-v4-flash. Esta config queda como referencia historica.",
   "mcpServers": {
     "atlas-rpg": {
       "command": "node",
@@ -12,42 +12,42 @@
   },
   "agents": {
     "atlas": {
-      "model": "claude-opus-4",
+      "model": "deepseek-v4-flash",
       "system_prompt_file": "core/atlas-player.agent.md",
       "role": "primary"
     },
     "vivi": {
-      "model": "claude-opus-4",
+      "model": "deepseek-v4-flash",
       "system_prompt_file": "core/classes/vivi.agent.md",
       "role": "subagent",
       "category": "visual-engineering"
     },
     "paladin": {
-      "model": "claude-sonnet-4",
+      "model": "deepseek-v4-flash",
       "system_prompt_file": "core/classes/paladin.agent.md",
       "role": "subagent",
       "category": "backend"
     },
     "rogue": {
-      "model": "claude-sonnet-4",
+      "model": "deepseek-v4-flash",
       "system_prompt_file": "core/classes/rogue.agent.md",
       "role": "subagent",
       "category": "qa"
     },
     "eiko": {
-      "model": "claude-sonnet-4",
+      "model": "deepseek-v4-flash",
       "system_prompt_file": "core/classes/eiko.agent.md",
       "role": "subagent",
       "category": "devops"
     },
     "monk": {
-      "model": "claude-opus-4",
+      "model": "deepseek-v4-flash",
       "system_prompt_file": "core/classes/monk.agent.md",
       "role": "subagent",
       "category": "architecture"
     },
     "ranger": {
-      "model": "claude-haiku-4",
+      "model": "deepseek-v4-flash",
       "system_prompt_file": "core/classes/ranger.agent.md",
       "role": "subagent",
       "category": "research"

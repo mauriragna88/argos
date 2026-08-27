@@ -6,8 +6,11 @@ ARGOS MODELS APPLY - Aplica .arnes/agent-models.json a los agentes instalados de
 .DESCRIPTION
 Cada agente del party (vivi, ansem, auron, kuja...) se define como subagente en
 ~/.config/opencode/agents/<name>.md. Sin frontmatter de modelo, el subagente usa
-el modelo del agente primario que lo invoca (hoy: qwen3.8-max de Atlas, por eso
-todo el trabajo cae en un solo modelo y no se ve uso por modelo).
+el modelo del agente primario que lo invoca.
+
+POLITICA DEL USUARIO (2026-08-20): rotacion libre de proveedores. El modelo de cada agente
+se define en agent-models.json y puede apuntar a cualquier proveedor conectado
+(opencode-go, commandcode, nvidia, bai, etc). El usuario elige el mas eficiente/barato.
 
 Este script inyecta `model: <modelo>` en el frontmatter de cada agente instalado,
 para que cada uno use SU modelo al delegar. Es el eslabon que conecta

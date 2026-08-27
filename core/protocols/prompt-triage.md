@@ -99,11 +99,11 @@ El gate de nivel 4 NUNCA se salta. El gate L0 (producción/destructivo) NUNCA se
 
 ## 5. Decisión de modelo
 
-- **Nivel 1-2** → modelo de trabajo actual (workhorse, ej. `deepseek-v4-flash`). No gastar tokens de razonamiento.
-- **Nivel 3** → recomendar `modelo de razonamiento` disponible según suscripción (`model-recommendations.json` / `model-routing-policy.json`):
-  - OpenCode Pro: `gpt-5.6-luna` (razonamiento medio) o `deepseek-v4-pro`/`kimi-k2.6` según dominio
-  - Codex: `gpt-5.6-terra` (high) · Claude: `claude-sonnet-5`/`opus-4.8`
-- **Nivel 4** → `highest_reasoning_available`: Codex `gpt-5.6-sol`, Claude `opus-5`, OpenCode `kimi-k2.6`/`qwen3.8-max`.
+> **POLITICA DEL USUARIO (2026-08-16)**: TODOS los niveles usan `opencode-go/deepseek-v4-flash`. No hay switch de modelo, no hay "modelo de razonamiento" alternativo, no hay fallbacks. El gate (required/ask) se mantiene igual pero el modelo recomendado es siempre deepseek-v4-flash.
+
+- **Nivel 1-2** → `deepseek-v4-flash` (workhorse). No gastar tokens extra.
+- **Nivel 3** → `deepseek-v4-flash` (politica usuario: sin modelo de razonamiento alternativo).
+- **Nivel 4** → `deepseek-v4-flash` (politica usuario: sin highest_reasoning; el gate sigue siendo required).
 
 ### 5.1 Límite honesto (sesión locked)
 

@@ -182,12 +182,16 @@ function Update-TriageOutcome($questId, $verdict, $agent) {
     } catch {}
 }
 
-function Invoke-CircuitBreaker($agentName) {
+function Invoke-CircuitBreaker($agentName, [switch]$SoftFail) {
     if (-not $agentName) { return }
     $cbScript = Join-Path $PSScriptRoot "circuit-breaker.ps1"
     if (Test-Path $cbScript) {
         try {
-            $null = & $cbScript -Action record-fail -Agent $agentName -ErrorAction SilentlyContinue 2>&1
+            if ($SoftFail) {
+                $null = & $cbScript -Action record-fail -Agent $agentName -SoftFail -ErrorAction SilentlyContinue 2>&1
+            } else {
+                $null = & $cbScript -Action record-fail -Agent $agentName -ErrorAction SilentlyContinue 2>&1
+            }
         } catch {}
     }
 }
@@ -402,7 +406,15 @@ function Quest-Done($state, $questId, $verdict, $agent, $tokens, $evidencePath, 
 
     # Circuit breaker
     if ($verdict -ne "PASS" -and $agent) {
-        Invoke-CircuitBreaker $agent
+        # "EMPujon": FAIL_PARTIAL (el agente avanzo) de un agente con buen historial
+        # se registra como soft fail: no cuenta con peso completo contra el breaker.
+        # FAIL_TOTAL es fallo duro: cuenta normal (3 fallos -> bloqueo 30 min).
+        $isPartial = ($verdict -eq "FAIL_PARTIAL")
+        if ($isPartial) {
+            Invoke-CircuitBreaker $agent -SoftFail
+        } else {
+            Invoke-CircuitBreaker $agent
+        }
     } elseif ($verdict -eq "PASS" -and $agent) {
         $cbScript = Join-Path $PSScriptRoot "circuit-breaker.ps1"
         if (Test-Path $cbScript) {

@@ -76,7 +76,7 @@ if (Test-Path $ModelsPath) {
     $raw = Get-Content $ModelsPath -Raw | ConvertFrom-Json
     if ($raw.agents.$Agent) { $model = [string]$raw.agents.$Agent }
 }
-if (-not $model) { $model = 'opencode-go/gpt-5.6-luna' }
+if (-not $model) { $model = 'opencode-go/deepseek-v4-flash' }
 
 # ============ Persona del agente (con reparacion de mojibake) ============
 function Get-AgentPrompt {
@@ -106,10 +106,47 @@ function Get-AgentPrompt {
 }
 $persona = Get-AgentPrompt $Agent
 
+# ============ Carga de SKILLS por agente (auto-injection) ============
+# Cada agente carga automaticamente sus skills del skill registry (.agents/skills/)
+# segun su clase. Es el "complemento de poder": la experticia de cada rol hecha checklist.
+function Get-AgentSkills {
+    param([string]$Key)
+    # Mapa agente -> skills (fuente de verdad: .atl/skill-registry.md)
+    $skillMap = @{
+        'vivi'    = @('ui-ux-pro-max', 'taste-skill', 'need-info-escalation')
+        'ansem'   = @('postgres-best-practices', 'need-info-escalation')
+        'kuja'    = @('verification-before-completion', 'need-info-escalation')
+        'tywin'   = @('verification-before-completion')
+        'amarant' = @('writing-plans', 'need-info-escalation')
+        'ragnarok' = @('ceo-vision')
+        'maestro' = @('prompt-refinement', 'need-info-escalation')
+        'bard'    = @('taste-skill')
+        'atlas'   = @('handoff', 'need-info-escalation')
+        'eiko'    = @('handoff', 'need-info-escalation')
+    }
+    $skills = @()
+    $names = @()
+    if ($skillMap.ContainsKey($Key)) { $names = @($skillMap[$Key]) }
+    foreach ($s in $names) {
+        $p = Join-Path $Root ".agents\skills\$s\SKILL.md"
+        if (Test-Path $p) {
+            try {
+                $raw = [System.IO.File]::ReadAllText($p)
+                # Quitar frontmatter YAML (--- ... ---) para no confundir al LLM
+                $body = $raw -replace '(?s)^---.*?---\s*', ''
+                $skills += ("### SKILL: {0}`n{1}" -f $s, $body.Trim())
+            } catch {}
+        }
+    }
+    return ($skills -join "`n`n")
+}
+$agentSkills = Get-AgentSkills $Agent
+
 $system = @"
 $persona
+"@ + $(if ($agentSkills) { "`n`n[SKILLS DEL ROL — metodologia obligatoria para este agente]`n$agentSkills" }) + @"
 
-[MODO CODING ARNES - reglas]
+[MODE CODING ARNES - reglas]
 - Trabajas en el proyecto: $WorkDir
 - Usa las herramientas disponibles para leer, crear y editar archivos REALES.
 - Nunca digas 'no puedo' ni pongas 'TODO' o placeholders: entrega el codigo/archivo real.

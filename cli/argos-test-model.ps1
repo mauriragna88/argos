@@ -9,8 +9,8 @@ y muestra su respuesta: que modelo es y que proveedor lo creo. Confirma tambien 
 de tokens. Complementario al `argos verify` (que valida la conexion de la API).
 
 .EXAMPLE
-.\argos-test-model.ps1 -Model nvidia/deepseek-ai/deepseek-v4-flash
-.\argos-test-model.ps1 -Model openai/gpt-5.6-luna
+.\argos-test-model.ps1 -Model opencode-go/deepseek-v4-flash
+.\argos-test-model.ps1 -Model opencode-go/deepseek-v4-flash
 #>
 [CmdletBinding()]
 param(

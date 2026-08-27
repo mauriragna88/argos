@@ -1,4 +1,4 @@
-﻿# ARNES ARGOS — Contexto del harness (para integrar con otra IA / arnes)
+# ARNES ARGOS — Contexto del harness (para integrar con otra IA / arnes)
 
 > Documento de contexto para dárselo a otra IA o harness y explicarle qué es ARNES ARGOS,
 > cómo funciona y cómo se integra. Redactado el 2026-08-06.
@@ -37,27 +37,28 @@ Bard, Tidus, Ragnarok). "ARGOS" es el gigante mitológico de los 100 ojos: todo 
 
 ## 3. Los 16 agentes (party)
 
-| Agente | Clase | Rol | Modelo sugerido |
+> **POLITICA DEL USUARIO (2026-08-16)**: TODOS los agentes usan exclusivamente `opencode-go/deepseek-v4-flash`. Prohibido GPT, Claude, GLM, MiniMax, Qwen, Kimi, MiMo.
+
+| Agente | Clase | Rol | Modelo |
 |---|---|---|---|
-| Atlas | Player/Orchestrator | Orquesta, delega, autoriza (nunca codea) | qwen3.8-max |
-| Vivi | Mage | Frontend (React/Next/Tailwind) | gpt-5.6-luna |
+| Atlas | Player/Orchestrator | Orquesta, delega, autoriza (nunca codea) | deepseek-v4-flash |
+| Vivi | Mage | Frontend (React/Next/Tailwind) | deepseek-v4-flash |
 | Ansem | Paladin | Backend (APIs, Supabase, Zod) | deepseek-v4-flash |
 | Kuja | Rogue | QA (tests, edge cases) | deepseek-v4-flash |
 | Eiko | Cleric | DevOps (CI/CD, builds, deploy) | deepseek-v4-flash |
-| Amarant | Monk | Arquitectura (SDD, ADR, planes) | gpt-5.6-luna |
+| Amarant | Monk | Arquitectura (SDD, ADR, planes) | deepseek-v4-flash |
 | Eremez | Ranger | Research (librerías, docs) | deepseek-v4-flash |
-| Auron | Warden | Seguridad (OWASP, RLS, L0 gate) | deepseek-v4-pro |
-| Bran | Seer | Análisis, % completado, crecimiento | gpt-5.6-luna |
+| Auron | Warden | Seguridad (OWASP, RLS, L0 gate) | deepseek-v4-flash |
+| Bran | Seer | Análisis, % completado, crecimiento | deepseek-v4-flash |
 | Quina | Banker | Tokens, presupuesto | deepseek-v4-flash |
-| Varys | Spider | Tracker, evidencia | gpt-5.6-luna |
+| Varys | Spider | Tracker, evidencia | deepseek-v4-flash |
 | Tywin | Verifier | Verdict PASS/FAIL con evidencia | deepseek-v4-flash |
-| Sam | Archivist | Consejo estratégico con memoria | gpt-5.6-luna |
+| Sam | Archivist | Consejo estratégico con memoria | deepseek-v4-flash |
 | Bard | Bard | Mejora continua (qué falta, qué agregar) | deepseek-v4-flash |
 | Tidus | Warden | Infra, entorno, health-check | deepseek-v4-flash |
-| Ragnarok | Warden | Compras, herramientas, proveedores | gpt-5.6-luna |
+| Ragnarok | Warden | Compras, herramientas, proveedores | deepseek-v4-flash |
 
-**Economía de tokens por diseño**: Atlas (modelo tier) se usa SOLO 2 veces por quest (orquesta + autoriza).
-El volumen lo hacen modelos baratos/gratis (DeepSeek Flash, NVIDIA gratis).
+**Economía de tokens por diseño**: un solo modelo (deepseek-v4-flash) para todos los agentes, sin fallbacks ni rotación.
 
 ## 4. Memoria (por proyecto)
 

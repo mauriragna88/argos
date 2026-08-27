@@ -1,7 +1,7 @@
 {
-  "_comment": "Codex config para Atlas RPG. Copiar como .codexrc.json en el project root.",
+  "_comment": "Codex config para Atlas RPG. POLITICA DEL USUARIO (2026-08-16): TODOS los agentes usan exclusivamente deepseek-v4-flash. Prohibido GPT, Claude, GLM, MiniMax, Qwen, Kimi, MiMo.",
   "model": {
-    "default": "gpt-5.5",
+    "default": "deepseek-v4-flash",
     "reasoning_level": "medium",
     "reasoning_level_by_quest": {
       "trivial": "low",
@@ -11,13 +11,13 @@
     }
   },
   "agents": {
-    "atlas": { "model": "gpt-5.5", "system_prompt_file": "core/atlas-player.agent.md" },
-    "vivi": { "model": "gpt-5.5", "category": "visual-engineering", "system_prompt_file": "core/classes/vivi.agent.md" },
-    "paladin": { "model": "gpt-5.5", "category": "deep", "system_prompt_file": "core/classes/paladin.agent.md" },
-    "rogue": { "model": "gpt-5.5", "category": "deep", "system_prompt_file": "core/classes/rogue.agent.md" },
-    "eiko": { "model": "gpt-4o", "category": "unspecified-high", "system_prompt_file": "core/classes/eiko.agent.md" },
-    "monk": { "model": "gpt-5.5", "category": "ultrabrain", "system_prompt_file": "core/classes/monk.agent.md" },
-    "ranger": { "model": "gpt-4o-mini", "category": "quick", "system_prompt_file": "core/classes/ranger.agent.md" }
+    "atlas": { "model": "deepseek-v4-flash", "system_prompt_file": "core/atlas-player.agent.md" },
+    "vivi": { "model": "deepseek-v4-flash", "category": "visual-engineering", "system_prompt_file": "core/classes/vivi.agent.md" },
+    "paladin": { "model": "deepseek-v4-flash", "category": "deep", "system_prompt_file": "core/classes/paladin.agent.md" },
+    "rogue": { "model": "deepseek-v4-flash", "category": "deep", "system_prompt_file": "core/classes/rogue.agent.md" },
+    "eiko": { "model": "deepseek-v4-flash", "category": "unspecified-high", "system_prompt_file": "core/classes/eiko.agent.md" },
+    "monk": { "model": "deepseek-v4-flash", "category": "ultrabrain", "system_prompt_file": "core/classes/monk.agent.md" },
+    "ranger": { "model": "deepseek-v4-flash", "category": "quick", "system_prompt_file": "core/classes/ranger.agent.md" }
   },
   "auto_loop": true,
   "circuit_breaker": {

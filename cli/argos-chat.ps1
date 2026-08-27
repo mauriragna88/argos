@@ -85,7 +85,7 @@ function Invoke-ArgoQuest {
         $agentKey = if ($AgentName -eq 'atlas-player') { 'atlas' } else { $AgentName }
         if ($am.agents.$agentKey) { $model = [string]$am.agents.$agentKey }
     }
-    if (-not $model) { $model = 'opencode-go/gpt-5.6-luna' }
+    if (-not $model) { $model = 'opencode-go/deepseek-v4-flash' }
 
     # Persona RPG del agente (prompt propio de ARNES)
     $system = ''

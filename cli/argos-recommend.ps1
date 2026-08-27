@@ -59,23 +59,9 @@ $AGENTS = @(
 
 # === Benchmarks por familia de modelo (resumen 2026) ===
 # value: 1=barato 2=equilibrado 3=calidad maxima
+# POLITICA DEL USUARIO (2026-08-16): solo se usa opencode-go/deepseek-v4-flash.
 $BENCHMARKS = @{
-    'opencode-go/deepseek-v4-flash' = @{ quality = 2; cost = 1; speed = 3; desc = 'Workhorse barato y rapido. Excelente coding general' }
-    'opencode-go/deepseek-v4-pro'   = @{ quality = 3; cost = 2; speed = 2; desc = 'Razonamiento profundo. Mejor para logica compleja' }
-    'opencode-go/qwen3.8-max'       = @{ quality = 3; cost = 3; speed = 2; desc = 'TOP agente/orquestacion. El mas inteligente' }
-    'opencode-go/gpt-5.6-luna'      = @{ quality = 3; cost = 2; speed = 3; desc = 'GPT velocidad/valor. Excelente generalista' }
-    'opencode-go/glm-5.2'           = @{ quality = 2; cost = 2; speed = 2; desc = 'Equilibrado (Zhipu)' }
-    'opencode-go/kimi-k2.6'         = @{ quality = 2; cost = 2; speed = 2; desc = 'Razonamiento chino solido' }
-    'openai/gpt-5.6-luna'           = @{ quality = 3; cost = 2; speed = 3; desc = 'GPT-5.6 Luna: velocidad + valor' }
-    'openai/gpt-5.6-terra'          = @{ quality = 4; cost = 3; speed = 2; desc = 'GPT-5.6 Terra: balanceado premium' }
-    'openai/gpt-5.6-sol'            = @{ quality = 5; cost = 3; speed = 1; desc = 'GPT-5.6 Sol: MAXIMO razonamiento' }
-    'claude/claude-opus-5'          = @{ quality = 5; cost = 3; speed = 1; desc = 'Claude Opus 5: elite' }
-    'claude/claude-sonnet-5'        = @{ quality = 4; cost = 2; speed = 3; desc = 'Claude Sonnet 5: balance elite' }
-    'bai/claude-opus-5'             = @{ quality = 5; cost = 3; speed = 1; desc = 'Claude Opus 5 via B.AI' }
-    'bai/claude-fable-5'            = @{ quality = 4; cost = 2; speed = 3; desc = 'Claude Fable 5 via B.AI: rapido' }
-    'bai/gpt-5.6-sol'               = @{ quality = 5; cost = 3; speed = 1; desc = 'GPT-5.6 Sol via B.AI' }
-    'nvidia/deepseek-ai/deepseek-v4-flash' = @{ quality = 2; cost = 0; speed = 3; desc = 'DeepSeek Flash GRATIS (NVIDIA)' }
-    'nvidia/deepseek-ai/deepseek-v4-pro'   = @{ quality = 3; cost = 0; speed = 2; desc = 'DeepSeek Pro GRATIS (NVIDIA)' }
+    'opencode-go/deepseek-v4-flash' = @{ quality = 3; cost = 1; speed = 3; desc = 'UNICO modelo permitido (politica usuario 2026-08-16)' }
 }
 
 # === Obtener los modelos del catalogo VIVO de proveedores CONECTADOS ===
@@ -122,24 +108,25 @@ function Get-AvailableModels {
     return @($models | Sort-Object -Unique)
 }
 
-# === Preferencia de modelo por rol (alineada a la estrategia: 75% DeepSeek, Luna razonamiento, Qwen Atlas) ===
+# === Preferencia de modelo por rol ===
+# POLITICA DEL USUARIO (2026-08-16): un unico modelo para todos los roles.
 $ROLE_PREF = @{
-    atlas    = @('opencode-go/qwen3.8-max', 'bai/qwen3.8-max', 'opencode-go/deepseek-v4-pro', 'nvidia/deepseek-ai/deepseek-v4-pro')
-    vivi     = @('openai/gpt-5.6-luna', 'opencode-go/gpt-5.6-luna', 'bai/claude-fable-5', 'opencode-go/deepseek-v4-flash', 'nvidia/deepseek-ai/deepseek-v4-flash')
-    ansem    = @('nvidia/deepseek-ai/deepseek-v4-flash', 'opencode-go/deepseek-v4-flash', 'bai/deepseek-v4-flash', 'opencode-go/deepseek-v4-pro')
-    kuja     = @('nvidia/deepseek-ai/deepseek-v4-flash', 'opencode-go/deepseek-v4-flash', 'bai/deepseek-v4-flash', 'opencode-go/deepseek-v4-pro')
-    eiko     = @('nvidia/deepseek-ai/deepseek-v4-flash', 'opencode-go/deepseek-v4-flash', 'bai/deepseek-v4-flash', 'opencode-go/gpt-5.6-luna')
-    amarant  = @('openai/gpt-5.6-luna', 'opencode-go/gpt-5.6-luna', 'bai/claude-fable-5', 'opencode-go/deepseek-v4-pro')
-    eremez   = @('nvidia/deepseek-ai/deepseek-v4-flash', 'opencode-go/deepseek-v4-flash', 'opencode-go/gpt-5.6-luna', 'bai/deepseek-v4-flash')
-    auron    = @('nvidia/deepseek-ai/deepseek-v4-pro', 'opencode-go/deepseek-v4-pro', 'bai/claude-opus-5', 'openai/gpt-5.6-terra')
-    bran     = @('openai/gpt-5.6-luna', 'opencode-go/gpt-5.6-luna', 'bai/claude-fable-5', 'opencode-go/deepseek-v4-flash')
-    quina    = @('opencode-go/deepseek-v4-flash', 'nvidia/deepseek-ai/deepseek-v4-flash', 'opencode-go/gpt-5.6-luna', 'bai/deepseek-v4-flash')
-    varys    = @('openai/gpt-5.6-luna', 'opencode-go/gpt-5.6-luna', 'opencode-go/deepseek-v4-flash', 'nvidia/deepseek-ai/deepseek-v4-flash')
-    tywin    = @('nvidia/deepseek-ai/deepseek-v4-flash', 'opencode-go/deepseek-v4-flash', 'openai/gpt-5.6-luna', 'opencode-go/deepseek-v4-pro')
-    sam      = @('openai/gpt-5.6-luna', 'opencode-go/gpt-5.6-luna', 'bai/claude-fable-5', 'opencode-go/deepseek-v4-pro')
-    bard     = @('openai/gpt-5.6-luna', 'opencode-go/gpt-5.6-luna', 'bai/claude-fable-5', 'opencode-go/deepseek-v4-flash')
-    tidus    = @('opencode-go/deepseek-v4-flash', 'nvidia/deepseek-ai/deepseek-v4-flash', 'opencode-go/gpt-5.6-luna', 'bai/deepseek-v4-flash')
-    ragnarok = @('openai/gpt-5.6-luna', 'opencode-go/gpt-5.6-luna', 'bai/claude-opus-5', 'opencode-go/deepseek-v4-pro')
+    atlas    = @('opencode-go/deepseek-v4-flash')
+    vivi     = @('opencode-go/deepseek-v4-flash')
+    ansem    = @('opencode-go/deepseek-v4-flash')
+    kuja     = @('opencode-go/deepseek-v4-flash')
+    eiko     = @('opencode-go/deepseek-v4-flash')
+    amarant  = @('opencode-go/deepseek-v4-flash')
+    eremez   = @('opencode-go/deepseek-v4-flash')
+    auron    = @('opencode-go/deepseek-v4-flash')
+    bran     = @('opencode-go/deepseek-v4-flash')
+    quina    = @('opencode-go/deepseek-v4-flash')
+    varys    = @('opencode-go/deepseek-v4-flash')
+    tywin    = @('opencode-go/deepseek-v4-flash')
+    sam      = @('opencode-go/deepseek-v4-flash')
+    bard     = @('opencode-go/deepseek-v4-flash')
+    tidus    = @('opencode-go/deepseek-v4-flash')
+    ragnarok = @('opencode-go/deepseek-v4-flash')
 }
 
 # === Recomendar modelo para un rol segun prioridad ===

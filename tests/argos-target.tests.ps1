@@ -135,6 +135,20 @@ try {
     Assert-That (Test-Path -LiteralPath (Join-Path $codexSkills 'impeccable\SKILL.md')) 'stack: codex lleva impeccable (fixture)'
     Assert-That ((Get-Content -LiteralPath (Join-Path $codexSkills 'impeccable\SKILL.md') -Raw) -eq $impeccableFixture) 'stack: impeccable copiado desde fixture'
 
+    # 7d. Pack "experiencia completa" para la app de ChatGPT (persona + stack en un Source).
+    $pack = Join-Path $work '.agents\chatgpt-vivi'
+    Assert-That (Test-Path -LiteralPath (Join-Path $pack 'INSTRUCTIONS.md')) 'chatgpt-pack: INSTRUCTIONS.md generado'
+    Assert-That (Test-Path -LiteralPath (Join-Path $pack 'README.md')) 'chatgpt-pack: README.md generado'
+    $stackFile = Join-Path $pack 'VIVI-STACK.md'
+    Assert-That (Test-Path -LiteralPath $stackFile) 'chatgpt-pack: VIVI-STACK.md generado'
+    $stackContent = Get-Content -LiteralPath $stackFile -Raw
+    foreach ($n in $stackNames) {
+        Assert-That ($stackContent -match [regex]::Escape("# === SKILL: $n ===")) "chatgpt-pack: $n incluida"
+    }
+    Assert-That ($stackContent -match [regex]::Escape('REFERENCE: design-principles/reference/devogatec.md')) 'chatgpt-pack: devogatec incluido'
+    Assert-That ($stackContent -match [regex]::Escape('REFERENCE: visual-qa/reference/evidence-tooling.md')) 'chatgpt-pack: evidence-tooling incluido'
+    Assert-That ((Get-Content -LiteralPath (Join-Path $pack 'INSTRUCTIONS.md') -Raw) -match 'Pipeline obligatorio') 'chatgpt-pack: instrucciones con el pipeline'
+
     # 8. scripts parsean en PowerShell 5.1 (dispatch + target DSH).
     foreach ($script in @('cli\argos.ps1', 'cli\argos-target.ps1')) {
         $tokens = $null

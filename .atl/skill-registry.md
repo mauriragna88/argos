@@ -184,6 +184,12 @@ Se ejecuta en cada `argos`, `argos target <entorno>` y `argos opencode`; es idem
 (solo copia los bundles cuyo contenido cambio). En los runners nativos (`argos code` / `argos party`)
 ademas se inyecta el cuerpo completo en el system prompt via `Get-AgentSkills`.
 
+**Pack de experiencia completa para la app de ChatGPT**: el mismo sync genera
+`~/.agents/chatgpt-vivi/` con `INSTRUCTIONS.md` (persona Vivi + pipeline: se pega en las
+instrucciones del Project), `VIVI-STACK.md` (las 5 skills + `taste-skill` + `impeccable` + sus
+`reference/` en un solo archivo: se adjunta como Source) y `README.md` (pasos de montaje).
+Se regenera en cada `argos`.
+
 ## GAPs (oportunidades para Ragnarok)
 - Contract validation DB↔Frontend: **CERRADO** (arnes-contract-audit, ADR-006)
 - Bard: mejorar DX/docs (parcialmente cubierto — Maestro cubre docs de repos)

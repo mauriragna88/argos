@@ -89,8 +89,8 @@ try {
     Assert-That (-not (Test-Path -LiteralPath (Join-Path $dshSkills 'taste-skill\taste-skill'))) 'dsh: repeticion no anida taste-skill'
     Assert-That (-not (Test-Path -LiteralPath (Join-Path $dshSkills 'impeccable\impeccable'))) 'dsh: repeticion no anida impeccable'
 
-    # 7b. Las tres skills del pipeline de diseno de Vivi viajan a DSH (origen core/skills/v2).
-    foreach ($skill in @('vivi-design-principles', 'vivi-motion-design', 'vivi-visual-qa')) {
+    # 7b. Las skills del pipeline de diseno de Vivi viajan a DSH (origen core/skills/v2).
+    foreach ($skill in @('design-principles', 'content-copy', 'motion-design', 'visual-qa')) {
         $dest = Join-Path $dshSkills "$skill\SKILL.md"
         $src = Join-Path $Root "core\skills\v2\$skill\SKILL.md"
         Assert-That (Test-Path -LiteralPath $dest) "dsh: $skill instalada"
@@ -98,6 +98,8 @@ try {
         Assert-That ((Get-Content -LiteralPath $dest -Raw) -match '(?m)^user-invocable:\s*false\s*$') "dsh: $skill es model-only"
         Assert-That (-not (Test-Path -LiteralPath (Join-Path $dshSkills "$skill\$skill"))) "dsh: repeticion no anida $skill"
     }
+    Assert-That (Test-Path -LiteralPath (Join-Path $dshSkills 'design-principles\reference\devogatec.md')) 'dsh: design-principles lleva reference/devogatec.md'
+    Assert-That (Test-Path -LiteralPath (Join-Path $dshSkills 'visual-qa\reference\evidence-tooling.md')) 'dsh: visual-qa lleva reference/evidence-tooling.md'
 
     # 8. scripts parsean en PowerShell 5.1 (dispatch + target DSH).
     foreach ($script in @('cli\argos.ps1', 'cli\argos-target.ps1')) {

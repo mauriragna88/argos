@@ -577,9 +577,10 @@ Otros agentes disponibles en core/classes/ y core/auditors/ (carga bajo demanda)
                 Write-Host '  [1/4] DeepSeek Harness · ARGOS/OSMA ya cargan via plugin (no se toca AGENTS.md del repo)...' -ForegroundColor Cyan
                 Write-Host '  [2/4] Sincronizando skills visuales globales de DSH...' -ForegroundColor Cyan
                 Sync-DshSkill -Source (Join-Path $Root 'core\skills\v2\vivi-visual-excellence') -Destination (Join-Path $dshSkills 'vivi-visual-excellence') -Name 'vivi-visual-excellence'
-                Sync-DshSkill -Source (Join-Path $Root 'core\skills\v2\vivi-design-principles') -Destination (Join-Path $dshSkills 'vivi-design-principles') -Name 'vivi-design-principles'
-                Sync-DshSkill -Source (Join-Path $Root 'core\skills\v2\vivi-motion-design') -Destination (Join-Path $dshSkills 'vivi-motion-design') -Name 'vivi-motion-design'
-                Sync-DshSkill -Source (Join-Path $Root 'core\skills\v2\vivi-visual-qa') -Destination (Join-Path $dshSkills 'vivi-visual-qa') -Name 'vivi-visual-qa'
+                Sync-DshSkill -Source (Join-Path $Root 'core\skills\v2\design-principles') -Destination (Join-Path $dshSkills 'design-principles') -Name 'design-principles'
+                Sync-DshSkill -Source (Join-Path $Root 'core\skills\v2\content-copy') -Destination (Join-Path $dshSkills 'content-copy') -Name 'content-copy'
+                Sync-DshSkill -Source (Join-Path $Root 'core\skills\v2\motion-design') -Destination (Join-Path $dshSkills 'motion-design') -Name 'motion-design'
+                Sync-DshSkill -Source (Join-Path $Root 'core\skills\v2\visual-qa') -Destination (Join-Path $dshSkills 'visual-qa') -Name 'visual-qa'
                 Sync-DshSkill -Source (Join-Path $Root '.agents\skills\taste-skill') -Destination (Join-Path $dshSkills 'taste-skill') -Name 'taste-skill'
                 if (Test-Path -LiteralPath (Join-Path $impeccableSource 'SKILL.md')) {
                     Sync-DshSkill -Source $impeccableSource -Destination (Join-Path $dshSkills 'impeccable') -Name 'impeccable'

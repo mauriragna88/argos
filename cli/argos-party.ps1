@@ -98,7 +98,7 @@ function Get-Persona {
 function Get-AgentSkills {
     param([string]$Key)
     $skillMap = @{
-        'vivi'    = @('vivi-design-principles', 'vivi-visual-excellence', 'ui-ux-pro-max', 'taste-skill', 'vivi-motion-design', 'vivi-visual-qa', 'need-info-escalation')
+        'vivi'    = @('design-principles', 'content-copy', 'vivi-visual-excellence', 'ui-ux-pro-max', 'taste-skill', 'motion-design', 'visual-qa', 'need-info-escalation')
         'ansem'   = @('postgres-best-practices', 'need-info-escalation')
         'kuja'    = @('verification-before-completion', 'need-info-escalation')
         'tywin'   = @('verification-before-completion')

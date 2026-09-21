@@ -128,9 +128,10 @@ Es la experticia de cada rol hecha checklist obligatoria.
 | postgres-best-practices | Ansem (Paladin) | Schemas, RLS, queries, migraciones Supabase/Postgres | supabase docs |
 | ui-ux-pro-max | Vivi (Mage) | Toda UI: jerarquía, spacing, tipografía, componentes | nextlevelbuilder (79K⭐) |
 | taste-skill | Vivi (Mage) | Anti-slop: sin gradientes genéricos ni copy de IA | Leonxln (66K⭐) |
-| vivi-design-principles | Vivi (Mage) | SIEMPRE primero: fundamento de diseño (layering, spacing, restraint, jerarquía, marca, anti-template) | ARGOS propio (core/skills/v2) |
-| vivi-motion-design | Vivi (Mage) | Condicional: animación, scroll, parallax, cursor, GSAP/Motion, cinemático | ARGOS propio (core/skills/v2) |
-| vivi-visual-qa | Vivi (Mage) | Al final de toda implementación frontend: verifica el render real (desktop/tablet/mobile) | ARGOS propio (core/skills/v2) |
+| design-principles | Vivi (Mage) | SIEMPRE primero: fundamento de diseño (layering, spacing, restraint, jerarquía, escalas, tokens, anti-template) | ARGOS propio (core/skills/v2) |
+| content-copy | Vivi (Mage) | SIEMPRE junto a design-principles: mensaje, jerarquía de contenido, CTAs, microcopy, estados | ARGOS propio (core/skills/v2) |
+| motion-design | Vivi (Mage) | Condicional: animación, scroll, parallax, cursor, GSAP/Motion, cinemático (gobernado por el dial de motion) | ARGOS propio (core/skills/v2) |
+| visual-qa | Vivi (Mage) | Al final de toda implementación frontend: verifica el render real con evidencia (desktop/tablet/mobile) | ARGOS propio (core/skills/v2) |
 | handoff | Atlas, Eiko (cross-party) | Pausar/reanudar quests: compresión de estado accionable | mattpocock (88K⭐) |
 | need-info-escalation | Todos los ejecutores + Atlas | Agente sin info → NEED_INFO → Atlas pregunta al usuario UNA vez | ARNES propio |
 | ceo-vision | Ragnarok | Nuevo proyecto/feature: variantes de plataforma (web/desktop/móvil/offline) y si vale la pena | ARNES propio (rol CEO) |
@@ -144,7 +145,7 @@ QUE MAESTRO DEFINE (contrato texto→verificación cerrado).
 
 **Mapa de auto-carga** (mantener sincronizado con Get-AgentSkills en argos-code.ps1 / argos-party.ps1):
 ```powershell
-'vivi'     = @('vivi-design-principles', 'vivi-visual-excellence', 'ui-ux-pro-max', 'taste-skill', 'vivi-motion-design', 'vivi-visual-qa', 'need-info-escalation')
+'vivi'     = @('design-principles', 'content-copy', 'vivi-visual-excellence', 'ui-ux-pro-max', 'taste-skill', 'motion-design', 'visual-qa', 'need-info-escalation')
 'ansem'    = @('postgres-best-practices', 'need-info-escalation')
 'kuja'     = @('verification-before-completion', 'need-info-escalation')
 'tywin'    = @('verification-before-completion')

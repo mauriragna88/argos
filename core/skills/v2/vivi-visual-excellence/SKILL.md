@@ -17,19 +17,19 @@ Produce intentional, distinctive, production-ready interfaces. This skill is man
 
 This skill is the always-on entry point. For every significant frontend task the pipeline is:
 
-1. `vivi-design-principles` — ALWAYS FIRST. Vivi's permanent design foundation (layering, spacing, restraint, hierarchy, typography, color, layout, brand adaptation, anti-template test). The user never needs to request it and Vivi never waits for a `/skill` command.
-2. `vivi-motion-design` — SECOND, only when the project includes animation, interaction, scroll effects, parallax, cinematic experiences, GSAP/Motion or smooth scrolling. Motion must have a purpose; if none is required, skip this skill.
+1. `design-principles` — ALWAYS FIRST. Vivi's permanent design foundation (layering, spacing, restraint, hierarchy, typography, color, layout, brand adaptation, anti-template test). `content-copy` runs inside this same phase: content decisions define the hierarchy the design then structures. The user never needs to request them and Vivi never waits for a `/skill` command.
+2. `motion-design` — SECOND, only when the project includes animation, interaction, scroll effects, parallax, cinematic experiences, GSAP/Motion or smooth scrolling. Motion must have a purpose; if none is required, skip this skill.
 3. Implementation.
-4. `vivi-visual-qa` — LAST, before declaring anything complete. It verifies the actual rendered result and requires fixing problems and rendering again until the interface looks finished.
+4. `visual-qa` — LAST, before declaring anything complete. It verifies the actual rendered result and requires fixing problems and rendering again until the interface looks finished.
 
 | Project type | Pipeline |
 |---|---|
-| Static website | vivi-design-principles → build → vivi-visual-qa |
-| Interactive website | vivi-design-principles → vivi-motion-design → build → vivi-visual-qa |
-| Cinematic website | vivi-design-principles → vivi-motion-design → build → vivi-visual-qa |
-| Dashboard | vivi-design-principles → build → vivi-visual-qa |
-| Redesign from reference | vivi-design-principles → analyze reference → build → vivi-visual-qa |
-| Redesign with complex motion | vivi-design-principles → analyze reference → vivi-motion-design → build → vivi-visual-qa |
+| Static website | design-principles → build → visual-qa |
+| Interactive website | design-principles → motion-design → build → visual-qa |
+| Cinematic website | design-principles → motion-design → build → visual-qa |
+| Dashboard | design-principles → build → visual-qa |
+| Redesign from reference | design-principles → analyze reference → build → visual-qa |
+| Redesign with complex motion | design-principles → analyze reference → motion-design → build → visual-qa |
 
 The three skills complement each other; they are not competing instructions. Apply them together with this standard, `impeccable` and `taste-skill`.
 
@@ -49,7 +49,7 @@ Never trace, clone, reproduce, or imitate a specific screen, brand, asset, layou
 
 ## Mandatory workflow — audit first
 
-1. Load and apply the pipeline (`vivi-design-principles` always; `vivi-motion-design` when it applies) plus `impeccable` and `taste-skill` automatically through the model-facing skill loader. They are always active with this skill; do not wait for or ask the user to type `/skill`.
+1. Load and apply the pipeline (`design-principles` + `content-copy` always; `motion-design` when it applies) plus `impeccable` and `taste-skill` automatically through the model-facing skill loader. They are always active with this skill; do not wait for or ask the user to type `/skill`.
 2. **Audit before editing:** inspect the rendered experience and repository context: user goal, information architecture, real content, existing components, tokens, typography, responsive behavior, accessibility, motion, performance, and technical constraints. Preserve what already works.
 3. Set the three project dials explicitly before choosing an art direction:
    - **Variance:** low for established product systems, medium for most product work, high only for justified expressive or campaign experiences.
@@ -75,7 +75,7 @@ Never trace, clone, reproduce, or imitate a specific screen, brand, asset, layou
 - Use a small, consistent duration/easing vocabulary and avoid animating every element.
 - Honor `prefers-reduced-motion`; essential state changes must remain understandable without animation.
 - Cinematic or scroll-driven effects require a clear product rationale and must not obstruct reading, navigation, or input.
-- The full motion system — vocabulary, hierarchy, density, mobile adaptation, reduced motion — lives in the `vivi-motion-design` skill. Load it whenever the task includes motion.
+- The full motion system — vocabulary, hierarchy, density, mobile adaptation, reduced motion — lives in the `motion-design` skill. Load it whenever the task includes motion.
 
 ## Responsive quality
 
@@ -111,7 +111,7 @@ Before delivery, confirm all of the following:
 - Loading, empty, error, success, disabled, hover, and focus states are present where applicable.
 - Images, fonts, JavaScript, hydration, layout shift, and animated effects stay within the project's performance budget.
 - The final anti-slop pass removes generic patterns, filler copy, unjustified decoration, and copied reference details.
-- The `vivi-visual-qa` skill pass was executed (desktop, tablet and mobile renders; typography, spacing, color, images, motion, interaction, accessibility, performance) and its findings were fixed, not just noted.
+- The `visual-qa` skill pass was executed (desktop, tablet and mobile renders; typography, spacing, color, images, motion, interaction, accessibility, performance) and its findings were fixed, not just noted.
 
 ## Definition of done
 

@@ -139,9 +139,9 @@ Tablas asociativas (V4-V7): `observation_links`, `contradictions`, `consolidatio
 
 ### 3.2 Skills v2 propias por agente (`core/skills/v2/`)
 
-21 skills + `template`: `amarant-foresight`, `ansem-smite`, `atlas-orchestrate`, `auron-bulwark`, `auron-repo-audit`, `bard-drift`, `bran-vision`, `eiko-mend`, `eremez-mark`, `kuja-backstab`, `quina-ledger`, `ragnarok-scout`, `sam-counsel`, `tidus-tide-check`, `tywin-judgment`, `varys-whisper`, `vivi-design-principles`, `vivi-fireball`, `vivi-motion-design`, `vivi-visual-excellence`, `vivi-visual-qa`. Estructura canónica: `--- name/description ---` + Purpose + Trigger + Inputs + Pasos + Output + Complementos web + Memoria + Reglas. Excepción model-only: las skills visuales de Vivi (`vivi-visual-excellence` y el pipeline) usan `user-invocable: false`.
+22 skills + `template`: `amarant-foresight`, `ansem-smite`, `atlas-orchestrate`, `auron-bulwark`, `auron-repo-audit`, `bard-drift`, `bran-vision`, `content-copy`, `design-principles`, `eiko-mend`, `eremez-mark`, `kuja-backstab`, `motion-design`, `quina-ledger`, `ragnarok-scout`, `sam-counsel`, `tidus-tide-check`, `tywin-judgment`, `varys-whisper`, `vivi-fireball`, `vivi-visual-excellence`, `visual-qa`. Estructura canónica: `--- name/description ---` + Purpose + Trigger + Inputs + Pasos + Output + Complementos web + Memoria + Reglas. Excepción model-only: las skills del stack visual de Vivi (`vivi-visual-excellence` + pipeline) usan `user-invocable: false`.
 
-Pipeline de diseño de Vivi (skills propias en `core/skills/v2/`, auto-inyección vía `Get-AgentSkills` con fallback al directorio propio + sync a DSH): `vivi-design-principles` (siempre, primero), `vivi-motion-design` (condicional), `vivi-visual-qa` (verificación final del render).
+Pipeline de diseño de Vivi (skills propias en `core/skills/v2/`, auto-inyección vía `Get-AgentSkills` con fallback al directorio propio + sync a DSH): `design-principles` + `content-copy` (siempre, primero), `motion-design` (condicional, gobernado por el dial de motion), `visual-qa` (verificación final del render con evidencia; trae `reference/evidence-tooling.md`).
 
 ### 3.3 Superpowers externos
 

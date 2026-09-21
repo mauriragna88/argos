@@ -37,37 +37,67 @@ try {
     $show = (& $PSExe -NoProfile -ExecutionPolicy Bypass -File $TargetCli show -ConfigDir $work | Out-String)
     Assert-That ($show -match 'Target actual: codex') "show refleja codex -> $show"
 
-    # 4. launch codex -NoLaunch despliega AGENTS.md con roster
+    # 4. launch codex -NoLaunch despliega su bundle ligero de dominio.
     & $PSExe -NoProfile -ExecutionPolicy Bypass -File $TargetCli -Target codex -NoLaunch -ConfigDir $work -TargetDir $work | Out-Null
-    Assert-That (Test-Path (Join-Path $work 'AGENTS.md')) 'AGENTS.md desplegado'
+    Assert-That (Test-Path (Join-Path $work 'AGENTS.md')) 'codex: AGENTS.md desplegado'
     $agents = Get-Content (Join-Path $work 'AGENTS.md') -Raw
-    Assert-That ($agents -match 'ARNES ARGOS - Atlas') 'AGENTS.md contiene la persona Atlas'
-    Assert-That ($agents -match 'Party ARNES') 'AGENTS.md contiene el roster del party'
+    Assert-That ($agents -match 'ARNES ARGOS - Bundle ligero \(target: codex\)') 'codex: AGENTS.md contiene bundle ligero'
+    Assert-That ($agents -match 'Backend/APIs/Supabase -> Ansem') 'codex: AGENTS.md contiene agente de dominio'
 
-    # 5. launch claude -NoLaunch despliega CLAUDE.md + party completo de 16
+    # 5. launch claude -NoLaunch despliega CLAUDE.md + subagentes de dominio resolubles.
     & $PSExe -NoProfile -ExecutionPolicy Bypass -File $TargetCli -Target claude -NoLaunch -ConfigDir $work -TargetDir $work | Out-Null
     Assert-That (Test-Path (Join-Path $work 'CLAUDE.md')) 'CLAUDE.md desplegado'
     $claudeAgents = @(Get-ChildItem (Join-Path $work 'agents\*.md') -ErrorAction SilentlyContinue)
-    Assert-That ($claudeAgents.Count -eq 16) "claude agents = 16 (obtenido $($claudeAgents.Count))"
+    Assert-That ($claudeAgents.Count -eq 2) "claude agents = 2 (obtenido $($claudeAgents.Count))"
     foreach ($ca in $claudeAgents) {
         $c = Get-Content $ca.FullName -Raw
         Assert-That ($c -match '^---\r?\nname:') "frontmatter valido en $($ca.Name)"
     }
 
-    # 6. launch freebuff -NoLaunch despliega AGENTS.md del proyecto (persona + roster)
+    # 6. launch freebuff -NoLaunch despliega el bundle ligero frontend/devops.
     & $PSExe -NoProfile -ExecutionPolicy Bypass -File $TargetCli -Target freebuff -NoLaunch -ConfigDir $work -TargetDir $work | Out-Null
     Assert-That (Test-Path (Join-Path $work 'AGENTS.md')) 'freebuff: AGENTS.md desplegado'
     $fbAgents = Get-Content (Join-Path $work 'AGENTS.md') -Raw
-    Assert-That ($fbAgents -match 'ARNES ARGOS - Atlas') 'freebuff: AGENTS.md contiene la persona Atlas'
-    Assert-That ($fbAgents -match 'Party ARNES') 'freebuff: AGENTS.md contiene el roster del party'
+    Assert-That ($fbAgents -match 'ARNES ARGOS - Bundle ligero \(target: freebuff\)') 'freebuff: AGENTS.md contiene bundle ligero'
+    Assert-That ($fbAgents -match 'Frontend/UI/React -> Vivi') 'freebuff: AGENTS.md contiene agente de dominio'
 
-    # 7. argos.ps1 parsea (dispatch agregado)
-    $tokens = $null
-    $errors = $null
-    [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $Root 'cli\argos.ps1'), [ref]$tokens, [ref]$errors) | Out-Null
-    Assert-That ($errors.Count -eq 0) 'argos.ps1 parsea con el case target'
+    # 7. launch dsh -NoLaunch instala las tres skills en un HOME hermetico bajo TargetDir.
+    $impeccableSource = Join-Path $work '.config\opencode\skills\impeccable'
+    New-Item -ItemType Directory -Path $impeccableSource -Force | Out-Null
+    $impeccableFixture = "---`nname: impeccable`ndescription: Fixture hermetico de Impeccable.`nuser-invocable: false`n---`n`n# Impeccable fixture`n"
+    [System.IO.File]::WriteAllText((Join-Path $impeccableSource 'SKILL.md'), $impeccableFixture, (New-Object System.Text.UTF8Encoding($false)))
 
-    Write-Output 'PASS argos-target: list/set/show y despliegue AGENTS.md/CLAUDE.md/Freebuff'
+    & $PSExe -NoProfile -ExecutionPolicy Bypass -File $TargetCli -Target dsh -NoLaunch -ConfigDir $work -TargetDir $work | Out-Null
+    # Repetir prueba que la sincronizacion es idempotente y no anida bundles.
+    & $PSExe -NoProfile -ExecutionPolicy Bypass -File $TargetCli -Target dsh -NoLaunch -ConfigDir $work -TargetDir $work | Out-Null
+
+    $dshSkills = Join-Path $work '.dsh\skills'
+    $viviSkill = Join-Path $dshSkills 'vivi-visual-excellence\SKILL.md'
+    $tasteSkill = Join-Path $dshSkills 'taste-skill\SKILL.md'
+    $impeccableSkill = Join-Path $dshSkills 'impeccable\SKILL.md'
+    Assert-That (Test-Path -LiteralPath $viviSkill) 'dsh: vivi-visual-excellence instalada'
+    Assert-That (Test-Path -LiteralPath $tasteSkill) 'dsh: taste-skill instalada'
+    Assert-That (Test-Path -LiteralPath $impeccableSkill) 'dsh: impeccable instalada desde fixture hermetico'
+    $viviContent = Get-Content -LiteralPath $viviSkill -Raw
+    $tasteContent = Get-Content -LiteralPath $tasteSkill -Raw
+    $impeccableContent = Get-Content -LiteralPath $impeccableSkill -Raw
+    Assert-That ($viviContent -eq (Get-Content -LiteralPath (Join-Path $Root 'core\skills\v2\vivi-visual-excellence\SKILL.md') -Raw)) 'dsh: contenido de vivi-visual-excellence copiado completo'
+    Assert-That ($tasteContent -eq (Get-Content -LiteralPath (Join-Path $Root '.agents\skills\taste-skill\SKILL.md') -Raw)) 'dsh: contenido de taste-skill copiado completo'
+    Assert-That ($impeccableContent -eq $impeccableFixture) 'dsh: contenido de impeccable copiado desde fixture'
+    Assert-That ($viviContent -match '(?m)^user-invocable:\s*false\s*$') 'dsh: vivi-visual-excellence es model-only'
+    Assert-That (-not (Test-Path -LiteralPath (Join-Path $dshSkills 'vivi-visual-excellence\vivi-visual-excellence'))) 'dsh: repeticion no anida vivi-visual-excellence'
+    Assert-That (-not (Test-Path -LiteralPath (Join-Path $dshSkills 'taste-skill\taste-skill'))) 'dsh: repeticion no anida taste-skill'
+    Assert-That (-not (Test-Path -LiteralPath (Join-Path $dshSkills 'impeccable\impeccable'))) 'dsh: repeticion no anida impeccable'
+
+    # 8. scripts parsean en PowerShell 5.1 (dispatch + target DSH).
+    foreach ($script in @('cli\argos.ps1', 'cli\argos-target.ps1')) {
+        $tokens = $null
+        $errors = $null
+        [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $Root $script), [ref]$tokens, [ref]$errors) | Out-Null
+        Assert-That ($errors.Count -eq 0) "$script parsea sin errores"
+    }
+
+    Write-Output 'PASS argos-target: list/set/show y despliegue AGENTS.md/CLAUDE.md/Freebuff/DSH skills'
     exit 0
 } finally {
     if (Test-Path -LiteralPath $work) {

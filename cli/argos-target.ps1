@@ -69,6 +69,27 @@ function Write-Utf8NoBom {
     [System.IO.File]::WriteAllText($Path, $Content, $utf8NoBom)
 }
 
+function Sync-DshSkill {
+    param(
+        [Parameter(Mandatory)][string]$Source,
+        [Parameter(Mandatory)][string]$Destination,
+        [Parameter(Mandatory)][string]$Name
+    )
+    if (-not (Test-Path -LiteralPath (Join-Path $Source 'SKILL.md'))) {
+        throw "Skill empaquetada invalida o ausente: $Name ($Source)"
+    }
+    $parent = Split-Path $Destination -Parent
+    if (-not (Test-Path -LiteralPath $parent)) {
+        New-Item -ItemType Directory -Path $parent -Force | Out-Null
+    }
+    # Reemplazo atomico a nivel de bundle: evita anidamiento y archivos obsoletos al repetir.
+    if (Test-Path -LiteralPath $Destination) {
+        Remove-Item -LiteralPath $Destination -Recurse -Force
+    }
+    Copy-Item -LiteralPath $Source -Destination $Destination -Recurse -Force
+    Write-Host ("  [OK] Skill DSH sincronizada: {0} -> {1}" -f $Name, $Destination) -ForegroundColor Green
+}
+
 if (-not $ConfigDir) { $ConfigDir = Join-Path (Get-ArnesHome) '.config\arnes' }
 if (-not $TargetDir) { $TargetDir = $ConfigDir }
 $TargetFile = Join-Path $ConfigDir 'target.json'
@@ -539,14 +560,32 @@ Otros agentes disponibles en core/classes/ y core/auditors/ (carga bajo demanda)
                 }
             }
             'dsh' {
-                # DeepSeek Harness: despliega persona Atlas, valida OSMA y arranca el servidor web.
-                if (-not (Test-Path $DshDir)) {
+                # DeepSeek Harness: instala skills globales, valida OSMA y arranca el servidor web.
+                # En tests, -TargetDir + -NoLaunch crea un HOME DSH hermetico bajo TargetDir.
+                $hermeticDsh = $NoLaunch -and $PSBoundParameters.ContainsKey('TargetDir')
+                if (-not $hermeticDsh -and -not (Test-Path $DshDir)) {
                     Write-Host ('  [!] No se encontro DeepSeek Harness en: {0}' -f $DshDir) -ForegroundColor Red
                     Write-Host '      Clonalo: git clone https://github.com/deepseek-ai/deepseek-harness.git (HOME)/deepseek-harness' -ForegroundColor Yellow
                     exit 1
                 }
-                Write-Host '  [1/3] DeepSeek Harness · ARGOS/OSMA ya cargan via plugin (no se toca AGENTS.md del repo)...' -ForegroundColor Cyan
-                Write-Host '  [2/3] Validando OSMA (memoria)...' -ForegroundColor Cyan
+
+                $dshHome = if ($hermeticDsh) { Join-Path $TargetDir '.dsh' } else { Join-Path (Get-ArnesHome) '.dsh' }
+                $dshSkills = Join-Path $dshHome 'skills'
+                $opencodeHome = if ($hermeticDsh) { Join-Path $TargetDir '.config\opencode' } else { Join-Path (Get-ArnesHome) '.config\opencode' }
+                $impeccableSource = Join-Path $opencodeHome 'skills\impeccable'
+
+                Write-Host '  [1/4] DeepSeek Harness · ARGOS/OSMA ya cargan via plugin (no se toca AGENTS.md del repo)...' -ForegroundColor Cyan
+                Write-Host '  [2/4] Sincronizando skills visuales globales de DSH...' -ForegroundColor Cyan
+                Sync-DshSkill -Source (Join-Path $Root 'core\skills\v2\vivi-visual-excellence') -Destination (Join-Path $dshSkills 'vivi-visual-excellence') -Name 'vivi-visual-excellence'
+                Sync-DshSkill -Source (Join-Path $Root '.agents\skills\taste-skill') -Destination (Join-Path $dshSkills 'taste-skill') -Name 'taste-skill'
+                if (Test-Path -LiteralPath (Join-Path $impeccableSource 'SKILL.md')) {
+                    Sync-DshSkill -Source $impeccableSource -Destination (Join-Path $dshSkills 'impeccable') -Name 'impeccable'
+                } else {
+                    Write-Host ('  [!] Impeccable no encontrado en: {0}' -f $impeccableSource) -ForegroundColor Yellow
+                    Write-Host '      Instala el skill oficial sin bloquear este target: npx skills add pbakaus/impeccable' -ForegroundColor Yellow
+                }
+
+                Write-Host '  [3/4] Validando OSMA (memoria)...' -ForegroundColor Cyan
                 . (Join-Path $PSScriptRoot 'osma-resolve.ps1')
                 if (Get-OsmaBrain) {
                     Write-Host ('  [OK] OSMA resuelto: {0}' -f (Get-OsmaBrain)) -ForegroundColor Green
@@ -560,13 +599,13 @@ Otros agentes disponibles en core/classes/ y core/auditors/ (carga bajo demanda)
                     $alive = $false
                     try { $r = Invoke-WebRequest -Uri 'http://127.0.0.1:3080' -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop; $alive = ($r.StatusCode -eq 200) } catch { $alive = $false }
                     if ($alive) {
-                        Write-Host '  [3/3] DeepSeek Harness YA esta activo en http://127.0.0.1:3080' -ForegroundColor Green
+                        Write-Host '  [4/4] DeepSeek Harness YA esta activo en http://127.0.0.1:3080' -ForegroundColor Green
                         Write-Host '        Abriendo el navegador...'
                         Start-Process 'http://127.0.0.1:3080'
                         Write-Host '        (argos target dsh no abre un 2do servidor; reclama aqui DSH.)' -ForegroundColor DarkGray
                         Write-Host '        El modelo se elige por sesion en Settings -> Models.' -ForegroundColor DarkGray
                     } else {
-                        Write-Host ('  [3/3] Arrancando DeepSeek Harness ({0}) -> http://127.0.0.1:3080 ...' -f $DshDir) -ForegroundColor Cyan
+                        Write-Host ('  [4/4] Arrancando DeepSeek Harness ({0}) -> http://127.0.0.1:3080 ...' -f $DshDir) -ForegroundColor Cyan
                         Write-Host '       El modelo se elige por sesion en la Web UI (Settings -> Models).' -ForegroundColor DarkGray
                         & pnpm dsh web
                     }

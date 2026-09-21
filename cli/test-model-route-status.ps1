@@ -1,11 +1,15 @@
 #Requires -Version 5.1
 <#! Deterministic acceptance test; it never invokes OpenCode. #>
+# Hermético: usa SU propia policy fixture (13 agentes, aliases V2) en vez de la
+# policy viva de .arnes (que evolucionó a 30 agentes con ids crudos). Así el test
+# prueba el contrato del comando, no el estado de la máquina.
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $command = Join-Path $PSScriptRoot 'model-route-status.ps1'
 $atlas = Join-Path $PSScriptRoot 'atlas-ff.ps1'
-$fixture = Join-Path ([System.IO.Path]::GetTempPath()) ('arnes-route-catalog-' + [guid]::NewGuid().ToString() + '.json')
-$policy = Join-Path $root '.arnes\model-routing-policy.json'
+$tmp = [System.IO.Path]::GetTempPath()
+$fixture = Join-Path $tmp ('arnes-route-catalog-' + [guid]::NewGuid().ToString() + '.json')
+$policy = Join-Path $tmp ('arnes-route-policy-' + [guid]::NewGuid().ToString() + '.json')
 $legacy = @(
     (Join-Path $root '.arnes\model-chain.json'),
     (Join-Path $root '.arnes\model-assignments.json')
@@ -23,6 +27,36 @@ try {
         [ordered]@{ full_id='nvidia/glm-5.2'; source='live'; availability='available'; health='degraded' },
         [ordered]@{ full_id='nvidia/other'; source='configured'; availability='unavailable' }
     ) | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $fixture -Encoding utf8
+
+    # Policy fixture V2: 13 agentes con preference_order por capability alias
+    @{
+        resolution_mode = 'catalog_backed_aliases'
+        model_capabilities = [ordered]@{
+            kimi_k3         = @{ display_name = 'Kimi K3' }
+            glm_5_2         = @{ display_name = 'GLM 5.2' }
+            minimax_m3      = @{ display_name = 'MiniMax M3' }
+            deepseek_v4_pro = @{ display_name = 'DeepSeek V4 Pro' }
+        }
+        provider_budget_defaults = @{
+            caps_percent_by_capability = [ordered]@{ kimi_k3 = 30; glm_5_2 = 30; minimax_m3 = 30; deepseek_v4_pro = 30 }
+        }
+        agents = [ordered]@{
+            atlas   = @{ preference_order = @('deepseek_v4_pro') }
+            vivi    = @{ preference_order = @('kimi_k3', 'minimax_m3', 'glm_5_2') }
+            eiko    = @{ preference_order = @('minimax_m3') }
+            paladin = @{ preference_order = @('deepseek_v4_pro') }
+            rogue   = @{ preference_order = @('glm_5_2') }
+            monk    = @{ preference_order = @('deepseek_v4_pro') }
+            ranger  = @{ preference_order = @('minimax_m3') }
+            auron   = @{ preference_order = @('deepseek_v4_pro') }
+            bran    = @{ preference_order = @('minimax_m3') }
+            quina   = @{ preference_order = @('glm_5_2') }
+            varys   = @{ preference_order = @('minimax_m3') }
+            tywin   = @{ preference_order = @('deepseek_v4_pro') }
+            sam     = @{ preference_order = @('deepseek_v4_pro') }
+        }
+    } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $policy -Encoding utf8
+
     $before = @($legacy | ForEach-Object { "$_=$((Get-FileHash -LiteralPath $_ -Algorithm SHA256).Hash)" })
 
     $raw = & $command routes -CatalogPath $fixture -PolicyPath $policy -Json; $exit = $LASTEXITCODE; $routes = $raw | ConvertFrom-Json
@@ -40,22 +74,35 @@ try {
     $raw = & $command manual -Agent vivi -Capability not_authorized -CatalogPath $fixture -PolicyPath $policy -Json 2>$null; $exit = $LASTEXITCODE; $invalid = $raw | ConvertFrom-Json
     Assert-That ($exit -eq 1 -and $invalid.status -eq 'error') 'manual preview rejects unknown capability'
 
+    # Raw-id policy: preferencias con ids completos proveedor/modelo (formato 2026-08-20)
+    $rawPolicy = Join-Path $tmp ('arnes-route-policy-raw-' + [guid]::NewGuid().ToString() + '.json')
+    @{
+        model_capabilities = @{}
+        agents = @{
+            vivi = @{ preference_order = @('opencode-go/deepseek-v4.1-flash', 'tokenrouter/moonshotai/kimi-k3-free') }
+        }
+    } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $rawPolicy -Encoding utf8
+    $raw = & $command auto -Agent vivi -CatalogPath $fixture -PolicyPath $rawPolicy -Json; $exit = $LASTEXITCODE; $rawAuto = $raw | ConvertFrom-Json
+    Assert-That ($exit -eq 0 -and $rawAuto.selected_model -eq 'tokenrouter/moonshotai/kimi-k3-free' -and $rawAuto.preference_index -eq 1) 'auto preview supports raw full-id preferences (suffix match)'
+    Remove-Item -LiteralPath $rawPolicy -Force -ErrorAction SilentlyContinue
+
     # Covers public dispatcher wiring without querying the real OpenCode catalog.
     $raw = & $atlas models -Provider nvidia -CatalogPath $fixture -Json; $ok = $?
     Assert-That ($ok -and ($raw -join "`n") -match 'nvidia/deepseek-v4-pro') 'atlas models maps to catalog command'
-    $raw = & $atlas routes -CatalogPath $fixture -Json; $ok = $?
+    $raw = & $atlas routes -CatalogPath $fixture -PolicyPath $policy -Json; $ok = $?
     Assert-That ($ok -and ($raw -join "`n") -match 'vivi') 'atlas routes maps to route status command'
-    $raw = & $atlas provider-status -CatalogPath $fixture -Json; $ok = $?
+    $raw = & $atlas provider-status -CatalogPath $fixture -PolicyPath $policy -Json; $ok = $?
     Assert-That ($ok -and ($raw -join "`n") -match 'kimi_k3') 'atlas provider-status maps to status command'
-    $raw = & $atlas -Command route -LegacyArguments @('auto', 'vivi') -CatalogPath $fixture -Json; $ok = $?
+    $raw = & $atlas -Command route -LegacyArguments @('auto', 'vivi') -CatalogPath $fixture -PolicyPath $policy -Json; $ok = $?
     Assert-That ($ok -and ($raw -join "`n") -match 'kimi-k3-free') 'atlas route auto maps agent argument'
-    $raw = & $atlas -Command route -LegacyArguments @('manual', 'vivi', 'minimax_m3') -CatalogPath $fixture -Json; $ok = $?
+    $raw = & $atlas -Command route -LegacyArguments @('manual', 'vivi', 'minimax_m3') -CatalogPath $fixture -PolicyPath $policy -Json; $ok = $?
     Assert-That ($ok -and ($raw -join "`n") -match 'minimax-m3') 'atlas route manual maps capability argument'
 
     $after = @($legacy | ForEach-Object { "$_=$((Get-FileHash -LiteralPath $_ -Algorithm SHA256).Hash)" })
     Assert-That (($before -join "`n") -eq ($after -join "`n")) 'all legacy routing files remain byte-identical'
-    Write-Host 'PASS model-route-status: catalog, routes, provider health, safe auto/manual previews, dispatcher mapping, no legacy mutation' -ForegroundColor Green
+    Write-Host 'PASS model-route-status: catalog, routes, provider health, safe auto/manual previews, raw-id policy, dispatcher mapping, no legacy mutation' -ForegroundColor Green
 } finally {
     Remove-Item -LiteralPath $fixture -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $policy -Force -ErrorAction SilentlyContinue
 }
 exit 0

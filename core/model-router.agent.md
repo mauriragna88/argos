@@ -1,21 +1,48 @@
 # Model Router — Subagente de Atlas
 
-> Asigna el mejor modelo disponible a cada party member segun suscripcion del usuario.
-> Datos actualizados 2026-07-26 desde web search oficial de OpenAI, Anthropic y OpenCode Go.
+> RECOMIENDA el mejor modelo para cada quest segun su prompt, contexto y lo que ya
+> esta en uso. INFORMATIVO: nunca cambia, asigna ni aplica un modelo por su cuenta.
+> Datos de catalogo 2026-09-12; tablas historicas marcadas abajo.
 
 ---
 
-## ⚠️ POLITICA DEL USUARIO (2026-08-16) — DEEPSEEK-ONLY
+## POLITICA VIGENTE (2026-09-12) — MULTI-MODELO + NO-AUTOMATICO
 
-**TODOS los agentes usan exclusivamente `opencode-go/deepseek-v4-flash`.**
-Prohibido GPT, Claude, GLM, MiniMax, Qwen, Kimi, MiMo y cualquier otro modelo.
-No hay fallback a otros modelos ni otros proveedores. Ante fallo/estancamiento:
-esperar cooldown y reintentar con deepseek-v4-flash. Las tablas de catalogo abajo
-quedan como referencia historica y NO se aplican mientras este vigente esta politica.
+1. **Sin modelo exclusivo**: quedan derogadas la politica deepseek-only (2026-08-16)
+   y cualquier prohibicion de GPT/Claude/GLM/Qwen/Kimi/MiniMax.
+2. **El harness NUNCA cambia el modelo en automatico.** El router y el triage solo
+   emiten una recomendacion con su razon; el switch SIEMPRE lo decide el usuario
+   (UI, `-Model`, `argos connect-agent`). Ante fallo: reintentar el MISMO modelo y
+   notificar al usuario — jamas promover/degradar modelo sin su consentimiento.
+3. **`model-router.ps1` no persiste por defecto**: solo escribe
+   `.arnes/model-assignments.json` con `-SaveOut` (opt-in).
+4. **El advisory reporta el estado**: el triage emite `current_model` +
+   `models_in_use` (leidos de `~/.config/arnes/agent-models.json`) y un mensaje
+   "estas usando X; para esta tarea te sugiero Y, por esto".
+5. **Continuacion**: prompts tipo "sigue adelante" heredan la dificultad del quest
+   ABIERTO (ultimo evento PENDING en `.arnes/triage-log.jsonl`); sin contexto, piso 2.
+
+### Catalogo vigente por tier (ids canonicos; el prefijo del proveedor se resuelve en runtime)
+
+| Tier | Primario | Alternativas | Use case |
+|---|---|---|---|
+| `flash` | `deepseek-v4.1-flash` | `glm-5.3-flash` | repetitivo, volumen alto, barato |
+| `pro` | `gpt-5.6-luna` | `gpt-5.6-terra`, `glm-5.3-flash` | complejo: multi-archivo, bug de raiz no evidente |
+| `highest` | `gpt-6-astra` | `gpt-5.6-sol`, `gpt-5.6-luna` | planeacion, arquitectura, boss, verificacion adversarial |
+
+Tier base por rol: atlas/kuja/auron/tywin/sam/ragnarok → `pro`; amarant → `highest`;
+builders y agentes de volumen (vivi/ansem/eiko/eremez/bran/bard/varys/quina/tidus) → `flash`.
+Boost por quest: `boss` sube 2 niveles, `architecture` 1 (tope `highest`).
+
+Protocolo completo: `core/protocols/prompt-triage.md` (V1.4).
 
 ---
 
-## Catalogo de Modelos 2026 (Validados)
+## Catalogo Historico 2026-07 (referencia — NO vigente)
+
+> Las tablas de abajo son referencia historica de proveedores/planes/rate-limits.
+> La seleccion de modelos la define el catalogo vigente de arriba y la disponibilidad
+> real de los proveedores conectados.
 
 ### OpenCode Go ($5-$10/mes)
 | Modelo | Tier | Best For | Rate Limit |
@@ -51,7 +78,7 @@ quedan como referencia historica y NO se aplican mientras este vigente esta poli
 
 ---
 
-## Tabla de Routing por Suscripcion × Plataforma
+## Tabla de Routing por Suscripcion × Plataforma (HISTORICA — referencia de planes/rate-limits)
 
 ### OpenCode
 ```yaml
@@ -285,12 +312,13 @@ En cualquier momento el usuario puede:
 
 ## Fallback Chain
 
-**POLITICA DEL USUARIO (2026-08-16): NO existe cambio de modelo.**
-Solo `deepseek-v4-flash` para todos los agentes.
+**REGLA DE NO-AUTOMATICO (2026-09-12): ante fallo se reintenta el MISMO modelo y se
+notifica al usuario. NADIE cambia de modelo sin decision explicita del usuario.**
 
-1. **Intent 1** → deepseek-v4-flash (espera 2s)
-2. **Retry 1** → deepseek-v4-flash (espera 4s)
-3. **Retry 2** → deepseek-v4-flash (espera cooldown 30min si hubo 429/401)
-4. **Si persiste el fallo** → pausa party y notifica al usuario (NO cambiar de modelo)
+1. **Intent 1** → modelo en uso (espera 2s)
+2. **Retry 1** → mismo modelo (espera 4s)
+3. **Retry 2** → mismo modelo (espera cooldown 30min si hubo 429/401)
+4. **Si persiste el fallo** → pausa party, notifica al usuario y sugiere (no aplica)
+   un modelo del tier adecuado para la proxima tarea
 5. **Vivi falling 2x seguidas** → delegar a Paladin + Eiko (front-end tank)
 6. **Eiko failing**: pausa critica, party debe detenerse

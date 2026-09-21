@@ -28,13 +28,22 @@ const TRIAGE_PATTERNS = {
 
 const TRIAGE_L0 = ['delete', 'bulk delete', 'destroy', 'drop table', 'rm -rf', 'production deploy', 'prod deploy', 'force push', 'git reset', 'schema migration', 'rls change', 'rls policy', 'auth change', 'rollback prod', 'rollback production', 'secret rotation', 'database migration', 'breaking change', 'produccion', 'producción', 'rollback', 'migracion', 'migración', 'rls', 'borrar', 'rotacion de secrets', 'rotación de secrets']
 
-// Modelo recomendado por dificultad/dominio
-// POLITICA DEL USUARIO (2026-08-16): todos los niveles usan opencode-go/deepseek-v4-flash.
-function recommendModel(difficulty, questType) {
-  return { model: 'opencode-go/deepseek-v4-flash', tier: 'flash', gate: difficulty >= 4 ? 'required' : difficulty === 3 ? 'ask' : 'auto_pass' }
+// Modelo recomendado por dificultad (catalogo multi-modelo, espejo de quest-detector.ps1)
+// POLITICA (2026-09-12): multi-modelo. Se RECOMIENDA, no bloquea:
+//   flash -> repetitivo/volumen | pro -> complejo | highest -> planeacion/boss.
+// Ids canonicos: el prefijo del proveedor se resuelve en runtime segun conexiones.
+const MODEL_CATALOG = {
+  flash: { model: 'deepseek-v4.1-flash', alternatives: ['glm-5.3-flash'] },
+  pro: { model: 'gpt-5.6-luna', alternatives: ['gpt-5.6-terra', 'glm-5.3-flash'] },
+  highest: { model: 'gpt-6-astra', alternatives: ['gpt-5.6-sol', 'gpt-5.6-luna'] },
 }
 
-function classifyPrompt(prompt) {
+function recommendModel(difficulty, questType) {
+  const tier = difficulty >= 4 ? 'highest' : difficulty === 3 ? 'pro' : 'flash'
+  return { model: MODEL_CATALOG[tier].model, alternatives: MODEL_CATALOG[tier].alternatives, tier, gate: difficulty >= 4 ? 'required' : difficulty === 3 ? 'ask' : 'auto_pass' }
+}
+
+function classifyPrompt(prompt, pendingDifficulty = null) {
   const lower = String(prompt || '').toLowerCase()
   // quest type por keywords
   let bestType = 'unknown'
@@ -63,6 +72,20 @@ function classifyPrompt(prompt) {
   else if (complexity === 'boss') difficulty = 4
   if (bestType === 'boss') difficulty = 4
   if (isL0 && difficulty < 3) difficulty = 3
+  // TRIAGE V3: CONTINUACION ("sigue", "continua", ...) -> piso 2, nunca trivial.
+  // Espejo de quest-detector.ps1: solo cuenta si el prompt es corto (<=40) o sin
+  // keywords de dominio, para no confundir "sigue" con un fix nuevo tipo "sigue fallando".
+  const continuationPatterns = ['sigue adelante', 'sigue', 'continua', 'continuar', 'keep going', 'go on', 'procede', 'avanza', 'dale', 'next step']
+  const isContinuation = continuationPatterns.some((cp) => lower.includes(cp)) && (prompt.trim().length <= 40 || bestScore === 0)
+  // El contexto manda: si hay quest ABIERTO (evento PENDING del triage-log), hereda
+  // su dificultad; sin contexto abierto, piso 2 (nunca trivial).
+  let contextInherited = false
+  if (isContinuation && pendingDifficulty >= 1) {
+    difficulty = Math.max(difficulty, Number(pendingDifficulty))
+    contextInherited = true
+  } else if (isContinuation && difficulty < 2) {
+    difficulty = 2
+  }
   // AMBIGUITY (V1.3): prompt abierto -> Atlas complementa antes de clasificar.
   // El nivel final = prompt + complemento; si es ambiguo el gate sube a ask
   // porque el complemento puede subir el nivel. (Espejo de quest-detector.ps1)
@@ -72,7 +95,24 @@ function classifyPrompt(prompt) {
   // L0 manda: gate required siempre (espejo de quest-detector.ps1)
   if (isL0 && rec.gate === 'ask') rec.gate = 'required'
   if (isAmbiguous && rec.gate === 'auto_pass') rec.gate = 'ask'
-  return { quest_type: bestType, confidence: bestScore, complexity, is_l0: isL0, difficulty, is_ambiguous: isAmbiguous, ...rec, prompt: prompt }
+  return { quest_type: bestType, confidence: bestScore, complexity, is_l0: isL0, difficulty, is_ambiguous: isAmbiguous, is_continuation: isContinuation, context_inherited: contextInherited, ...rec, prompt: prompt }
+}
+
+// Ultima dificultad ABIERTA (evento PENDING) del triage-log del proyecto:
+// es el "contexto" que un prompt de continuacion ("sigue") hereda.
+function getLastPendingDifficulty(projectRoot) {
+  try {
+    const logFile = join(projectRoot, '.arnes', 'triage-log.jsonl')
+    if (!existsSync(logFile)) return null
+    const lines = readFileSync(logFile, 'utf8').trim().split('\n').filter(Boolean).slice(-50)
+    for (let i = lines.length - 1; i >= 0; i--) {
+      try {
+        const evt = JSON.parse(lines[i])
+        if (evt.event === 'triage' && evt.outcome === 'PENDING' && evt.difficulty) return Number(evt.difficulty)
+      } catch {}
+    }
+  } catch {}
+  return null
 }
 
 // Append de evento triage a .arnes/triage-log.jsonl (append-only, no memoria)
@@ -85,7 +125,7 @@ function appendTriageLog(projectRoot, triage, osmaHint) {
       ts: new Date().toISOString(),
       prompt_type: triage.quest_type,
       difficulty: triage.difficulty,
-      signals: [triage.is_l0 ? 'l0' : '', triage.quest_type === 'unknown' ? 'unknown_type' : '', triage.is_ambiguous ? 'ambiguity' : ''].filter(Boolean),
+      signals: [triage.is_l0 ? 'l0' : '', triage.quest_type === 'unknown' ? 'unknown_type' : '', triage.is_ambiguous ? 'ambiguity' : '', triage.is_continuation ? 'continuation' : ''].filter(Boolean),
       similarity: { matched: Boolean(osmaHint), hint: osmaHint || '' },
       model_used: triage.model,
       recommendation: triage.tier,
@@ -114,7 +154,8 @@ const triageTool = defineTool({
   async execute(args, exec) {
     const root = resolveProjectRoot(args.cwd || (exec && exec.cwd) || process.cwd())
     if (!root) return text('ARGOS: no hay proyecto ARNES aquí (falta .arnes/arnes.db).')
-    const triage = classifyPrompt(args.prompt)
+    const pendingDifficulty = getLastPendingDifficulty(root)
+    const triage = classifyPrompt(args.prompt, pendingDifficulty)
     // consulta OSMA: experiencias similares para afinar (anti-repeticion)
     let osmaHint = ''
     try {
@@ -132,6 +173,7 @@ const triageTool = defineTool({
     return text([
       `Prompt Triage (DSH): dificultad ${triage.difficulty}/4`,
       `Quest type: ${triage.quest_type} (conf ${triage.confidence}) | complejidad: ${triage.complexity} | L0: ${triage.is_l0} | AMBIGUO: ${triage.is_ambiguous}`,
+      triage.context_inherited ? 'Continuacion: dificultad heredada del quest abierto (triage PENDING).' : '',
       triage.is_ambiguous ? 'Prompt abierto: Atlas complementa (interpreta + alternativas + planeacion minima) antes de clasificar.' : '',
       `Modelo recomendado: ${triage.model} (tier ${triage.tier})`,
       gateLine,

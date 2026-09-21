@@ -7,7 +7,8 @@ ARGOS CONNECT-AGENT - Asigna modelo por agente SOLO con los proveedores logueado
 1. Detecta los logins REALES (Pi auth.json + conexiones ARNES) y muestra SOLO esos.
 2. Arma el catalogo con ids completos proveedor/modelo (sin ambiguedad:
    opencode-go/deepseek-v4-flash != nvidia/deepseek-ai/deepseek-v4-flash).
-   POLITICA DEL USUARIO (2026-08-16): el unico modelo asignable es opencode-go/deepseek-v4-flash.
+   POLITICA (2026-09-12): multi-modelo. Cualquier modelo del catalogo de los
+   proveedores logueados es asignable; model-router RECOMIENDA, no bloquea.
 3. Wizard por agente: eliges con flechas/busqueda (como opencode/pi).
 4. Guarda en agent-models.json y sincroniza a Pi (argos-pi -SyncOnly).
 
@@ -70,10 +71,10 @@ Write-Host ''
 # ============ 2. CATALOGO por proveedor (ids completos, Pi-compatibles) ============
 $piProviderMap = @{ 'openai' = 'openai-codex'; 'opencode-go' = 'opencode-go'; 'nvidia' = 'nvidia'; 'bai' = 'bai' }
 $knownModels = @{
-    'opencode-go' = @('deepseek-v4-flash')
-    'nvidia'      = @('nvidia/llama-3.3-nemotron-super-49b-v1.5', 'z-ai/glm-5.2', 'google/gemma-3-12b-it')
-    'openai-codex' = @('gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.6-fast', 'gpt-5.5', 'gpt-5.4')
-    'bai'         = @('claude-opus-5', 'claude-fable-5', 'claude-sonnet-5', 'gpt-5.6-sol', 'gpt-5.6-luna', 'deepseek-v4-flash', 'qwen3.8-max', 'kimi-k2.6', 'glm-5.2', 'gemini-3.1-pro')
+    'opencode-go'  = @('deepseek-v4-flash', 'deepseek-v4.1-flash', 'glm-5.3-flash')
+    'nvidia'       = @('nvidia/llama-3.3-nemotron-super-49b-v1.5', 'z-ai/glm-5.2', 'google/gemma-3-12b-it')
+    'openai-codex' = @('gpt-6-astra', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.6-fast', 'gpt-5.5', 'gpt-5.4')
+    'bai'          = @('claude-opus-5', 'claude-fable-5', 'claude-sonnet-5', 'gpt-6-astra', 'gpt-5.6-sol', 'gpt-5.6-luna', 'deepseek-v4-flash', 'deepseek-v4.1-flash', 'qwen3.8-max', 'kimi-k2.6', 'glm-5.2', 'glm-5.3-flash', 'gemini-3.1-pro')
 }
 # ampliar con los modelos de connections.json si existen
 if (Test-Path $ConnPath) {

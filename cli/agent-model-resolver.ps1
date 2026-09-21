@@ -46,12 +46,14 @@ try {
     $policy = Get-Content -LiteralPath $PolicyPath -Raw | ConvertFrom-Json
     # Validate the whole policy before considering a catalog. A typo must never
     # silently look like a provider outage for just the requested agent.
+    # Una preferencia puede ser un alias de capability (kimi_k3) o un id completo
+    # proveedor/modelo (policy raw-id desde 2026-08-20): los ids completos se
+    # validan contra el catalogo en el matching, no aqui.
     $knownCapabilities = @($policy.model_capabilities.PSObject.Properties.Name)
     foreach ($policyAgent in @($policy.agents.PSObject.Properties)) {
         foreach ($capability in @($policyAgent.Value.preference_order)) {
-            if ($capability -notin $knownCapabilities) {
-                throw "La politica contiene el alias desconocido '$capability' para el agente '$($policyAgent.Name)'."
-            }
+            if ($capability -match '/' -or $capability -in $knownCapabilities) { continue }
+            throw "La politica contiene el alias desconocido '$capability' para el agente '$($policyAgent.Name)'."
         }
     }
     $agentPolicy = $policy.agents.$Agent
@@ -81,7 +83,15 @@ try {
 
     $index = 0
     foreach ($capability in @($agentPolicy.preference_order)) {
-        $match = @($liveRows | Where-Object { Test-CapabilityMatch -Capability $capability -FullId ([string]$_.full_id) } | Select-Object -First 1)
+        $match = @($liveRows | Where-Object {
+            if ($capability -match '/') {
+                # Id completo (raw-id policy): match exacto o por sufijo del modelo
+                $id = ([string]$_.full_id).ToLowerInvariant()
+                $cap = $capability.ToLowerInvariant()
+                return ($id -eq $cap -or $id.EndsWith("/$cap", [System.StringComparison]::OrdinalIgnoreCase))
+            }
+            return Test-CapabilityMatch -Capability $capability -FullId ([string]$_.full_id)
+        } | Select-Object -First 1)
         if ($match.Count -gt 0) {
             $selected = $match[0]
             $parts = ([string]$selected.full_id) -split '/', 2

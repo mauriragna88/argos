@@ -137,11 +137,12 @@ if (-not $oc) {
 }
 
 # Abrir opencode con Atlas como agente primario (TUI interactivo)
-# Usar array splatting: garantiza que el quest (con espacios) llegue como UN solo argumento
-$ocArgs = @('--agent', 'atlas-player')
+# El proyecto va como positional y el quest como --prompt; de otro modo OpenCode
+# interpreta el quest como una ruta de proyecto.
+$ocArgs = @('.', '--agent', 'atlas-player')
 if ($Quest) {
     Write-Host '  Abriendo opencode con Atlas y tu quest...' -ForegroundColor Yellow
-    $ocArgs += $Quest
+    $ocArgs += @('--prompt', $Quest)
     & opencode @ocArgs
 } else {
     Write-Host '  Abriendo opencode con Atlas (orquestador)...' -ForegroundColor Yellow

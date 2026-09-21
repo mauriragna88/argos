@@ -59,9 +59,16 @@ $AGENTS = @(
 
 # === Benchmarks por familia de modelo (resumen 2026) ===
 # value: 1=barato 2=equilibrado 3=calidad maxima
-# POLITICA DEL USUARIO (2026-08-16): solo se usa opencode-go/deepseek-v4-flash.
+# POLITICA (2026-09-12): multi-modelo. Se RECOMIENDA por rol y prioridad, sin exclusividad.
+# Los ids son canonicos (sin prefijo); el matching contra el catalogo vivo de los
+# proveedores conectados es por sufijo (ej: openai-codex/gpt-6-astra == gpt-6-astra).
 $BENCHMARKS = @{
-    'opencode-go/deepseek-v4-flash' = @{ quality = 3; cost = 1; speed = 3; desc = 'UNICO modelo permitido (politica usuario 2026-08-16)' }
+    'deepseek-v4.1-flash' = @{ quality = 2; cost = 1; speed = 3; tier = 'flash';   desc = 'workhorse: repetitivo, volumen alto, barato' }
+    'glm-5.3-flash'       = @{ quality = 2; cost = 1; speed = 3; tier = 'flash';   desc = 'workhorse alterno: rapido y barato' }
+    'gpt-5.6-terra'       = @{ quality = 3; cost = 2; speed = 3; tier = 'pro';     desc = 'codigo con presupuesto: volumen alto, buen razonamiento' }
+    'gpt-5.6-luna'        = @{ quality = 4; cost = 2; speed = 2; tier = 'pro';     desc = 'razonamiento medio-alto: complejo multi-archivo' }
+    'gpt-5.6-sol'         = @{ quality = 5; cost = 3; speed = 1; tier = 'highest'; desc = 'razonamiento maximo: debugging profundo' }
+    'gpt-6-astra'         = @{ quality = 5; cost = 3; speed = 2; tier = 'highest'; desc = 'flagship: planeacion, arquitectura, decisiones con trade-offs' }
 }
 
 # === Obtener los modelos del catalogo VIVO de proveedores CONECTADOS ===
@@ -108,25 +115,25 @@ function Get-AvailableModels {
     return @($models | Sort-Object -Unique)
 }
 
-# === Preferencia de modelo por rol ===
-# POLITICA DEL USUARIO (2026-08-16): un unico modelo para todos los roles.
+# === Preferencia de modelo por rol (estrategia: razonamiento donde importa, flash en volumen) ===
+# Orden = preferencia. Solo se recomiendan modelos DISPONIBLES en los proveedores conectados.
 $ROLE_PREF = @{
-    atlas    = @('opencode-go/deepseek-v4-flash')
-    vivi     = @('opencode-go/deepseek-v4-flash')
-    ansem    = @('opencode-go/deepseek-v4-flash')
-    kuja     = @('opencode-go/deepseek-v4-flash')
-    eiko     = @('opencode-go/deepseek-v4-flash')
-    amarant  = @('opencode-go/deepseek-v4-flash')
-    eremez   = @('opencode-go/deepseek-v4-flash')
-    auron    = @('opencode-go/deepseek-v4-flash')
-    bran     = @('opencode-go/deepseek-v4-flash')
-    quina    = @('opencode-go/deepseek-v4-flash')
-    varys    = @('opencode-go/deepseek-v4-flash')
-    tywin    = @('opencode-go/deepseek-v4-flash')
-    sam      = @('opencode-go/deepseek-v4-flash')
-    bard     = @('opencode-go/deepseek-v4-flash')
-    tidus    = @('opencode-go/deepseek-v4-flash')
-    ragnarok = @('opencode-go/deepseek-v4-flash')
+    atlas    = @('gpt-6-astra', 'gpt-5.6-luna')
+    amarant  = @('gpt-6-astra', 'gpt-5.6-sol')
+    auron    = @('gpt-5.6-luna', 'gpt-5.6-sol')
+    kuja     = @('gpt-5.6-luna', 'gpt-5.6-terra')
+    tywin    = @('gpt-5.6-luna', 'gpt-5.6-terra')
+    sam      = @('gpt-5.6-luna', 'gpt-5.6-terra')
+    vivi     = @('gpt-5.6-terra', 'glm-5.3-flash')
+    ansem    = @('gpt-5.6-terra', 'deepseek-v4.1-flash')
+    bard     = @('gpt-5.6-terra', 'deepseek-v4.1-flash')
+    bran     = @('gpt-5.6-terra', 'deepseek-v4.1-flash')
+    ragnarok = @('gpt-5.6-terra', 'deepseek-v4.1-flash')
+    eremez   = @('glm-5.3-flash', 'deepseek-v4.1-flash')
+    eiko     = @('glm-5.3-flash', 'deepseek-v4.1-flash')
+    varys    = @('glm-5.3-flash', 'deepseek-v4.1-flash')
+    quina    = @('glm-5.3-flash', 'deepseek-v4.1-flash')
+    tidus    = @('glm-5.3-flash', 'deepseek-v4.1-flash')
 }
 
 # === Recomendar modelo para un rol segun prioridad ===
@@ -139,9 +146,16 @@ function Get-Recommendation {
     if ($models.Count -eq 0) { return '' }
 
     # 1) Preferencia por rol (alineada a la estrategia del usuario)
+    # Matching por sufijo: el catalogo vivo trae "proveedor/modelo" y las prefs
+    # son ids canonicos (ej: 'openai-codex/gpt-6-astra' matchea 'gpt-6-astra').
     $pref = $ROLE_PREF[$AgentKey]
     if ($pref) {
-        $avail = @($pref | Where-Object { $models -contains $_ -and $BENCHMARKS[$_] })
+        $avail = @($pref | Where-Object {
+            $canon = $_
+            $BENCHMARKS[$canon] -and @($models | Where-Object {
+                $_ -eq $canon -or $_.EndsWith("/$canon", [System.StringComparison]::OrdinalIgnoreCase)
+            }).Count -gt 0
+        })
         if ($avail.Count -gt 0) {
             if ($Priority -eq 'ahorro') {
                 return ($avail | Sort-Object { $BENCHMARKS[$_].cost } | Select-Object -First 1)

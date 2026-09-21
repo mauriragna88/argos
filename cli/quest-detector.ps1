@@ -228,15 +228,95 @@ switch ($complexity) {
 if ($bestType -eq 'boss') { $difficulty = 4 }
 if ($isL0 -and $difficulty -lt 3) { $difficulty = 3 }  # L0 manda: minimo complejo
 
-$modelTier = 'flash'
-$recommendedModel = 'opencode-go/deepseek-v4-flash'
-# POLITICA DEL USUARIO (2026-08-16): todos los agentes usan deepseek-v4-flash, sin importar dificultad.
-if ($difficulty -ge 4) {
-    $modelTier = 'flash'
-    $recommendedModel = 'opencode-go/deepseek-v4-flash'
-} elseif ($difficulty -eq 3) {
-    $modelTier = 'flash'
-    $recommendedModel = 'opencode-go/deepseek-v4-flash'
+# === TRIAGE V3: CONTINUACION ("sigue", "continua", ...) -> el contexto manda ===
+# Un "sigue adelante" de 6 caracteres caeria en trivial por longitud. Si el prompt
+# es de continuacion, hereda la dificultad del contexto ABIERTO (ultimo evento
+# PENDING en .arnes/triage-log.jsonl) y, sin contexto abierto, usa piso 2 (nunca trivial).
+$continuationPatterns = @('sigue adelante','sigue','continua','continúa','continuar','keep going','go on','procede','avanza','dale','next step')
+$isContinuation = $false
+foreach ($cp in $continuationPatterns) {
+    if ($promptLower.Contains($cp)) { $isContinuation = $true; break }
+}
+# Evitar falsos positivos: "sigue fallando el login" es un fix nuevo, no continuacion.
+# Solo cuenta como continuacion si el prompt es corto o no matcheo keywords de dominio.
+if ($isContinuation -and $Prompt.Trim().Length -gt 40 -and $bestScore -gt 0) { $isContinuation = $false }
+
+$contextInherited = $false
+if ($isContinuation) {
+    try {
+        $triageLogPath = Join-Path (Split-Path $PSScriptRoot -Parent) '.arnes\triage-log.jsonl'
+        if (Test-Path $triageLogPath) {
+            $recent = @(Get-Content $triageLogPath -Tail 50 -ErrorAction SilentlyContinue)
+            for ($i = $recent.Count - 1; $i -ge 0; $i--) {
+                try { $prevEvt = $recent[$i] | ConvertFrom-Json } catch { continue }
+                if ($prevEvt.event -eq 'triage' -and $prevEvt.outcome -eq 'PENDING' -and $prevEvt.difficulty) {
+                    $difficulty = [Math]::Max([int]$prevEvt.difficulty, 1)
+                    $contextInherited = $true
+                    break
+                }
+            }
+        }
+    } catch {}
+    if (-not $contextInherited -and $difficulty -lt 2) { $difficulty = 2 }  # piso: continuacion nunca trivial
+}
+
+# === CATALOGO MULTI-MODELO (2026-09-12): recomienda, no bloquea ===
+# flash   -> deepseek-v4.1-flash / glm-5.3-flash   (repetitivo, volumen alto, barato)
+# pro     -> gpt-5.6-luna / gpt-5.6-terra          (complejo: multi-archivo, raiz no evidente)
+# highest -> gpt-6-astra / gpt-5.6-sol             (planeacion/arquitectura/boss)
+# Ids canonicos: el prefijo del proveedor (opencode-go/, openai-codex/, bai/, nvidia/)
+# se resuelve en runtime segun las conexiones activas.
+$MODEL_CATALOG = @{
+    flash   = @{ primary = 'deepseek-v4.1-flash'; alternatives = @('glm-5.3-flash') }
+    pro     = @{ primary = 'gpt-5.6-luna'; alternatives = @('gpt-5.6-terra', 'glm-5.3-flash') }
+    highest = @{ primary = 'gpt-6-astra'; alternatives = @('gpt-5.6-sol', 'gpt-5.6-luna') }
+}
+$modelTier = switch ($difficulty) {
+    4 { 'highest' }
+    3 { 'pro' }
+    default { 'flash' }
+}
+$recommendedModel = $MODEL_CATALOG[$modelTier].primary
+$recommendedAlternatives = @($MODEL_CATALOG[$modelTier].alternatives)
+
+# === MODELOS EN USO (solo lectura) + ADVISORY: el modelo NUNCA se cambia en automatico ===
+# Lee ~/.config/arnes/agent-models.json (fuente de verdad de los modelos desplegados)
+# para reportar QUE estas usando y QUE se sugiere. El switch siempre lo hace el usuario:
+# el harness solo aconseja ("para esta/siguiente tarea usa tal y por esto").
+$currentModel = ''
+$modelsInUse = @()
+try {
+    $homeDir = if ($env:USERPROFILE) { $env:USERPROFILE } else { $HOME }
+    $amPath = Join-Path $homeDir '.config\arnes\agent-models.json'
+    if (Test-Path $amPath) {
+        $amData = Get-Content $amPath -Raw | ConvertFrom-Json
+        $inUse = @()
+        foreach ($prop in $amData.agents.PSObject.Properties) {
+            if ($prop.Value) { $inUse += [string]$prop.Value }
+        }
+        $modelsInUse = @($inUse | Sort-Object -Unique)
+        if ($amData.agents.atlas) { $currentModel = [string]$amData.agents.atlas }
+        elseif ($modelsInUse.Count -gt 0) { $currentModel = $modelsInUse[0] }
+    }
+} catch {}
+
+# Inferir el tier del modelo en uso (canon = ultimo segmento del id)
+$currentTier = ''
+if ($currentModel) {
+    $canonCurrent = ($currentModel -split '/')[-1]
+    foreach ($t in @('flash','pro','highest')) {
+        if ($MODEL_CATALOG[$t].primary -eq $canonCurrent -or $MODEL_CATALOG[$t].alternatives -contains $canonCurrent) { $currentTier = $t; break }
+    }
+    if (-not $currentTier -and $canonCurrent -match 'flash') { $currentTier = 'flash' }
+}
+
+# Mensaje de retroalimentacion: que usas, que te sugiero y por que (informativo, no automatico)
+$advisory = if ($currentModel -and $currentTier -and $currentTier -ne $modelTier) {
+    "Estas usando $currentModel (tier $currentTier). Para esta tarea (dificultad $difficulty, $bestType) te sugiero $recommendedModel (tier $modelTier)$(if ($recommendedAlternatives) { "; alternativas: $($recommendedAlternatives -join ', ')" }). NO se cambia en automatico: el switch lo haces tu."
+} elseif ($currentModel) {
+    "Estas usando $currentModel. Sugerencia informativa para dificultad ${difficulty}: $recommendedModel (tier $modelTier). El modelo NUNCA se cambia en automatico."
+} else {
+    "Recomendacion para esta tarea: $recommendedModel (tier $modelTier)$(if ($recommendedAlternatives) { "; alternativas: $($recommendedAlternatives -join ', ')" }). No se cambia en automatico: tu eliges el modelo."
 }
 
 $triageGate = if ($difficulty -ge 4 -or $isL0) { 'required' } elseif ($difficulty -eq 3) { 'ask' } else { 'auto_pass' }
@@ -352,6 +432,14 @@ $result.vagueness_score = $vaguenessScore
 $result.info_gaps = $infoGaps
 $result.clarify_questions = $clarifyQuestions
 $result.needs_clarification = $needsClarification
+# TRIAGE V3: continuacion + alternativas del catalogo
+$result.is_continuation = $isContinuation
+$result.context_inherited = $contextInherited
+$result.recommended_alternatives = $recommendedAlternatives
+# Advisory de modelos: que usas vs que se sugiere (el switch siempre es del usuario)
+$result.current_model = $currentModel
+$result.models_in_use = $modelsInUse
+$result.advisory = $advisory
 
 # Memoria: append a .arnes/triage-log.jsonl (event log append-only, no memoria paralela)
 if (-not $NoLog) {
@@ -364,6 +452,7 @@ if (-not $NoLog) {
         if ($hasChain) { $signals += 'chain' }
         if ($bestType -eq 'unknown') { $signals += 'unknown_type' }
         if ($isAmbiguous) { $signals += 'ambiguity' }
+        if ($isContinuation) { $signals += 'continuation' }
         $evt = [ordered]@{
             event = 'triage'
             ts = (Get-Date).ToString('o')
@@ -375,7 +464,7 @@ if (-not $NoLog) {
             recommendation = $modelTier
             user_decision = 'auto'
             outcome = 'PENDING'
-            notes = "quest-detector heuristic | gate=$triageGate$(if ($isAmbiguous) { ' | ambiguity: Atlas complementa antes de clasificar' })"
+            notes = "quest-detector heuristic | gate=$triageGate$(if ($isAmbiguous) { ' | ambiguity: Atlas complementa antes de clasificar' })$(if ($contextInherited) { ' | continuacion: dificultad heredada de triage PENDING' })"
         } | ConvertTo-Json -Compress
         Add-Content -Path $logFile -Value $evt -Encoding UTF8
     } catch {}
@@ -447,7 +536,10 @@ if (-not $Silent) {
     Write-Host "  Has chain:     $hasChain" -ForegroundColor DarkGray
     Write-Host "  Estimated HP:  $estimatedHP" -ForegroundColor DarkGray
     Write-Host "  Estimated MP:  $estimatedMP tokens" -ForegroundColor DarkGray
-    Write-Host ("  Triage:        dificultad {0}/4 · modelo: {1} ({2})" -f $difficulty, $recommendedModel, $modelTier) -ForegroundColor Green
+    Write-Host ("  Triage:        dificultad {0}/4 · sugerido: {1} ({2})" -f $difficulty, $recommendedModel, $modelTier) -ForegroundColor Green
+    if ($currentModel) {
+        Write-Host ("  En uso:        {0}  (tu eliges el modelo; no se cambia en automatico)" -f $currentModel) -ForegroundColor DarkGray
+    }
     Write-Host ""
 }
 
@@ -464,6 +556,9 @@ if ($Recommend -and -not $Silent) {
     Write-Host ("║ {0,-41} ║" -f (" Party sugerido: $shortParty")) -ForegroundColor Yellow
     Write-Host ("║ {0,-41} ║" -f (" Costo est.: $mpK" + "K tokens · ~$" + ("{0:N2}" -f $estimatedCostUsd))) -ForegroundColor Yellow
     Write-Host ("║ {0,-41} ║" -f (" Complejidad: $complexity · L0: $l0Txt")) -ForegroundColor White
+    Write-Host ("║ {0,-41} ║" -f (" Modelo: $recommendedModel ($modelTier)")) -ForegroundColor Green
+    $curShort = if ($currentModel) { if ($currentModel.Length -gt 28) { $currentModel.Substring(0, 25) + '...' } else { $currentModel } } else { 'n/d' }
+    Write-Host ("║ {0,-41} ║" -f (" En uso: $curShort · tu eliges")) -ForegroundColor DarkGray
     # TRIAGE V2: clarificacion si el prompt es vago (retroalimentacion exacta)
     if ($needsClarification) {
         Write-Host ("╠" + ("═" * 43) + "╣") -ForegroundColor Yellow

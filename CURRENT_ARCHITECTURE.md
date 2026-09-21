@@ -199,7 +199,7 @@ Tablas asociativas (V4-V7): `observation_links`, `contradictions`, `consolidatio
 | `~/.config/arnes/connections.json` | Proveedores con API keys |
 | `.arnes/config.json` | Plataforma/suscripción/preferencias/characters con `model_opencode/codex/claude` |
 | `.arnes/model-recommendations.json` | Catálogo estático 2026.07 (platforms × plans × recommended_party × overrides × fallback_chain) |
-| `.arnes/model-assignments.json` | Asignación concreta por quest (`quest_type`, `platform`, `assignments`, `tier`) |
+| `.arnes/model-assignments.json` | Recomendación por quest (`quest_type`, `platform`, `assignments`, `tier`) — SOLO se escribe con `model-router -SaveOut` (opt-in; el modelo nunca se cambia en automático) |
 | `.arnes/model-routing-policy.json` | **Política V2 (2026-08-08)**: `resolution_mode: catalog_backed_aliases`, provider tiers (nvidia free → opencode-go fallback, luna 60/40), `preference_order` por agente, `stuck_agent_rule` (5 min / 3 fails / switch), `on_error_429_401_410` |
 | `.arnes/model-chain.json` | Cadena NVIDIA legacy (referencia histórica; policy dice "read_only") |
 | `cli/argos-engine.ps1` | Motor nativo que habla directo con APIs (bai/nvidia/opencode-go/openai), retry 429, MaxTokens |

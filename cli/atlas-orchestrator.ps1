@@ -191,6 +191,11 @@ if ($resolvedGate -ne "off" -and -not $Json) {
         $triageTxt = " Dificultad: $($questInfo.difficulty)/4 · Modelo rec.: $($questInfo.recommended_model)"
         if ($triageTxt.Length -gt 41) { $triageTxt = $triageTxt.Substring(0, 38) + "..." }
         Write-Host ("║ {0,-41} ║" -f $triageTxt) -ForegroundColor $(if ([int]$questInfo.difficulty -ge 3) { "Yellow" } else { "White" })
+        if ($questInfo.current_model) {
+            $curShort = $questInfo.current_model
+            if ($curShort.Length -gt 24) { $curShort = $curShort.Substring(0, 21) + "..." }
+            Write-Host ("║ {0,-41} ║" -f (" En uso: $curShort · sugerencia, no automatico")) -ForegroundColor DarkGray
+        }
     } else {
         Write-Host ("║ {0,-41} ║" -f " (sin recommendation - detector sin -Recommend)") -ForegroundColor DarkGray
     }

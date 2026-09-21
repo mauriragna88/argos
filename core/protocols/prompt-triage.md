@@ -11,6 +11,11 @@
 > **V1.2**: telemetría formal de modelos (Fase 1) — `cli/model-telemetry.ps1` registra
 > cada run en `.arnes/model-runs.jsonl` al cerrar el quest; tools DSH `argos_triage` y
 > `argos_model_stats` en el bundle `dsh/argos-osma`.
+> **V1.4** (2026-09-12): **política multi-modelo** — el triage RECOMIENDA un modelo del
+> catálogo (flash/pro/highest = deepseek-v4.1-flash, glm-5.3-flash, gpt-5.6-terra/luna/sol,
+> gpt-6-astra) según dificultad y tipo de quest; ya no existe modelo exclusivo.
+> Nueva señal `continuation`: prompts tipo "sigue adelante" heredan la dificultad del
+> contexto ABIERTO (último evento PENDING del triage-log) en vez de caer en trivial.
 > **Referencias**: `AGENTS.md` (sección Prompt Triage) · `core/model-router.agent.md` · `core/protocols/atlas-advisory-handoff.md` · `IMPLEMENTATION_PLAN.md` (Fase 1: `osma-model-run`)
 > **Regla de oro**: TODO prompt del usuario se clasifica ANTES de ejecutar. Ninguna excepción.
 
@@ -46,14 +51,28 @@ o el prompt matchea patrones abiertos ("como creas mejor", "alguna idea", "recom
 "que opinas", "mejor forma", "nose", "no se", "quiza"). Con `ambiguity`, el gate sube:
 `auto_pass` → `ask` (Atlas va a complementar y el nivel puede subir). L0/dificultad 4 siguen siendo `required`.
 
+### 2.2 Señal `continuation` (automática en el CLI)
+
+`quest-detector.ps1` marca `continuation` cuando el prompt matchea patrones de
+continuación ("sigue", "sigue adelante", "continua", "avanza", "dale", "keep going",
+"next step") Y es corto (≤40 chars) o no matcheó keywords de dominio — así
+"sigue fallando el login" (fix nuevo) no se confunde con "sigue".
+
+Comportamiento: **el contexto manda sobre el prompt crudo**.
+1. Se busca el último evento `PENDING` en `.arnes/triage-log.jsonl` (el quest abierto).
+2. Si existe, la dificultad del prompt de continuación **se hereda** de ese evento
+   (`context_inherited: true`) — "sigue" sobre un quest de dificultad 3 sigue siendo 3.
+3. Sin contexto abierto, la dificultad usa piso 2 (una continuación nunca es trivial).
+El evento de triage se registra con la señal `continuation` y la nota de herencia.
+
 ## 3. Clasificación de dificultad (4 niveles)
 
-| Nivel | Nombre | Señales típicas | Modelo |
+| Nivel | Nombre | Señales típicas | Modelo (catálogo 2026-09-12) |
 |---|---|---|---|
-| **1** | Trivial | 1 archivo, patrón conocido, sin ambigüedad (renombrar, typo, copy de patrón, string literal) | Flash sobra |
-| **2** | Rutina | 1-3 archivos, lógica directa, librerías ya usadas en el repo (componente, endpoint sencillo, test unitario, fix acotado) | Flash bien |
-| **3** | Complejo | Arquitectura, refactor multi-archivo, bug intermitente/raíz no evidente, seguridad (RLS/auth/secrets), integración entre sistemas, razonamiento multi-paso, decisiones con trade-offs, tareas con ambigüedad de requisitos | **Recomendar pro/reasoning** ⚠️ |
-| **4** | Boss | Diseño de sistema completo, migración grande, debugging profundo, refactor con dependencias en cascada, tareas que requieren plan formal (SDD) + verificación adversarial | **Insistir en modelo fuerte** 🛑 |
+| **1** | Trivial | 1 archivo, patrón conocido, sin ambigüedad (renombrar, typo, copy de patrón, string literal) | **flash** sobra (deepseek-v4.1-flash / glm-5.3-flash) |
+| **2** | Rutina | 1-3 archivos, lógica directa, librerías ya usadas en el repo (componente, endpoint sencillo, test unitario, fix acotado) | **flash** bien |
+| **3** | Complejo | Arquitectura, refactor multi-archivo, bug intermitente/raíz no evidente, seguridad (RLS/auth/secrets), integración entre sistemas, razonamiento multi-paso, decisiones con trade-offs, tareas con ambigüedad de requisitos | **Recomendar pro** (gpt-5.6-luna / gpt-5.6-terra) ⚠️ |
+| **4** | Boss | Diseño de sistema completo, migración grande, debugging profundo, refactor con dependencias en cascada, tareas que requieren plan formal (SDD) + verificación adversarial | **Insistir en highest** (gpt-6-astra / gpt-5.6-sol) 🛑 |
 
 Señales de peso para subir de nivel (si 2+ aplican, sube al menos 1 nivel):
 - Más de 3 archivos o cambios entre módulos/servicios
@@ -99,11 +118,24 @@ El gate de nivel 4 NUNCA se salta. El gate L0 (producción/destructivo) NUNCA se
 
 ## 5. Decisión de modelo
 
-> **POLITICA DEL USUARIO (2026-08-16)**: TODOS los niveles usan `opencode-go/deepseek-v4-flash`. No hay switch de modelo, no hay "modelo de razonamiento" alternativo, no hay fallbacks. El gate (required/ask) se mantiene igual pero el modelo recomendado es siempre deepseek-v4-flash.
+> **POLITICA (2026-09-12)**: multi-modelo. El triage RECOMIENDA según dificultad y tipo
+> de quest; sin modelo exclusivo, sin bloqueos.
+> **REGLA DE NO-AUTOMATICO**: el harness NUNCA cambia, asigna ni aplica un modelo por
+> su cuenta. El triage solo emite la recomendación (+ `models_in_use`/`current_model`
+> con lo que estás usando ahora, leído de `~/.config/arnes/agent-models.json`) y un
+> `advisory` del tipo "estás usando X; para esta tarea te sugiero Y, por esto". El
+> switch SIEMPRE lo hace el usuario. `model-router.ps1` ya no persiste asignaciones
+> por defecto: solo escribe `model-assignments.json` con `-SaveOut` (opt-in).
 
-- **Nivel 1-2** → `deepseek-v4-flash` (workhorse). No gastar tokens extra.
-- **Nivel 3** → `deepseek-v4-flash` (politica usuario: sin modelo de razonamiento alternativo).
-- **Nivel 4** → `deepseek-v4-flash` (politica usuario: sin highest_reasoning; el gate sigue siendo required).
+Catálogo canónico (ids sin prefijo; el prefijo del proveedor —opencode-go/,
+openai-codex/, bai/, nvidia/— se resuelve en runtime según conexiones activas):
+
+- **Nivel 1-2** → `flash`: `deepseek-v4.1-flash` (alt: `glm-5.3-flash`). Repetitivo y de volumen: no gastar razonamiento caro.
+- **Nivel 3** → `pro`: `gpt-5.6-luna` (alt: `gpt-5.6-terra`, `glm-5.3-flash`). Multi-archivo, bug de raíz no evidente, trade-offs.
+- **Nivel 4** → `highest`: `gpt-6-astra` (alt: `gpt-5.6-sol`, `gpt-5.6-luna`). Planeación, arquitectura, boss. Gate `required`.
+
+Regla de economía (Quina): flash para repetitivo, razonamiento caro SOLO donde paga:
+planeación, arquitectura, debugging profundo y verificación adversarial.
 
 ### 5.1 Límite honesto (sesión locked)
 
@@ -212,7 +244,7 @@ Sirve para que Bran/Quina ajusten la economía de modelos con data real.
 [ATLAS] Prompt Triage ⚖️
   Dificultad: 3/4 (Complejo) — multi-archivo + lógica de negocio con casos borde
   Similitud:  Q-012 (72%) "API con Zod" → PASS con paladin pro, 8K tokens
-  Veredicto:  esto lo resuelve mejor un modelo de razonamiento (deepseek-v4-pro / gpt-5.6-luna)
+  Veredicto:  esto lo resuelve mejor un modelo de razonamiento (gpt-5.6-luna / gpt-5.6-terra)
   ¿Cómo seguimos?  [Cambiar a pro] [Seguir con flash] [Dividir la tarea]
 ```
 

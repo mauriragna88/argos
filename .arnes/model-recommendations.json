@@ -1,9 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
-  "version": "2026.08",
-  "generated_at": "2026-08-16",
-  "policy": "POLITICA DEL USUARIO (2026-08-20): rotacion libre de proveedores. Atlas elige el modelo mas eficiente y barato disponible segun quest y suscripcion activa. Este catalogo es referencia viva para recomendar; nada esta deshabilitado.",
+  "version": "2026.09",
+  "generated_at": "2026-09-12",
+  "policy": "POLITICA (2026-09-12): multi-modelo + no-automatico. El harness RECOMIENDA (flash/pro/highest) segun prompt, contexto y rol; NUNCA cambia, asigna ni aplica un modelo por su cuenta. El switch siempre lo hace el usuario. Los ids son canonicos: el prefijo del proveedor se resuelve en runtime segun conexiones activas.",
   "sources": [
+    "Politica 2026-09-12: multi-modelo + no-automatico (core/protocols/prompt-triage.md V1.4)",
     "Politica del usuario 2026-08-20: rotacion libre de proveedores (multi-proveedor)",
     "Web search 2026-07-26: OpenCode Go provider catalog (referencia historica)"
   ],
@@ -14,46 +15,46 @@
         "free": {
           "price_usd_month": 0,
           "rate_limit": "5K req/5h",
-          "best_models": ["deepseek-v4-flash"],
+          "best_models": ["deepseek-v4.1-flash", "glm-5.3-flash"],
           "notes": "Tier economico. Rotacion libre: elegir modelo eficiente"
         },
         "pro": {
           "price_usd_month": 10,
           "rate_limit": "30K req/5h",
-          "best_models": ["deepseek-v4-flash"],
+          "best_models": ["deepseek-v4.1-flash", "glm-5.3-flash"],
           "notes": "Rotacion libre: elegir modelo eficiente para cada agente"
         }
       },
       "recommended_party": {
         "free": {
-          "atlas": "deepseek-v4-flash",
-          "vivi": "deepseek-v4-flash",
-          "eiko": "deepseek-v4-flash",
-          "paladin": "deepseek-v4-flash",
-          "rogue": "deepseek-v4-flash",
-          "monk": "deepseek-v4-flash",
-          "ranger": "deepseek-v4-flash",
-          "auron": "deepseek-v4-flash",
-          "bran": "deepseek-v4-flash",
-          "quina": "deepseek-v4-flash",
-          "varys": "deepseek-v4-flash",
-          "tywin": "deepseek-v4-flash",
-          "sam": "deepseek-v4-flash"
+          "atlas": "gpt-5.6-luna",
+          "vivi": "deepseek-v4.1-flash",
+          "eiko": "glm-5.3-flash",
+          "paladin": "deepseek-v4.1-flash",
+          "rogue": "gpt-5.6-luna",
+          "monk": "gpt-6-astra",
+          "ranger": "glm-5.3-flash",
+          "auron": "gpt-5.6-luna",
+          "bran": "deepseek-v4.1-flash",
+          "quina": "glm-5.3-flash",
+          "varys": "glm-5.3-flash",
+          "tywin": "gpt-5.6-luna",
+          "sam": "gpt-5.6-luna"
         },
         "pro": {
-          "atlas": "deepseek-v4-flash",
-          "vivi": "deepseek-v4-flash",
-          "eiko": "deepseek-v4-flash",
-          "paladin": "deepseek-v4-flash",
-          "rogue": "deepseek-v4-flash",
-          "monk": "deepseek-v4-flash",
-          "ranger": "deepseek-v4-flash",
-          "auron": "deepseek-v4-flash",
-          "bran": "deepseek-v4-flash",
-          "quina": "deepseek-v4-flash",
-          "varys": "deepseek-v4-flash",
-          "tywin": "deepseek-v4-flash",
-          "sam": "deepseek-v4-flash"
+          "atlas": "gpt-5.6-luna",
+          "vivi": "deepseek-v4.1-flash",
+          "eiko": "glm-5.3-flash",
+          "paladin": "deepseek-v4.1-flash",
+          "rogue": "gpt-5.6-luna",
+          "monk": "gpt-6-astra",
+          "ranger": "glm-5.3-flash",
+          "auron": "gpt-5.6-luna",
+          "bran": "deepseek-v4.1-flash",
+          "quina": "glm-5.3-flash",
+          "varys": "glm-5.3-flash",
+          "tywin": "gpt-5.6-luna",
+          "sam": "gpt-5.6-luna"
         }
       }
     },
@@ -63,72 +64,72 @@
         "free": {
           "price_usd_month": 0,
           "rate_limit": "5K req/5h",
-          "best_models": ["deepseek-v4-flash"],
+          "best_models": ["gpt-5.6-terra"],
           "notes": "Disponible segun suscripcion"
         },
         "plus": {
           "price_usd_month": 20,
           "rate_limit": "5x Free",
-          "best_models": ["deepseek-v4-flash"],
+          "best_models": ["gpt-5.6-luna", "gpt-5.6-terra"],
           "notes": "Disponible segun suscripcion"
         },
         "pro": {
           "price_usd_month": 200,
           "rate_limit": "20x Free",
-          "best_models": ["deepseek-v4-flash"],
+          "best_models": ["gpt-6-astra", "gpt-5.6-sol", "gpt-5.6-luna"],
           "notes": "Disponible segun suscripcion"
         }
       },
       "reasoning_levels": {
-        "low": "deepseek-v4-flash",
-        "medium": "deepseek-v4-flash",
-        "high": "deepseek-v4-flash"
+        "low": "gpt-5.6-terra",
+        "medium": "gpt-5.6-luna",
+        "high": "gpt-5.6-sol"
       },
       "recommended_party": {
         "free": {
-          "atlas": "deepseek-v4-flash",
-          "vivi": "deepseek-v4-flash",
-          "eiko": "deepseek-v4-flash",
-          "paladin": "deepseek-v4-flash",
-          "rogue": "deepseek-v4-flash",
-          "monk": "deepseek-v4-flash",
-          "ranger": "deepseek-v4-flash",
-          "auron": "deepseek-v4-flash",
-          "bran": "deepseek-v4-flash",
-          "quina": "deepseek-v4-flash",
-          "varys": "deepseek-v4-flash",
-          "tywin": "deepseek-v4-flash",
-          "sam": "deepseek-v4-flash"
+          "atlas": "gpt-5.6-luna",
+          "vivi": "deepseek-v4.1-flash",
+          "eiko": "glm-5.3-flash",
+          "paladin": "deepseek-v4.1-flash",
+          "rogue": "gpt-5.6-luna",
+          "monk": "gpt-6-astra",
+          "ranger": "glm-5.3-flash",
+          "auron": "gpt-5.6-luna",
+          "bran": "deepseek-v4.1-flash",
+          "quina": "glm-5.3-flash",
+          "varys": "glm-5.3-flash",
+          "tywin": "gpt-5.6-luna",
+          "sam": "gpt-5.6-luna"
         },
         "plus": {
-          "atlas": "deepseek-v4-flash",
-          "vivi": "deepseek-v4-flash",
-          "eiko": "deepseek-v4-flash",
-          "paladin": "deepseek-v4-flash",
-          "rogue": "deepseek-v4-flash",
-          "monk": "deepseek-v4-flash",
-          "ranger": "deepseek-v4-flash",
-          "auron": "deepseek-v4-flash",
-          "bran": "deepseek-v4-flash",
-          "quina": "deepseek-v4-flash",
-          "varys": "deepseek-v4-flash",
-          "tywin": "deepseek-v4-flash",
-          "sam": "deepseek-v4-flash"
+          "atlas": "gpt-5.6-luna",
+          "vivi": "deepseek-v4.1-flash",
+          "eiko": "glm-5.3-flash",
+          "paladin": "deepseek-v4.1-flash",
+          "rogue": "gpt-5.6-luna",
+          "monk": "gpt-6-astra",
+          "ranger": "glm-5.3-flash",
+          "auron": "gpt-5.6-luna",
+          "bran": "deepseek-v4.1-flash",
+          "quina": "glm-5.3-flash",
+          "varys": "glm-5.3-flash",
+          "tywin": "gpt-5.6-luna",
+          "sam": "gpt-5.6-luna"
         },
         "pro": {
-          "atlas": "deepseek-v4-flash",
-          "vivi": "deepseek-v4-flash",
-          "eiko": "deepseek-v4-flash",
-          "paladin": "deepseek-v4-flash",
-          "rogue": "deepseek-v4-flash",
-          "monk": "deepseek-v4-flash",
-          "ranger": "deepseek-v4-flash",
-          "auron": "deepseek-v4-flash",
-          "bran": "deepseek-v4-flash",
-          "quina": "deepseek-v4-flash",
-          "varys": "deepseek-v4-flash",
-          "tywin": "deepseek-v4-flash",
-          "sam": "deepseek-v4-flash"
+          "atlas": "gpt-5.6-luna",
+          "vivi": "deepseek-v4.1-flash",
+          "eiko": "glm-5.3-flash",
+          "paladin": "deepseek-v4.1-flash",
+          "rogue": "gpt-5.6-luna",
+          "monk": "gpt-6-astra",
+          "ranger": "glm-5.3-flash",
+          "auron": "gpt-5.6-luna",
+          "bran": "deepseek-v4.1-flash",
+          "quina": "glm-5.3-flash",
+          "varys": "glm-5.3-flash",
+          "tywin": "gpt-5.6-luna",
+          "sam": "gpt-5.6-luna"
         }
       }
     },
@@ -138,98 +139,99 @@
         "free": {
           "price_usd_month": 0,
           "rate_limit": "limitado",
-          "best_models": ["deepseek-v4-flash"],
+          "best_models": ["deepseek-v4.1-flash", "glm-5.3-flash"],
           "notes": "Disponible segun suscripcion"
         },
         "pro": {
           "price_usd_month": 17,
           "rate_limit": "5x Free",
-          "best_models": ["deepseek-v4-flash"],
+          "best_models": ["deepseek-v4.1-flash", "glm-5.3-flash"],
           "notes": "Disponible segun suscripcion"
         },
         "max": {
           "price_usd_month": 100,
           "rate_limit": "20x Pro",
-          "best_models": ["deepseek-v4-flash"],
+          "best_models": ["gpt-6-astra", "gpt-5.6-sol"],
           "notes": "Disponible segun suscripcion"
         }
       },
       "recommended_party": {
         "free": {
-          "atlas": "deepseek-v4-flash",
-          "vivi": "deepseek-v4-flash",
-          "eiko": "deepseek-v4-flash",
-          "paladin": "deepseek-v4-flash",
-          "rogue": "deepseek-v4-flash",
-          "monk": "deepseek-v4-flash",
-          "ranger": "deepseek-v4-flash",
-          "auron": "deepseek-v4-flash",
-          "bran": "deepseek-v4-flash",
-          "quina": "deepseek-v4-flash",
-          "varys": "deepseek-v4-flash",
-          "tywin": "deepseek-v4-flash",
-          "sam": "deepseek-v4-flash"
+          "atlas": "gpt-5.6-luna",
+          "vivi": "deepseek-v4.1-flash",
+          "eiko": "glm-5.3-flash",
+          "paladin": "deepseek-v4.1-flash",
+          "rogue": "gpt-5.6-luna",
+          "monk": "gpt-6-astra",
+          "ranger": "glm-5.3-flash",
+          "auron": "gpt-5.6-luna",
+          "bran": "deepseek-v4.1-flash",
+          "quina": "glm-5.3-flash",
+          "varys": "glm-5.3-flash",
+          "tywin": "gpt-5.6-luna",
+          "sam": "gpt-5.6-luna"
         },
         "pro": {
-          "atlas": "deepseek-v4-flash",
-          "vivi": "deepseek-v4-flash",
-          "eiko": "deepseek-v4-flash",
-          "paladin": "deepseek-v4-flash",
-          "rogue": "deepseek-v4-flash",
-          "monk": "deepseek-v4-flash",
-          "ranger": "deepseek-v4-flash",
-          "auron": "deepseek-v4-flash",
-          "bran": "deepseek-v4-flash",
-          "quina": "deepseek-v4-flash",
-          "varys": "deepseek-v4-flash",
-          "tywin": "deepseek-v4-flash",
-          "sam": "deepseek-v4-flash"
+          "atlas": "gpt-5.6-luna",
+          "vivi": "deepseek-v4.1-flash",
+          "eiko": "glm-5.3-flash",
+          "paladin": "deepseek-v4.1-flash",
+          "rogue": "gpt-5.6-luna",
+          "monk": "gpt-6-astra",
+          "ranger": "glm-5.3-flash",
+          "auron": "gpt-5.6-luna",
+          "bran": "deepseek-v4.1-flash",
+          "quina": "glm-5.3-flash",
+          "varys": "glm-5.3-flash",
+          "tywin": "gpt-5.6-luna",
+          "sam": "gpt-5.6-luna"
         },
         "max": {
-          "atlas": "deepseek-v4-flash",
-          "vivi": "deepseek-v4-flash",
-          "eiko": "deepseek-v4-flash",
-          "paladin": "deepseek-v4-flash",
-          "rogue": "deepseek-v4-flash",
-          "monk": "deepseek-v4-flash",
-          "ranger": "deepseek-v4-flash",
-          "auron": "deepseek-v4-flash",
-          "bran": "deepseek-v4-flash",
-          "quina": "deepseek-v4-flash",
-          "varys": "deepseek-v4-flash",
-          "tywin": "deepseek-v4-flash",
-          "sam": "deepseek-v4-flash"
+          "atlas": "gpt-5.6-luna",
+          "vivi": "deepseek-v4.1-flash",
+          "eiko": "glm-5.3-flash",
+          "paladin": "deepseek-v4.1-flash",
+          "rogue": "gpt-5.6-luna",
+          "monk": "gpt-6-astra",
+          "ranger": "glm-5.3-flash",
+          "auron": "gpt-5.6-luna",
+          "bran": "deepseek-v4.1-flash",
+          "quina": "glm-5.3-flash",
+          "varys": "glm-5.3-flash",
+          "tywin": "gpt-5.6-luna",
+          "sam": "gpt-5.6-luna"
         }
       }
     }
   },
   "quest_type_overrides": {
     "boss_fight": {
-      "_rule": "rotacion libre: subir a mejor modelo de razonamiento disponible segun suscripcion.",
-      "atlas": "deepseek-v4-flash",
-      "monk": "deepseek-v4-flash",
-      "tywin": "deepseek-v4-flash",
-      "sam": "deepseek-v4-flash"
+      "_rule": "subir a tier highest (gpt-6-astra / gpt-5.6-sol); se SUGIERE al usuario, no se aplica en automatico.",
+      "atlas": "gpt-6-astra",
+      "monk": "gpt-6-astra",
+      "tywin": "gpt-6-astra",
+      "sam": "gpt-6-astra"
     },
     "frontend_quest": {
-      "_rule": "rotacion libre: mejor modelo frontend disponible.",
-      "vivi": "deepseek-v4-flash",
-      "eiko": "deepseek-v4-flash"
+      "_rule": "flash para volumen; si hay decision visual compleja, sugerir gpt-5.6-terra.",
+      "vivi": "deepseek-v4.1-flash",
+      "eiko": "glm-5.3-flash"
     },
     "backend_quest": {
-      "_rule": "rotacion libre: mejor modelo backend disponible.",
-      "paladin": "deepseek-v4-flash",
-      "auron": "deepseek-v4-flash"
+      "_rule": "pro para logica/seguridad compleja (gpt-5.6-luna); se sugiere, no se aplica.",
+      "paladin": "deepseek-v4.1-flash",
+      "auron": "gpt-5.6-luna"
     },
     "trivial_quest": {
-      "_rule": "usar el modelo mas barato/eficiente disponible",
+      "_rule": "usar el modelo mas barato/eficiente disponible (tier flash)",
       "notes": "Economia de tokens prioritaria"
     }
   },
   "fallback_chain": {
-    "vivi": ["deepseek-v4-flash", "deepseek/deepseek-v4-flash"],
-    "paladin": ["deepseek-v4-flash", "deepseek/deepseek-v4-pro"],
-    "monk": ["deepseek-v4-flash", "deepseek/deepseek-v4-pro"],
-    "atlas": ["deepseek-v4-flash", "deepseek/deepseek-v4-flash"]
+    "_rule": "REGLA DE NO-AUTOMATICO (2026-09-12): el fallback se SUGIERE al usuario; nadie cambia de modelo sin decision explicita.",
+    "vivi": ["deepseek-v4.1-flash", "glm-5.3-flash"],
+    "paladin": ["deepseek-v4.1-flash", "gpt-5.6-luna"],
+    "monk": ["gpt-6-astra", "gpt-5.6-sol"],
+    "atlas": ["gpt-5.6-luna", "gpt-5.6-terra"]
   }
 }

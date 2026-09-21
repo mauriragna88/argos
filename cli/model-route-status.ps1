@@ -63,10 +63,19 @@ function Get-Preview {
     if ($null -eq $agentPolicy) { throw "El agente '$RequestedAgent' no esta definido en la politica." }
     $choices = if ($RequestedCapability) { @($RequestedCapability) } else { @($agentPolicy.preference_order) }
     foreach ($choice in $choices) {
-        if ($choice -notin @($Policy.model_capabilities.PSObject.Properties.Name)) {
+        # Una preferencia puede ser alias de capability o id completo proveedor/modelo
+        if ($choice -notmatch '/' -and $choice -notin @($Policy.model_capabilities.PSObject.Properties.Name)) {
             throw "La capability '$choice' no esta definida en la politica."
         }
-        $candidate = @($HealthyRows | Where-Object { Test-CapabilityMatch $choice ([string]$_.full_id) } | Select-Object -First 1)
+        $candidate = @($HealthyRows | Where-Object {
+            if ($choice -match '/') {
+                # Id completo (raw-id policy): match exacto o por sufijo del modelo
+                $id = ([string]$_.full_id).ToLowerInvariant()
+                $cap = $choice.ToLowerInvariant()
+                return ($id -eq $cap -or $id.EndsWith("/$cap", [System.StringComparison]::OrdinalIgnoreCase))
+            }
+            return Test-CapabilityMatch $choice ([string]$_.full_id)
+        } | Select-Object -First 1)
         if ($candidate.Count) {
             $parts = ([string]$candidate[0].full_id) -split '/', 2
             return [ordered]@{

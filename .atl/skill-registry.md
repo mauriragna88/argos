@@ -164,13 +164,21 @@ directorio global de skills de TODOS los entornos:
 
 | Entorno | Directorio global | Quien lo lee |
 |---|---|---|
-| ~/.agents/skills | estandar Agent Skills | cmdc, DSH y cualquier tool compatible |
+| ~/.agents/skills | estandar Agent Skills | cmdc, DSH, freebuff, Antigravity IDE, **app de ChatGPT/Codex** y cualquier tool compatible |
 | ~/.dsh/skills | DeepSeek Harness | `argos target dsh` |
 | ~/.claude/skills | Claude Code | `argos target claude` |
 | ~/.codex/skills | Codex CLI | `argos target codex` |
 | ~/.config/opencode/skills | OpenCode | `argos` / `argos opencode` |
-| ~/.gemini/skills | Gemini/agy | `argos target agy` |
+| ~/.gemini/skills | Gemini/agy (fork de Gemini CLI) | `argos target agy` |
 | ~/.commandcode/skills | Command Code (cmdc) | `argos cmdc` / cmdc directo |
+| ~/.gemini/config/skills | Antigravity (scope global de IDE + CLI) | Antigravity |
+| ~/.gemini/antigravity-cli/skills | Antigravity CLI | `agy` |
+
+Notas por entorno (verificado contra docs oficiales):
+- **app de ChatGPT / Codex**: leen skills de usuario desde `$HOME/.agents/skills`; en la app se ven en la barra lateral **Skills** y se invocan con `@` (match implicito por `description` habilitado por defecto).
+- **freebuff (Codebuff)**: lee `~/.claude/skills` y `~/.agents/skills` (global) + `.claude/skills` y `.agents/skills` (proyecto).
+- **Antigravity**: scope global en `~/.gemini/config/skills`; el CLI ademas usa `~/.gemini/antigravity-cli/skills`; el IDE tambien descubre `<proyecto>/.agents/skills`.
+- **cmdc**: `user-invocable: false` = model-invocable pero oculto del menu `/`; se ven con `/skills` y `cmd skills list`.
 
 Se ejecuta en cada `argos`, `argos target <entorno>` y `argos opencode`; es idempotente y barato
 (solo copia los bundles cuyo contenido cambio). En los runners nativos (`argos code` / `argos party`)

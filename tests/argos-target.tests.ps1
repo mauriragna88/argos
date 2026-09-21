@@ -111,11 +111,13 @@ try {
     $codexSkills = Join-Path $work '.codex\skills'
     $opencodeSkills = Join-Path $work '.config\opencode\skills'
     $geminiSkills = Join-Path $work '.gemini\skills'
+    $agyGlobalSkills = Join-Path $work '.gemini\config\skills'
+    $agyCliSkills = Join-Path $work '.gemini\antigravity-cli\skills'
     $cmdcSkills = Join-Path $work '.commandcode\skills'
     $stackDests = @(
         @{ L = 'agents'; P = $agentsSkills }, @{ L = 'dsh'; P = $dshSkills }, @{ L = 'claude'; P = $claudeSkills }
         @{ L = 'codex'; P = $codexSkills }, @{ L = 'opencode'; P = $opencodeSkills }, @{ L = 'gemini'; P = $geminiSkills }
-        @{ L = 'cmdc'; P = $cmdcSkills }
+        @{ L = 'cmdc'; P = $cmdcSkills }, @{ L = 'agy-global'; P = $agyGlobalSkills }, @{ L = 'agy-cli'; P = $agyCliSkills }
     )
     foreach ($d in $stackDests) {
         foreach ($n in $stackNames) {

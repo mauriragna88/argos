@@ -9,7 +9,8 @@
 # Destinos: cada CLI/entorno lee skills de SU directorio global.
 # El stack se mantiene identico en todos para que Vivi cargue lo
 # mismo sin importar desde donde se lance (DSH, claude, codex,
-# opencode, gemini/agy, cmdc y el estandar ~/.agents).
+# opencode, gemini/agy, cmdc, Antigravity y el estandar ~/.agents,
+# que es de donde tambien leen la app de ChatGPT/Codex).
 #
 # Uso (dot-source):
 #   . (Join-Path $PSScriptRoot 'argos-skills-sync.ps1')
@@ -92,6 +93,9 @@ function Sync-ViviDesignStack {
         @{ Label = 'opencode'; Path = (Join-Path $HomeBase '.config\opencode\skills') }
         @{ Label = 'gemini';   Path = (Join-Path $HomeBase '.gemini\skills') }
         @{ Label = 'cmdc';     Path = (Join-Path $HomeBase '.commandcode\skills') }
+        # Antigravity (codelab oficial): scope global de todos sus productos + scope global del CLI
+        @{ Label = 'agy-global'; Path = (Join-Path $HomeBase '.gemini\config\skills') }
+        @{ Label = 'agy-cli';    Path = (Join-Path $HomeBase '.gemini\antigravity-cli\skills') }
     )
 
     $updated = 0

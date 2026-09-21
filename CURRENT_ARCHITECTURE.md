@@ -143,7 +143,7 @@ Tablas asociativas (V4-V7): `observation_links`, `contradictions`, `consolidatio
 
 Pipeline de diseño de Vivi (skills propias en `core/skills/v2/`, auto-inyección vía `Get-AgentSkills` con fallback al directorio propio + sync a DSH): `design-principles` + `content-copy` (siempre, primero), `motion-design` (condicional, gobernado por el dial de motion), `visual-qa` (verificación final del render con evidencia; trae `reference/evidence-tooling.md`).
 
-Despliegue multi-entorno: `cli/argos-skills-sync.ps1` (`Sync-ViviDesignStack`) replica el stack (las 5 skills + `taste-skill` e `impeccable`) al directorio global de skills de todos los entornos —`~/.agents/skills`, `~/.dsh/skills`, `~/.claude/skills`, `~/.codex/skills`, `~/.config/opencode/skills`, `~/.gemini/skills`, `~/.commandcode/skills`— en cada `argos`, `argos target <entorno>` y `argos opencode` (idempotente: solo copia si el contenido cambió).
+Despliegue multi-entorno: `cli/argos-skills-sync.ps1` (`Sync-ViviDesignStack`) replica el stack (las 5 skills + `taste-skill` e `impeccable`) al directorio global de skills de todos los entornos —`~/.agents/skills` (estándar; lo leen cmdc, DSH, freebuff, Antigravity IDE y la app de ChatGPT/Codex), `~/.dsh/skills`, `~/.claude/skills`, `~/.codex/skills`, `~/.config/opencode/skills`, `~/.gemini/skills`, `~/.commandcode/skills`, `~/.gemini/config/skills` (Antigravity global) y `~/.gemini/antigravity-cli/skills` (Antigravity CLI)— en cada `argos`, `argos target <entorno>` y `argos opencode` (idempotente: solo copia si el contenido cambió).
 
 ### 3.3 Superpowers externos
 

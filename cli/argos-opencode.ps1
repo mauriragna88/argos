@@ -29,6 +29,9 @@ $ErrorActionPreference = 'Stop'
 $Root = Resolve-Path (Join-Path $PSScriptRoot '..')
 $GlobalConfigDir = Join-Path $env:USERPROFILE '.config\arnes'
 
+# Stack visual de Vivi -> todos los runners (mismo sync que argos target)
+. (Join-Path $PSScriptRoot 'argos-skills-sync.ps1')
+
 # === Mutex de sincronizacion (serializa invocaciones concurrentes de argos) ===
 # Objeto kernel nombrado: no deja lock files huerfanos y el SO lo limpia solo si el proceso muere.
 function Get-ArnesSyncMutex {
@@ -65,6 +68,8 @@ try {
     }
     Write-Host '  [1/3] Sincronizando agentes RPG y modelos a OpenCode...' -ForegroundColor Cyan
     & (Join-Path $PSScriptRoot 'atlas.ps1') --sync
+    # Skills de Vivi al dia en TODOS los entornos (opencode, dsh, claude, codex, gemini, cmdc)
+    Sync-ViviDesignStack -Root $Root | Out-Null
 } finally {
     if ($syncMutex) {
         if ($mutexOwned) {

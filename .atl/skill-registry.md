@@ -157,6 +157,25 @@ QUE MAESTRO DEFINE (contrato texto→verificación cerrado).
 'eiko'     = @('handoff', 'need-info-escalation')
 ```
 
+**Despliegue multi-entorno del stack de Vivi** (2026-09-21): `cli/argos-skills-sync.ps1`
+(`Sync-ViviDesignStack`) mantiene el stack visual —`vivi-visual-excellence`, `design-principles`,
+`content-copy`, `motion-design`, `visual-qa` + `taste-skill` e `impeccable`— identico en el
+directorio global de skills de TODOS los entornos:
+
+| Entorno | Directorio global | Quien lo lee |
+|---|---|---|
+| ~/.agents/skills | estandar Agent Skills | cmdc, DSH y cualquier tool compatible |
+| ~/.dsh/skills | DeepSeek Harness | `argos target dsh` |
+| ~/.claude/skills | Claude Code | `argos target claude` |
+| ~/.codex/skills | Codex CLI | `argos target codex` |
+| ~/.config/opencode/skills | OpenCode | `argos` / `argos opencode` |
+| ~/.gemini/skills | Gemini/agy | `argos target agy` |
+| ~/.commandcode/skills | Command Code (cmdc) | `argos cmdc` / cmdc directo |
+
+Se ejecuta en cada `argos`, `argos target <entorno>` y `argos opencode`; es idempotente y barato
+(solo copia los bundles cuyo contenido cambio). En los runners nativos (`argos code` / `argos party`)
+ademas se inyecta el cuerpo completo en el system prompt via `Get-AgentSkills`.
+
 ## GAPs (oportunidades para Ragnarok)
 - Contract validation DB↔Frontend: **CERRADO** (arnes-contract-audit, ADR-006)
 - Bard: mejorar DX/docs (parcialmente cubierto — Maestro cubre docs de repos)

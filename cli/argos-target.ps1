@@ -21,6 +21,12 @@ El default queda guardado en ~/.config/arnes/target.json (UNA vez por maquina).
 Para opencode/codex/claude, el modelo lo gestiona el propio CLI; ARNES aporta
 personas, agentes y memoria (.arnes/arnes.db accesible por archivo).
 
+En CADA lanzamiento se sincroniza el stack visual de Vivi (design-principles,
+content-copy, motion-design, visual-qa, vivi-visual-excellence + taste-skill e
+impeccable) al directorio global de skills de todos los entornos (dsh, claude,
+codex, opencode, gemini, cmdc y ~/.agents), para que Vivi cargue lo mismo sin
+importar el CLI elegido. Fuente unica: cli/argos-skills-sync.ps1
+
 .EXAMPLE
 .\argos-target.ps1                        # lanza el default (opencode si no hay config)
 .\argos-target.ps1 -Target auto           # menu si hay varios CLIs instalados
@@ -69,26 +75,9 @@ function Write-Utf8NoBom {
     [System.IO.File]::WriteAllText($Path, $Content, $utf8NoBom)
 }
 
-function Sync-DshSkill {
-    param(
-        [Parameter(Mandatory)][string]$Source,
-        [Parameter(Mandatory)][string]$Destination,
-        [Parameter(Mandatory)][string]$Name
-    )
-    if (-not (Test-Path -LiteralPath (Join-Path $Source 'SKILL.md'))) {
-        throw "Skill empaquetada invalida o ausente: $Name ($Source)"
-    }
-    $parent = Split-Path $Destination -Parent
-    if (-not (Test-Path -LiteralPath $parent)) {
-        New-Item -ItemType Directory -Path $parent -Force | Out-Null
-    }
-    # Reemplazo atomico a nivel de bundle: evita anidamiento y archivos obsoletos al repetir.
-    if (Test-Path -LiteralPath $Destination) {
-        Remove-Item -LiteralPath $Destination -Recurse -Force
-    }
-    Copy-Item -LiteralPath $Source -Destination $Destination -Recurse -Force
-    Write-Host ("  [OK] Skill DSH sincronizada: {0} -> {1}" -f $Name, $Destination) -ForegroundColor Green
-}
+# Stack visual de Vivi -> todos los runners (dsh, claude, codex, opencode, gemini, cmdc, ~/.agents).
+# Un solo lugar define fuentes y destinos: cli/argos-skills-sync.ps1
+. (Join-Path $PSScriptRoot 'argos-skills-sync.ps1')
 
 if (-not $ConfigDir) { $ConfigDir = Join-Path (Get-ArnesHome) '.config\arnes' }
 if (-not $TargetDir) { $TargetDir = $ConfigDir }
@@ -389,6 +378,18 @@ switch ($Command) {
             }
         }
 
+        # ==== STACK VISUAL DE VIVI -> TODOS LOS RUNNERS ====
+        # En cada lanzamiento el stack canonico (core/skills/v2) se despliega al directorio
+        # global de skills de cada entorno, para que Vivi cargue lo mismo sin importar el CLI.
+        # Idempotente y barato: solo copia los bundles cuyo contenido cambio.
+        Write-Host '  ▸ Sincronizando stack visual de Vivi (todos los runners)...' -ForegroundColor Cyan
+        try {
+            $stackHome = if ($NoLaunch -and $PSBoundParameters.ContainsKey('TargetDir')) { $TargetDir } else { Get-ArnesHome }
+            Sync-ViviDesignStack -Root $Root -HomeBase $stackHome | Out-Null
+        } catch {
+            Write-Host ("  [!] Sync de skills de Vivi fallo (continua): {0}" -f $_.Exception.Message) -ForegroundColor Yellow
+        }
+
         Write-Host ''
         Write-Host ("  ARNES -> {0}  |  {1}" -f $resolved.ToUpper(), $TargetMeta[$resolved]) -ForegroundColor DarkRed
         Write-Host ''
@@ -423,6 +424,11 @@ Atlas orquesta, no codea. Para tareas del dominio:
   - Backend/APIs/Supabase -> Ansem
   - QA/testing -> Kuja
   - Seguridad/RLS/migrations -> Auron
+
+Vivi (frontend/UI) usa su stack visual instalado en el hogar del usuario:
+~/.agents/skills/ (design-principles, content-copy, motion-design, visual-qa, vivi-visual-excellence).
+Leelos antes de cualquier tarea de UI/diseno: el orden es design-principles + content-copy
+siempre, motion-design solo si hay movimiento, y visual-qa al final antes de entregar.
 
 Otros agentes disponibles en core/classes/ y core/auditors/ (carga bajo demanda).
 
@@ -470,6 +476,11 @@ Repositorio es fuente de verdad: revalida memorias antiguas.
 Atlas orquesta, no codea. Para tareas del dominio:
   - Frontend/UI/React -> Vivi
   - DevOps/Infra -> Tidus + Eiko
+
+Vivi (frontend/UI) usa su stack visual instalado en el hogar del usuario:
+~/.agents/skills/ (design-principles, content-copy, motion-design, visual-qa, vivi-visual-excellence).
+Leelos antes de cualquier tarea de UI/diseno: el orden es design-principles + content-copy
+siempre, motion-design solo si hay movimiento, y visual-qa al final antes de entregar.
 
 Otros agentes disponibles en core/classes/ y core/auditors/ (carga bajo demanda).
 
@@ -569,25 +580,8 @@ Otros agentes disponibles en core/classes/ y core/auditors/ (carga bajo demanda)
                     exit 1
                 }
 
-                $dshHome = if ($hermeticDsh) { Join-Path $TargetDir '.dsh' } else { Join-Path (Get-ArnesHome) '.dsh' }
-                $dshSkills = Join-Path $dshHome 'skills'
-                $opencodeHome = if ($hermeticDsh) { Join-Path $TargetDir '.config\opencode' } else { Join-Path (Get-ArnesHome) '.config\opencode' }
-                $impeccableSource = Join-Path $opencodeHome 'skills\impeccable'
-
                 Write-Host '  [1/4] DeepSeek Harness · ARGOS/OSMA ya cargan via plugin (no se toca AGENTS.md del repo)...' -ForegroundColor Cyan
-                Write-Host '  [2/4] Sincronizando skills visuales globales de DSH...' -ForegroundColor Cyan
-                Sync-DshSkill -Source (Join-Path $Root 'core\skills\v2\vivi-visual-excellence') -Destination (Join-Path $dshSkills 'vivi-visual-excellence') -Name 'vivi-visual-excellence'
-                Sync-DshSkill -Source (Join-Path $Root 'core\skills\v2\design-principles') -Destination (Join-Path $dshSkills 'design-principles') -Name 'design-principles'
-                Sync-DshSkill -Source (Join-Path $Root 'core\skills\v2\content-copy') -Destination (Join-Path $dshSkills 'content-copy') -Name 'content-copy'
-                Sync-DshSkill -Source (Join-Path $Root 'core\skills\v2\motion-design') -Destination (Join-Path $dshSkills 'motion-design') -Name 'motion-design'
-                Sync-DshSkill -Source (Join-Path $Root 'core\skills\v2\visual-qa') -Destination (Join-Path $dshSkills 'visual-qa') -Name 'visual-qa'
-                Sync-DshSkill -Source (Join-Path $Root '.agents\skills\taste-skill') -Destination (Join-Path $dshSkills 'taste-skill') -Name 'taste-skill'
-                if (Test-Path -LiteralPath (Join-Path $impeccableSource 'SKILL.md')) {
-                    Sync-DshSkill -Source $impeccableSource -Destination (Join-Path $dshSkills 'impeccable') -Name 'impeccable'
-                } else {
-                    Write-Host ('  [!] Impeccable no encontrado en: {0}' -f $impeccableSource) -ForegroundColor Yellow
-                    Write-Host '      Instala el skill oficial sin bloquear este target: npx skills add pbakaus/impeccable' -ForegroundColor Yellow
-                }
+                Write-Host '  [2/4] Skills de Vivi ya sincronizadas en todos los runners (paso global previo).' -ForegroundColor Cyan
 
                 Write-Host '  [3/4] Validando OSMA (memoria)...' -ForegroundColor Cyan
                 . (Join-Path $PSScriptRoot 'osma-resolve.ps1')
@@ -646,6 +640,11 @@ Atlas orquesta, no codea. Para tareas del dominio:
   - Frontend/UI/React -> Vivi
   - DevOps/Infra -> Tidus + Eiko
 
+Vivi (frontend/UI) usa su stack visual instalado en el hogar del usuario:
+~/.agents/skills/ (design-principles, content-copy, motion-design, visual-qa, vivi-visual-excellence).
+Leelos antes de cualquier tarea de UI/diseno: el orden es design-principles + content-copy
+siempre, motion-design solo si hay movimiento, y visual-qa al final antes de entregar.
+
 Otros agentes disponibles en core/classes/ y core/auditors/ (carga bajo demanda).
 
 "@
@@ -678,6 +677,11 @@ Repositorio es fuente de verdad: revalida memorias antiguas.
 Atlas orquesta, no codea. Para tareas del dominio:
   - Frontend/UI/React -> Vivi
   - DevOps/Infra -> Tidus + Eiko
+
+Vivi (frontend/UI) usa su stack visual instalado en el hogar del usuario:
+~/.agents/skills/ (design-principles, content-copy, motion-design, visual-qa, vivi-visual-excellence).
+Leelos antes de cualquier tarea de UI/diseno: el orden es design-principles + content-copy
+siempre, motion-design solo si hay movimiento, y visual-qa al final antes de entregar.
 
 Otros agentes disponibles en core/classes/ y core/auditors/ (carga bajo demanda).
 

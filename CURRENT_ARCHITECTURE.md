@@ -143,6 +143,8 @@ Tablas asociativas (V4-V7): `observation_links`, `contradictions`, `consolidatio
 
 Pipeline de diseño de Vivi (skills propias en `core/skills/v2/`, auto-inyección vía `Get-AgentSkills` con fallback al directorio propio + sync a DSH): `design-principles` + `content-copy` (siempre, primero), `motion-design` (condicional, gobernado por el dial de motion), `visual-qa` (verificación final del render con evidencia; trae `reference/evidence-tooling.md`).
 
+Despliegue multi-entorno: `cli/argos-skills-sync.ps1` (`Sync-ViviDesignStack`) replica el stack (las 5 skills + `taste-skill` e `impeccable`) al directorio global de skills de todos los entornos —`~/.agents/skills`, `~/.dsh/skills`, `~/.claude/skills`, `~/.codex/skills`, `~/.config/opencode/skills`, `~/.gemini/skills`, `~/.commandcode/skills`— en cada `argos`, `argos target <entorno>` y `argos opencode` (idempotente: solo copia si el contenido cambió).
+
 ### 3.3 Superpowers externos
 
 `discoverSkills()` en `argos-skills.ts` escanea: `~/.pi/agent/git/github.com/obra/superpowers/skills` (14 skills: brainstorming, test-driven-development, systematic-debugging, writing-plans, subagent-driven-development, verification-before-completion, using-git-worktrees, executing-plans, dispatching-parallel-agents, receiving/requesting-code-review, finishing-a-development-branch, using-superpowers, writing-skills), `core/skills`, `pi/skills`. Se registran en `skill_mastery` al `session_start`.

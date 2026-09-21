@@ -76,6 +76,7 @@ Vivi lanza Meteor Shower (solo Atlas aprueba):
 | motion-design | Canónica ARGOS | Condicional: solo si hay animación, scroll, interacción o experiencia cinemática |
 | visual-qa | Canónica ARGOS | Al final: verifica el render real antes de declarar una UI terminada |
 | vivi-visual-excellence | Canónica ARGOS | Siempre activa en cualquier tarea frontend, UI, UX o web |
+| vivi | Canónica ARGOS | Persona + pipeline portable: se carga sola en cualquier entorno (app de ChatGPT, Codex, cmdc, DSH, Claude, Antigravity, opencode) |
 | impeccable | Oficial | Siempre activa en diseño, rediseño, auditoría o refinamiento frontend |
 | nextlevelbuilder/ui-ux-pro-max-skill | 79K | Siempre activa - design intelligence |
 | Leonxln/taste-skill | 66K | Siempre activa - anti-slop visual, AIDA structure |

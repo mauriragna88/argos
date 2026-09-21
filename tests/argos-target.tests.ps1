@@ -105,7 +105,7 @@ try {
     Assert-That (Test-Path -LiteralPath (Join-Path $dshSkills 'visual-qa\reference\evidence-tooling.md')) 'dsh: visual-qa lleva reference/evidence-tooling.md'
 
     # 7c. El stack visual de Vivi viaja a TODOS los runners (HOME hermetico bajo TargetDir).
-    $stackNames = @('vivi-visual-excellence', 'design-principles', 'content-copy', 'motion-design', 'visual-qa')
+    $stackNames = @('vivi', 'vivi-visual-excellence', 'design-principles', 'content-copy', 'motion-design', 'visual-qa')
     $agentsSkills = Join-Path $work '.agents\skills'
     $claudeSkills = Join-Path $work '.claude\skills'
     $codexSkills = Join-Path $work '.codex\skills'

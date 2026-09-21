@@ -128,6 +128,7 @@ Es la experticia de cada rol hecha checklist obligatoria.
 | postgres-best-practices | Ansem (Paladin) | Schemas, RLS, queries, migraciones Supabase/Postgres | supabase docs |
 | ui-ux-pro-max | Vivi (Mage) | Toda UI: jerarquía, spacing, tipografía, componentes | nextlevelbuilder (79K⭐) |
 | taste-skill | Vivi (Mage) | Anti-slop: sin gradientes genéricos ni copy de IA | Leonxln (66K⭐) |
+| vivi | Vivi (Mage) | Persona + pipeline portable: experiencia completa en cualquier entorno (app de ChatGPT, Codex, cmdc, DSH, Claude, Antigravity, opencode) | ARGOS propio (core/skills/v2) |
 | design-principles | Vivi (Mage) | SIEMPRE primero: fundamento de diseño (layering, spacing, restraint, jerarquía, escalas, tokens, anti-template) | ARGOS propio (core/skills/v2) |
 | content-copy | Vivi (Mage) | SIEMPRE junto a design-principles: mensaje, jerarquía de contenido, CTAs, microcopy, estados | ARGOS propio (core/skills/v2) |
 | motion-design | Vivi (Mage) | Condicional: animación, scroll, parallax, cursor, GSAP/Motion, cinemático (gobernado por el dial de motion) | ARGOS propio (core/skills/v2) |
@@ -190,10 +191,12 @@ instrucciones del Project), `VIVI-STACK.md` (las 5 skills + `taste-skill` + `imp
 `reference/` en un solo archivo: se adjunta como Source) y `README.md` (pasos de montaje).
 Se regenera en cada `argos`.
 
-**Vía facil (sin pegar ni subir nada)**: `argos chatgpt` (o `argos target chatgpt`) deja el
-`AGENTS.md` de Vivi en la carpeta del proyecto; en la app de ChatGPT basta **Projects -> New
-project -> Add folder -> esa carpeta**: el motor (Codex) descubre el `AGENTS.md` y las skills
-de `~/.agents/skills` automaticamente. El pack de arriba queda como alternativa sin carpeta.
+**Cero configuracion (la via facil de verdad)**: la skill `vivi` (persona + pipeline)
+viaja con el resto del stack a los 9 destinos, asi que CUALQUIER entorno —incluida la app
+de ChatGPT sin proyecto ni carpeta— la carga sola por descripcion cuando la tarea es de
+UI/diseno. Basta abrir el entorno y pedir UI: no hay que pegar, subir ni conectar nada.
+`argos chatgpt` (que deja el `AGENTS.md` de Vivi en la carpeta) y el pack `~/.agents/chatgpt-vivi/`
+quedan como refuerzos opcionales para proyectos con carpeta.
 
 ## GAPs (oportunidades para Ragnarok)
 - Contract validation DB↔Frontend: **CERRADO** (arnes-contract-audit, ADR-006)

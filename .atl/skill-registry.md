@@ -190,6 +190,11 @@ instrucciones del Project), `VIVI-STACK.md` (las 5 skills + `taste-skill` + `imp
 `reference/` en un solo archivo: se adjunta como Source) y `README.md` (pasos de montaje).
 Se regenera en cada `argos`.
 
+**Vía facil (sin pegar ni subir nada)**: `argos chatgpt` (o `argos target chatgpt`) deja el
+`AGENTS.md` de Vivi en la carpeta del proyecto; en la app de ChatGPT basta **Projects -> New
+project -> Add folder -> esa carpeta**: el motor (Codex) descubre el `AGENTS.md` y las skills
+de `~/.agents/skills` automaticamente. El pack de arriba queda como alternativa sin carpeta.
+
 ## GAPs (oportunidades para Ragnarok)
 - Contract validation DB↔Frontend: **CERRADO** (arnes-contract-audit, ADR-006)
 - Bard: mejorar DX/docs (parcialmente cubierto — Maestro cubre docs de repos)

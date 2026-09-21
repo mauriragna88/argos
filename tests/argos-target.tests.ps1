@@ -149,6 +149,16 @@ try {
     Assert-That ($stackContent -match [regex]::Escape('REFERENCE: visual-qa/reference/evidence-tooling.md')) 'chatgpt-pack: evidence-tooling incluido'
     Assert-That ((Get-Content -LiteralPath (Join-Path $pack 'INSTRUCTIONS.md') -Raw) -match 'Pipeline obligatorio') 'chatgpt-pack: instrucciones con el pipeline'
 
+    # 7e. launch chatgpt -NoLaunch prepara la carpeta (AGENTS.md de Vivi) para un local project.
+    & $PSExe -NoProfile -ExecutionPolicy Bypass -File $TargetCli -Target chatgpt -NoLaunch -ConfigDir $work -TargetDir $work | Out-Null
+    $cgAgents = Join-Path $work 'AGENTS.md'
+    Assert-That (Test-Path $cgAgents) 'chatgpt: AGENTS.md desplegado'
+    $cgContent = Get-Content $cgAgents -Raw
+    Assert-That ($cgContent -match 'ChatGPT desktop') 'chatgpt: encabezado del target'
+    Assert-That ($cgContent -match 'Pipeline obligatorio') 'chatgpt: incluye el pipeline de Vivi'
+    Assert-That ($cgContent -match '\.arnes/arnes\.db') 'chatgpt: incluye la memoria OSMA'
+    Assert-That (@(Get-ChildItem (Join-Path $work 'AGENTS.md.bak-*') -ErrorAction SilentlyContinue).Count -ge 1) 'chatgpt: respalda el AGENTS.md previo'
+
     # 8. scripts parsean en PowerShell 5.1 (dispatch + target DSH).
     foreach ($script in @('cli\argos.ps1', 'cli\argos-target.ps1')) {
         $tokens = $null

@@ -22,7 +22,7 @@ argos init               -> inicializar proyecto
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('', 'menu', 'init', 'connect', 'connect-agent', 'configure', 'chat', 'status', 'stats', 'triage-stats', 'style', 'skills', 'allocate', 'contract', 'regression', 'context', 'cache', 'models', 'model', 'memory', 'osma-install', 'recommend', 'mode', 'doctor', 'verify', 'test-model', 'quest', 'party', 'xp', 'theme', 'code', 'opencode', 'target', 'goal', 'audit', 'refine', 'cmdc')]
+    [ValidateSet('', 'menu', 'init', 'connect', 'connect-agent', 'configure', 'chat', 'status', 'stats', 'triage-stats', 'style', 'skills', 'allocate', 'contract', 'regression', 'context', 'cache', 'models', 'model', 'memory', 'osma-install', 'recommend', 'mode', 'doctor', 'verify', 'test-model', 'quest', 'party', 'xp', 'theme', 'code', 'opencode', 'target', 'goal', 'audit', 'refine', 'cmdc', 'chatgpt')]
     [string]$Command = '',
 
     [Parameter(Position = 1)]
@@ -745,10 +745,16 @@ switch ($Command) {
         $q = $q -join ' '
         & (Join-Path $ScriptDir 'argos-target.ps1') -Target 'cmdc' -Quest $q
     }
+    'chatgpt' {
+        # Atajo: argos chatgpt  ->  argos target chatgpt (prepara la carpeta para ChatGPT desktop)
+        $q = @($Model) + @($Args) | Where-Object { $_ } | ForEach-Object { [string]$_ }
+        $q = $q -join ' '
+        & (Join-Path $ScriptDir 'argos-target.ps1') -Target 'chatgpt' -Quest $q
+    }
     'target' {
-        # argos target [opencode|codex|claude|freebuff|dsh|agy|cmdc|auto|show|list|set <nombre>]
+        # argos target [opencode|codex|claude|freebuff|dsh|agy|cmdc|chatgpt|auto|show|list|set <nombre>]
         $verb = if ($Model) { $Model } elseif ($Args -and $Args.Count -gt 0) { $Args[0] } else { '' }
-        if ($verb -in @('opencode', 'codex', 'claude', 'freebuff', 'dsh', 'agy', 'cmdc', 'auto')) {
+        if ($verb -in @('opencode', 'codex', 'claude', 'freebuff', 'dsh', 'agy', 'cmdc', 'chatgpt', 'auto')) {
             # El quest es TODO lo que sigue al target (PowerShell parte el string en palabras)
             $quest = if ($Args -and $Args.Count -gt 0) { ($Args -join ' ') } else { '' }
             & (Join-Path $ScriptDir 'argos-target.ps1') -Target $verb -Quest $quest

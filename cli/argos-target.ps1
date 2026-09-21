@@ -16,6 +16,10 @@ El puente entre ARNES y el CLI que quieras usar:
   agy       -> despliega la persona Atlas + roster del party a AGENTS.md del proyecto y a
                ~/.gemini/GEMINI.md (memoria global), valida OSMA y abre Google CLI agy
                (fork de Gemini CLI) con --model gemini-3.7-flash-high.
+  chatgpt   -> prepara la carpeta para un "local project" de ChatGPT desktop: escribe el
+               AGENTS.md de Vivi (persona + pipeline) y deja las skills en ~/.agents/skills.
+               En la app solo conectas la carpeta (Projects -> New project -> Add folder);
+               su motor (Codex) descubre AGENTS.md + skills sin pegar ni subir nada.
 
 El default queda guardado en ~/.config/arnes/target.json (UNA vez por maquina).
 Para opencode/codex/claude, el modelo lo gestiona el propio CLI; ARNES aporta
@@ -42,7 +46,7 @@ param(
     [string]$Command = 'launch',
 
     [Parameter(Position = 1)]
-    [ValidateSet('', 'opencode', 'codex', 'claude', 'freebuff', 'dsh', 'agy', 'cmdc', 'auto')]
+    [ValidateSet('', 'opencode', 'codex', 'claude', 'freebuff', 'dsh', 'agy', 'cmdc', 'chatgpt', 'auto')]
     [string]$Target = '',
 
     [string]$Name = '',
@@ -94,6 +98,22 @@ $TargetMeta = @{
     dsh      = 'DeepSeek Harness (web en :3080, ARGOS/OSMA precargado)'
     agy      = 'Google CLI agy (Gemini 3.7 Flash, ARGOS/OSMA en AGENTS.md + GEMINI.md)'
     cmdc     = 'Command Code CLI (contexto minimo: respeta motor nativo + memoria OSMA)'
+    chatgpt  = 'ChatGPT desktop (local project: AGENTS.md de Vivi + skills del usuario)'
+}
+
+# La app de ChatGPT no es un CLI: se detecta instalada por protocolo/appx/rutas comunes.
+function Test-ChatGptApp {
+    if (Get-Command chatgpt -ErrorAction SilentlyContinue) { return $true }
+    foreach ($p in @(
+            (Join-Path $env:LOCALAPPDATA 'Programs\ChatGPT\ChatGPT.exe'),
+            (Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps\ChatGPT.exe')
+        )) {
+        if ($p -and (Test-Path -LiteralPath $p)) { return $true }
+    }
+    try {
+        if (Get-AppxPackage -Name '*ChatGPT*' -ErrorAction SilentlyContinue) { return $true }
+    } catch { }
+    return $false
 }
 
 function Get-InstalledTargets {
@@ -105,6 +125,7 @@ function Get-InstalledTargets {
     if (Test-Path $DshDir) { $result += 'dsh' }
     if (Get-Command agy -ErrorAction SilentlyContinue) { $result += 'agy' }
     if (Get-Command cmdc -ErrorAction SilentlyContinue) { $result += 'cmdc' }
+    if (Test-ChatGptApp) { $result += 'chatgpt' }
     return $result
 }
 
@@ -300,7 +321,7 @@ switch ($Command) {
         Write-Host '  ARNES ARGOS - TARGETS' -ForegroundColor Cyan
         $current = Get-CurrentTarget
         $installed = Get-InstalledTargets
-        foreach ($k in @('opencode', 'codex', 'claude', 'freebuff', 'dsh', 'agy', 'cmdc')) {
+        foreach ($k in @('opencode', 'codex', 'claude', 'freebuff', 'dsh', 'agy', 'cmdc', 'chatgpt')) {
             $mark = if ($k -eq $current) { ' *' } else { '  ' }
             $status = if ($k -in $installed) { 'instalado' } else { 'NO instalado' }
             Write-Host ("  {0} {1,-10} {2}  [{3}]" -f $mark, $k, $TargetMeta[$k], $status) -ForegroundColor White
@@ -383,8 +404,8 @@ switch ($Command) {
         # global de skills de cada entorno, para que Vivi cargue lo mismo sin importar el CLI.
         # Idempotente y barato: solo copia los bundles cuyo contenido cambio.
         Write-Host '  ▸ Sincronizando stack visual de Vivi (todos los runners)...' -ForegroundColor Cyan
+        $stackHome = if ($NoLaunch -and $PSBoundParameters.ContainsKey('TargetDir')) { $TargetDir } else { Get-ArnesHome }
         try {
-            $stackHome = if ($NoLaunch -and $PSBoundParameters.ContainsKey('TargetDir')) { $TargetDir } else { Get-ArnesHome }
             Sync-ViviDesignStack -Root $Root -HomeBase $stackHome | Out-Null
         } catch {
             Write-Host ("  [!] Sync de skills de Vivi fallo (continua): {0}" -f $_.Exception.Message) -ForegroundColor Yellow
@@ -752,6 +773,53 @@ Otros agentes disponibles en core/classes/ y core/auditors/ (carga bajo demanda)
                 } else {
                     & cmdc
                 }
+            }
+            'chatgpt' {
+                # ChatGPT desktop NO es un CLI: la app trabaja con "local projects" que se conectan
+                # a una carpeta, y su motor (Codex) descubre AUTOMATICAMENTE el AGENTS.md de esa
+                # carpeta y las skills de ~/.agents/skills. Este target deja la carpeta lista:
+                # escribe el AGENTS.md de Vivi (persona + pipeline) con respaldo del anterior.
+                Write-Host '  [1/2] Preparando la carpeta para ChatGPT desktop (AGENTS.md de Vivi)...' -ForegroundColor Cyan
+                $cgDir = if ($PSBoundParameters.ContainsKey('TargetDir')) { $TargetDir } else { (Get-Location).Path }
+                $cgOut = Join-Path $cgDir 'AGENTS.md'
+                if (Test-Path $cgOut) {
+                    $ts = Get-Date -Format 'yyyyMMdd-HHmmss'
+                    $bak = Join-Path $cgDir "AGENTS.md.bak-$ts"
+                    Copy-Item $cgOut $bak -Force
+                    Write-Host ("  [~] AGENTS.md existente respaldado: {0}" -f (Split-Path $bak -Leaf)) -ForegroundColor DarkGray
+                }
+                $viviGuide = ''
+                $instrPath = Join-Path $stackHome '.agents\chatgpt-vivi\INSTRUCTIONS.md'
+                if (Test-Path -LiteralPath $instrPath) {
+                    $viviGuide = [System.IO.File]::ReadAllText($instrPath).Trim()
+                } else {
+                    Write-Host '  [!] Guia de Vivi no encontrada (se escribe solo el encabezado ARGOS/OSMA).' -ForegroundColor Yellow
+                }
+                $cgBundle = @"
+# ARNES ARGOS — Guia de proyecto para ChatGPT desktop (target: chatgpt)
+
+Este proyecto tiene ARGOS/OSMA:
+  - Memoria SQLite: .arnes/arnes.db
+  - Exports JSONL: .arnes/memory/export/
+  - Config: .arnes/config.json
+
+Antes de explorar el repositorio, consulta OSMA (.arnes/arnes.db).
+Repositorio es fuente de verdad: revalida memorias antiguas.
+
+$viviGuide
+"@
+                Write-Utf8NoBom -Path $cgOut -Content $cgBundle
+                Write-Host ("  [OK] AGENTS.md listo -> {0}" -f $cgOut) -ForegroundColor Green
+                Write-Host '  [2/2] En la app de ChatGPT: Projects -> New project -> Add folder -> esta carpeta.' -ForegroundColor Cyan
+                Write-Host '        Con eso el motor (Codex) descubre este AGENTS.md y las skills de ~/.agents/skills:' -ForegroundColor DarkGray
+                Write-Host '        no hay que pegar instrucciones ni subir archivos.' -ForegroundColor DarkGray
+                Write-Host '        Alternativa sin carpeta: Project instructions = ~/.agents/chatgpt-vivi/INSTRUCTIONS.md' -ForegroundColor DarkGray
+                Write-Host '        y Source = ~/.agents/chatgpt-vivi/VIVI-STACK.md.' -ForegroundColor DarkGray
+                if ($NoLaunch) { exit 0 }
+                if (Test-ChatGptApp) {
+                    try { Start-Process 'chatgpt:' -ErrorAction Stop } catch { }
+                }
+                exit 0
             }
         }
     }

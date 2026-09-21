@@ -84,6 +84,12 @@ function Get-AgentPrompt {
     $candidates = @()
     $candidates += (Join-Path $Root "core\classes\$Key.agent.md")
     $candidates += (Join-Path $Root "core\auditors\$Key.agent.md")
+    # Los agentes usan su nombre RPG (vivi/ansem) pero los archivos usan la clase (mage/paladin)
+    $classAlias = @{ 'vivi'='mage'; 'ansem'='paladin'; 'kuja'='rogue'; 'eiko'='cleric'; 'amarant'='monk'; 'eremez'='ranger' }
+    if ($classAlias.ContainsKey($Key)) {
+        $candidates += (Join-Path $Root "core\classes\$($classAlias[$Key]).agent.md")
+        $candidates += (Join-Path $Root "core\auditors\$($classAlias[$Key]).agent.md")
+    }
     foreach ($c in $candidates) {
         if (Test-Path $c) {
             $text = [System.IO.File]::ReadAllText($c)
@@ -113,7 +119,7 @@ function Get-AgentSkills {
     param([string]$Key)
     # Mapa agente -> skills (fuente de verdad: .atl/skill-registry.md)
     $skillMap = @{
-        'vivi'    = @('ui-ux-pro-max', 'taste-skill', 'need-info-escalation')
+        'vivi'    = @('vivi-design-principles', 'vivi-visual-excellence', 'ui-ux-pro-max', 'taste-skill', 'vivi-motion-design', 'vivi-visual-qa', 'need-info-escalation')
         'ansem'   = @('postgres-best-practices', 'need-info-escalation')
         'kuja'    = @('verification-before-completion', 'need-info-escalation')
         'tywin'   = @('verification-before-completion')
@@ -129,6 +135,8 @@ function Get-AgentSkills {
     if ($skillMap.ContainsKey($Key)) { $names = @($skillMap[$Key]) }
     foreach ($s in $names) {
         $p = Join-Path $Root ".agents\skills\$s\SKILL.md"
+        # Fallback: skills canonicas del arnes que viven en core/skills/v2 (ej. vivi-visual-excellence)
+        if (-not (Test-Path $p)) { $p = Join-Path $Root "core\skills\v2\$s\SKILL.md" }
         if (Test-Path $p) {
             try {
                 $raw = [System.IO.File]::ReadAllText($p)

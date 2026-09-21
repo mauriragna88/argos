@@ -113,10 +113,11 @@ Audita el contrato de datos DB↔API↔Frontend. Es **MANDATORY pre-verdict** pa
 | owasp, security | Auron |
 | superpowers (258K⭐), ui-ux-pro-max (79K⭐), taste-skill (66K⭐) | Party (arsenal extra) |
 
-## Skills instaladas (.agents/skills/) — AUTO-CARGA por agente (2026-08-20)
+## Skills de auto-carga (.agents/skills/ + core/skills/v2/) — AUTO-CARGA por agente (2026-08-20)
 
-Estas skills viven en `.agents/skills/<nombre>/SKILL.md` y se inyectan AUTOMATICAMENTE
-en el system prompt del agente (argos-code.ps1 y argos-party.ps1 via Get-AgentSkills).
+Estas skills se inyectan AUTOMATICAMENTE en el system prompt del agente (argos-code.ps1 y
+argos-party.ps1 via Get-AgentSkills): las externas desde `.agents/skills/<nombre>/SKILL.md`
+y las canonicas propias desde `core/skills/v2/<nombre>/SKILL.md` (fallback automatico).
 Es la experticia de cada rol hecha checklist obligatoria.
 
 | Skill | Agente | Trigger | Origen |
@@ -127,6 +128,9 @@ Es la experticia de cada rol hecha checklist obligatoria.
 | postgres-best-practices | Ansem (Paladin) | Schemas, RLS, queries, migraciones Supabase/Postgres | supabase docs |
 | ui-ux-pro-max | Vivi (Mage) | Toda UI: jerarquía, spacing, tipografía, componentes | nextlevelbuilder (79K⭐) |
 | taste-skill | Vivi (Mage) | Anti-slop: sin gradientes genéricos ni copy de IA | Leonxln (66K⭐) |
+| vivi-design-principles | Vivi (Mage) | SIEMPRE primero: fundamento de diseño (layering, spacing, restraint, jerarquía, marca, anti-template) | ARGOS propio (core/skills/v2) |
+| vivi-motion-design | Vivi (Mage) | Condicional: animación, scroll, parallax, cursor, GSAP/Motion, cinemático | ARGOS propio (core/skills/v2) |
+| vivi-visual-qa | Vivi (Mage) | Al final de toda implementación frontend: verifica el render real (desktop/tablet/mobile) | ARGOS propio (core/skills/v2) |
 | handoff | Atlas, Eiko (cross-party) | Pausar/reanudar quests: compresión de estado accionable | mattpocock (88K⭐) |
 | need-info-escalation | Todos los ejecutores + Atlas | Agente sin info → NEED_INFO → Atlas pregunta al usuario UNA vez | ARNES propio |
 | ceo-vision | Ragnarok | Nuevo proyecto/feature: variantes de plataforma (web/desktop/móvil/offline) y si vale la pena | ARNES propio (rol CEO) |
@@ -140,7 +144,7 @@ QUE MAESTRO DEFINE (contrato texto→verificación cerrado).
 
 **Mapa de auto-carga** (mantener sincronizado con Get-AgentSkills en argos-code.ps1 / argos-party.ps1):
 ```powershell
-'vivi'     = @('ui-ux-pro-max', 'taste-skill', 'need-info-escalation')
+'vivi'     = @('vivi-design-principles', 'vivi-visual-excellence', 'ui-ux-pro-max', 'taste-skill', 'vivi-motion-design', 'vivi-visual-qa', 'need-info-escalation')
 'ansem'    = @('postgres-best-practices', 'need-info-escalation')
 'kuja'     = @('verification-before-completion', 'need-info-escalation')
 'tywin'    = @('verification-before-completion')

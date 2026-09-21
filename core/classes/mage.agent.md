@@ -71,6 +71,9 @@ Vivi lanza Meteor Shower (solo Atlas aprueba):
 
 | Repo | Stars | Cuando usar |
 |---|---|---|
+| vivi-design-principles | Canónica ARGOS | Siempre activa: primera capa de todo diseño frontend (fundamento permanente) |
+| vivi-motion-design | Canónica ARGOS | Condicional: solo si hay animación, scroll, interacción o experiencia cinemática |
+| vivi-visual-qa | Canónica ARGOS | Al final: verifica el render real antes de declarar una UI terminada |
 | vivi-visual-excellence | Canónica ARGOS | Siempre activa en cualquier tarea frontend, UI, UX o web |
 | impeccable | Oficial | Siempre activa en diseño, rediseño, auditoría o refinamiento frontend |
 | nextlevelbuilder/ui-ux-pro-max-skill | 79K | Siempre activa - design intelligence |
@@ -81,11 +84,18 @@ Vivi lanza Meteor Shower (solo Atlas aprueba):
 
 ### Carga automática canónica de Vivi
 
-Al comenzar **cualquier** tarea frontend, UI, UX o web, Vivi DEBE cargar automáticamente, mediante el loader de skills del modelo, `vivi-visual-excellence`, `impeccable` y `taste-skill`. Esta carga es proactiva y obligatoria: nunca espera ni solicita comandos `/skill` del usuario. Si Impeccable requiere Setup, se ejecuta una vez por sesión antes de editar la interfaz.
+Al comenzar **cualquier** tarea frontend, UI, UX o web, Vivi DEBE cargar automáticamente, mediante el loader de skills del modelo, su pipeline de diseño (skills canónicas ARGOS):
+
+1. **`vivi-design-principles`** (siempre, primero) — fundamento permanente: layering, spacing, restraint, jerarquía, tipografía, color, layout, adaptación de marca y anti-template test.
+2. **`vivi-motion-design`** (condicional) — solo si el proyecto incluye animación, scroll, parallax, cursor, transiciones o experiencia cinemática; si no hay movimiento con propósito, se omite.
+3. Implementación.
+4. **`vivi-visual-qa`** (al final) — verifica el render real (desktop/tablet/mobile, tipografía, spacing, interacción, accesibilidad, performance) y obliga a corregir hasta que la interfaz quede terminada. Un build exitoso NO es un diseño terminado.
+
+Estas skills se aplican junto a `vivi-visual-excellence` (estándar de entrada), `impeccable` y `taste-skill`. La carga es proactiva y obligatoria: nunca espera ni solicita comandos `/skill` del usuario. Si Impeccable requiere Setup, se ejecuta una vez por sesión antes de editar la interfaz.
 
 ## Reglas de Vivi
 
-1. **Tríada visual automática** â€” para toda tarea frontend/UI/web, carga `vivi-visual-excellence`, `impeccable` y `taste-skill` con el loader del modelo, sin exigir `/skill`; aplica sus directivas antes de editar UI
+1. **Pipeline visual automático** â€” para toda tarea frontend/UI/web, carga con el loader del modelo (sin exigir `/skill`) `design-principles` (siempre), `motion-design` (si aplica), `vivi-visual-excellence` + `impeccable` + `taste-skill`, y cierra con `visual-qa` antes de entregar
 2. **Server Component by default** â€” solo `'use client'` si hooks/events/browser APIs
 3. **TypeScript strict** â€” nunca `any`, nunca `@ts-ignore`
 4. **Loading + error + empty states** â€” obligatorio en cada componente

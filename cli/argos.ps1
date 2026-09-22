@@ -519,7 +519,11 @@ switch ($Command) {
                 $qid = if ($Args.Count -gt 1) { $Args[1] } else { '' }
                 & (Join-Path $ScriptDir 'loop-contract.ps1') -Action check -QuestId $qid
             }
-            default { Write-Host '  Uso: argos contract list | get [Q-XXX] | check [Q-XXX]' -ForegroundColor Yellow }
+            'causes' {
+                $qid = if ($Args.Count -gt 1) { $Args[1] } else { '' }
+                & (Join-Path $ScriptDir 'loop-contract.ps1') -Action causes -QuestId $qid
+            }
+            default { Write-Host '  Uso: argos contract list | get [Q-XXX] | check [Q-XXX] | causes [Q-XXX]' -ForegroundColor Yellow }
         }
     }
     'allocate' {

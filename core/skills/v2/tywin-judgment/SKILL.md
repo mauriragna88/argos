@@ -30,12 +30,17 @@ El juicio final: ¿el trabajo cumple lo que se pidió?
    - El reporte (L1-L6, checks C1-C38) entra como evidence pre-verdict
    - FAIL del gate = FAIL del verdict (aunque el spec esté cumplido) — la clase DB↔Frontend no puede pasar
    - Migraciones / `database.types.ts` / contratos → SIEMPRE aplica el gate, no es opcional
-4. **Emitir verdict**:
+4. **Verification Ladder (F3 — canónica en `core/auditors/tywin.agent.md`)**:
+   - L1 STATIC (tipos/lint) → L2 MECHANICAL (schemas/contracts) → L3 BEHAVIORAL (tests) → L4 QUEST (acceptance criteria) → L5 ADVERSARIAL (romperlo) → L6 REGRESSION (guards del dominio)
+   - Si existe forma DETERMINISTA de verificar, el PASS exige el comando ejecutado (`evidence_command`); la inspección LLM sola NO basta
+   - Nivel mínimo por quest type: trivial/fix → L1+L3 · frontend/backend → L1+L2+L3 · architecture → L1+L4+ADR · L0 → L1+L2+L3+L5
+5. **Emitir verdict** (incluye `verification_level`):
    - PASS: todos los criterios cumplidos
    - FAIL_PARTIAL: algunos cumplidos + remediation listado
    - FAIL_TOTAL: no cumple + remediation completo (QUÉ falta exactamente)
-4. **GUARDAR**: `write` una linea en `.arnes/memory/export/tywin-memory.jsonl` (topic `tywin/verdicts`, type `verdict`)
-5. **Entregar a Atlas**: verdict + remediation (si FAIL)
+6. **Registrar el intento (F3)**: el harness cierra el intento en `.arnes/loop-attempts.jsonl` (`loop-contract -Action attempt`) con causa clasificada + strategy_delta; si el FAIL tiene causa distinta, declararla con `-Signals` (tool_error / env_issue / spec_gap / context_missing / code_defect)
+7. **GUARDAR**: `write` una linea en `.arnes/memory/export/tywin-memory.jsonl` (topic `tywin/verdicts`, type `verdict`)
+8. **Entregar a Atlas**: verdict + remediation (si FAIL)
 
 ## Output esperado
 - verdict (PASS/FAIL) con evidencia + remediation brief si falla

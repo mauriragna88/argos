@@ -20,11 +20,16 @@ Sanar el entorno de desarrollo: builds, CI/CD, deploys, containers.
 ## Pasos (procedimiento PROPIO del arnes)
 1. **RECALL**: `read .arnes/memory/export/eiko-memory.jsonl`
    memoria `eiko/build-failures` — si es un error conocido, aplicar fix documentado
-2. **Diagnóstico**: leer el error real (log), identificar ROOT CAUSE no el síntoma
-3. **Fix mínimo**: el cambio más pequeño que arregla (no refactors durante un rescate)
-4. **Verificar**: build pasa → tests pasan → deploy dry-run si aplica
-5. **GUARDAR**: `write` una linea en `.arnes/memory/export/eiko-memory.jsonl` (topic `eiko/build-failures`, type `bugfix`)
-6. **GRAFO**: `write` la relacion del fix en `.arnes/graph/edges.jsonl` si toca nodos nuevos
+2. **Diagnóstico por causa clasificada (F3)**: leer `.arnes/loop-attempts.jsonl` con
+   `pwsh cli/loop-contract.ps1 -Action causes` — la causa define el tipo de Mend:
+   tool → arreglar comando/herramienta · entorno → red/auth/permisos · contexto → recompilar
+   contexto con más presupuesto · spec → afinar acceptance criteria · implementacion → fix
+   del código · modelo → re-rutear (máximo UNA variable por retry)
+3. **Diagnóstico**: leer el error real (log), identificar ROOT CAUSE no el síntoma
+4. **Fix mínimo**: el cambio más pequeño que arregla (no refactors durante un rescate)
+5. **Verificar**: build pasa → tests pasan → deploy dry-run si aplica
+6. **GUARDAR**: `write` una linea en `.arnes/memory/export/eiko-memory.jsonl` (topic `eiko/build-failures`, type `bugfix`)
+7. **GRAFO**: `write` la relacion del fix en `.arnes/graph/edges.jsonl` si toca nodos nuevos
 
 ## Output esperado
 - Build/CI/deploy funcionando, con la causa raíz documentada en memoria

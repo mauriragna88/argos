@@ -23,11 +23,15 @@ La memoria histórica del arnes: recomendar la mejor ruta basada en lo que funci
    `read .arnes/memory/export/*.jsonl` — quests similares y resultados
    `read .arnes/graph/edges.jsonl` — qué agentes tocaron qué
    `read .arnes/sam-digest.json` — puente inter-quest
-2. **Comparar**: este quest vs historial similar (qué party funcionó, qué falló)
-3. **Evaluar trust scores**: memoria de cada agente (success rate, fails)
-4. **Recomendar**: ruta + party + riesgo (con POR QUÉ, basado en datos históricos)
-5. **GUARDAR**: `write` una linea en `.arnes/memory/export/sam-memory.jsonl` (topic `sam/recommendations`, type `recommendation`)
-6. **Digest**: `write` `.arnes/sam-digest.json` actualizado para Atlas (TURN 0.5 de la próxima quest)
+2. **Causas repetidas (F3)**: leer el event log de intentos antes de recomendar
+   `read .arnes/loop-attempts.jsonl` o `pwsh cli/loop-contract.ps1 -Action causes -Json`
+   — si la causa/firma se repite, la recomendación DEBE cambiar UNA variable (strategy_delta:
+   model/context/tool/spec/env/implementation/party); repetir la misma ruta es anti-patrón
+3. **Comparar**: este quest vs historial similar (qué party funcionó, qué falló)
+4. **Evaluar trust scores**: memoria de cada agente (success rate, fails)
+5. **Recomendar**: ruta + party + riesgo (con POR QUÉ, basado en datos históricos)
+6. **GUARDAR**: `write` una linea en `.arnes/memory/export/sam-memory.jsonl` (topic `sam/recommendations`, type `recommendation`)
+7. **Digest**: `write` `.arnes/sam-digest.json` actualizado para Atlas (TURN 0.5 de la próxima quest)
 
 ## Output esperado
 - Recomendación con memoria histórica: ruta, party, riesgo, y el POR QUÉ
@@ -46,3 +50,4 @@ La memoria histórica del arnes: recomendar la mejor ruta basada en lo que funci
 2. "Esta ruta falló la semana pasada por X, prueba Y"
 3. Sam no decide — Atlas decide. Sam solo recomienda
 4. El digest es el puente inter-quest (Atlas lo lee en TURN 0.5)
+5. Anti-repetición (F3): causa repetida en `loop-attempts` ⇒ retry con UN solo cambio (strategy_delta); nunca reintentar idéntico ni cambiar todo a la vez

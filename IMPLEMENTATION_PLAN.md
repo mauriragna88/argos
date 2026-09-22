@@ -161,6 +161,31 @@ Construir el contexto óptimo del turno con presupuesto por fuente y scoring de 
 ### Objetivo concreto
 Convertir el loop actual en un sistema de contratos por quest (FAIL→causa→remediation→variable cambiada→retry) y dar a Tywin una ladder de verificación explícita con preferencia determinista.
 
+> **NOTA DE CIERRE (2026-09-22)**: Fase 3 cerrada sobre la base del 2026-08-17 (contratos
+> por quest, ladder en `tywin.agent.md`). Faltaba la pieza que convierte un FAIL en algo
+> accionable: **causa clasificada**. Implementado en `cli/loop-contract.ps1`:
+> - Acciones nuevas: `attempt` (registra intento en `.arnes/loop-attempts.jsonl` con
+>   `failure_signature`/`root_cause`/`remediation`/`strategy_delta` + `strategy_delta_source`),
+>   `causes` (agregado por causa + firmas repetidas, lo lee Sam) y `classify`.
+> - **Clasificador determinista** por señales (`tool_error`/`env_issue`/`spec_gap`/
+>   `context_missing`/`code_defect`) con precedencia fija tool > entorno > spec > contexto >
+>   implementacion > modelo; señales desconocidas se rechazan.
+> - **Retry de UNA variable**: `strategy_delta` ∈ {model, context, tool, spec, env,
+>   implementation, party}; más de una ⇒ rechazo. **FAIL sin remediation ⇒ rechazo** (regla
+>   Tywin preservada).
+> - `loop-engine` cierra cada intento vía `attempt` (antes escribía el placeholder
+>   `cause = "failed_verification"`); `argos contract causes [Q-XXX]` expuesto en el CLI;
+>   skills `tywin-judgment` (ladder + `verification_level`), `sam-counsel` (anti-repetición)
+>   y `eiko-mend` (Mend por causa) evolucionadas.
+> - Bug de colisión detectado y corregido: el parámetro `-Result` del nuevo `attempt`
+>   chocaba con el `$result` local de `check` (PowerShell case-insensitive) y lo rompía;
+>   el parámetro es ahora `-Verdict`.
+> - ADRs: 017 (contratos de loops), 018 (causa y retry), 020 (verification ladder).
+> - Tests herméticos: `tests/loop-contract.tests.ps1` (9 checks: contrato completo, intento
+>   con causa, 6 casos del clasificador + precedencia, delta múltiple rechazado, FAIL sin
+>   remediation rechazado, señal desconocida rechazada, agregados + firmas repetidas,
+>   límites del check, PASS registrado) incluido en `run-all`.
+
 ### Componentes a tocar
 | Ruta | Cambio |
 |---|---|

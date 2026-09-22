@@ -10,6 +10,11 @@
 #   get      -> consultar el contrato de un quest (o del quest activo)
 #   list     -> listar contratos existentes
 #   check    -> validar que el quest sigue dentro del contrato (iterations/tokens)
+#   attempt  -> registrar un intento: failure_signature/root_cause/remediation/strategy_delta
+#   causes   -> agregado de causas repetidas (anti-repeticion; lo lee Sam)
+#   classify -> clasificar la causa desde senales (tool_error, env_issue, spec_gap,
+#               context_missing, code_defect); precedencia tool > entorno > spec > contexto
+#               > implementacion > modelo
 #
 # Uso:
 #   .\cli\loop-contract.ps1 -Action create -QuestId Q-001 -Prompt "crea login"
@@ -17,11 +22,15 @@
 #   .\cli\loop-contract.ps1 -Action get -QuestId Q-001
 #   .\cli\loop-contract.ps1 -Action list
 #   .\cli\loop-contract.ps1 -Action check -QuestId Q-001 -Attempt 2 -TokensUsed 6000
+#   .\cli\loop-contract.ps1 -Action attempt -QuestId Q-001 -Attempt 2 -Verdict FAIL_PARTIAL `
+#       -FailureSignature "login 500" -Signals "code_defect" -Remediation "validar email en el form"
+#   .\cli\loop-contract.ps1 -Action causes -Json
+#   .\cli\loop-contract.ps1 -Action classify -Signals "context_missing" -Json
 
 #Requires -Version 5.1
 [CmdletBinding()]
 param(
-    [ValidateSet("create","get","list","check")]
+    [ValidateSet("create","get","list","check","attempt","causes","classify")]
     [string]$Action = "get",
     [string]$QuestId = "",
     [string]$Prompt = "",
@@ -29,11 +38,49 @@ param(
     [int]$TokenBudget = 0,
     [int]$Attempt = 0,
     [int]$TokensUsed = 0,
+    # --- attempt --- (se llama -Verdict para no colisionar con $result del check)
+    [ValidateSet("","PASS","FAIL_PARTIAL","FAIL_TOTAL")]
+    [string]$Verdict = "",
+    [string]$FailureSignature = "",
+    [string]$Signals = "",
+    [string]$RootCause = "",
+    [string]$StrategyDelta = "",
+    [string]$Remediation = "",
+    [string]$Evidence = "",
     [switch]$Json,
     [string]$ArnesDir = ""
 )
 
 $ErrorActionPreference = "Continue"
+
+# Clasificador de causa de fallo (F3, ADR-018): señales observables -> UNA causa.
+# Precedencia: tool > entorno > spec > contexto > implementacion > modelo.
+$KNOWN_SIGNALS = @('tool_error','env_issue','spec_gap','context_missing','code_defect')
+$ALLOWED_DELTAS = @('model','context','tool','spec','env','implementation','party')
+
+function Get-RootCause {
+    param([string]$SignalsCsv = "")
+    $flags = @("$SignalsCsv" -split ',' | ForEach-Object { $_.Trim().ToLower() } | Where-Object { $_ })
+    if ($flags -contains 'tool_error') { return 'tool' }
+    if ($flags -contains 'env_issue') { return 'entorno' }
+    if ($flags -contains 'spec_gap') { return 'spec' }
+    if ($flags -contains 'context_missing') { return 'contexto' }
+    if ($flags -contains 'code_defect') { return 'implementacion' }
+    return 'modelo'
+}
+
+function Get-StrategyDeltaForCause {
+    param([string]$Cause)
+    switch ($Cause) {
+        'modelo'         { return 'model' }
+        'contexto'       { return 'context' }
+        'tool'           { return 'tool' }
+        'spec'           { return 'spec' }
+        'entorno'        { return 'env' }
+        'implementacion' { return 'implementation' }
+        default          { return 'model' }
+    }
+}
 
 if (-not $ArnesDir) {
     $cwd = (Get-Location).Path
@@ -211,5 +258,133 @@ if ($Action -eq "check") {
         Write-Host ("  [CONTRACT] {0}: {1}" -f $QuestId, $(if ($result.within_limits) { "dentro de limites" } else { "FUERA DE LIMITES" })) -ForegroundColor $color
         foreach ($i in $result.issues) { Write-Host ("            - {0}" -f $i) -ForegroundColor Yellow }
     }
+    exit 0
+}
+
+# === CLASSIFY ===
+if ($Action -eq "classify") {
+    foreach ($s in ("$Signals" -split ',')) {
+        $t = $s.Trim().ToLower()
+        if ($t -and ($KNOWN_SIGNALS -notcontains $t)) { Write-Error "signal desconocida: $t (validas: $($KNOWN_SIGNALS -join ', '))"; exit 1 }
+    }
+    $cause = if ($RootCause) { $RootCause.Trim().ToLower() } else { Get-RootCause -SignalsCsv $Signals }
+    $delta = Get-StrategyDeltaForCause $cause
+    if ($Json) {
+        @{ cause = $cause; signals = "$Signals"; suggested_strategy_delta = $delta } | ConvertTo-Json -Compress
+    } else {
+        Write-Host ("  [CAUSE] {0} (delta sugerido: {1})" -f $cause, $delta) -ForegroundColor Cyan
+    }
+    exit 0
+}
+
+# === ATTEMPT (F3: loop_attempt con causa clasificada) ===
+if ($Action -eq "attempt") {
+    if (-not $QuestId) {
+        try {
+            $ls = Get-Content (Join-Path $ArnesDir "loop-state.json") -Raw -Encoding UTF8 | ConvertFrom-Json
+            $QuestId = $ls.current_quest_id
+            if (-not $Attempt) { $Attempt = [int]$ls.attempt_count }
+        } catch {}
+    }
+    if (-not $QuestId) { Write-Error "attempt requiere -QuestId (o quest activo)"; exit 1 }
+    if (-not $Verdict) { Write-Error "attempt requiere -Verdict (PASS|FAIL_PARTIAL|FAIL_TOTAL)"; exit 1 }
+
+    foreach ($s in ("$Signals" -split ',')) {
+        $t = $s.Trim().ToLower()
+        if ($t -and ($KNOWN_SIGNALS -notcontains $t)) { Write-Error "signal desconocida: $t (validas: $($KNOWN_SIGNALS -join ', '))"; exit 1 }
+    }
+    $delta = $StrategyDelta.Trim().ToLower()
+    if ($delta -and ($ALLOWED_DELTAS -notcontains $delta)) {
+        Write-Error "strategy_delta invalido: '$StrategyDelta'. Retry cambia UNA variable de: $($ALLOWED_DELTAS -join ', ')"
+        exit 1
+    }
+
+    $isFail = $Verdict -ne "PASS"
+    if ($isFail -and [string]::IsNullOrWhiteSpace($Remediation)) {
+        Write-Error "FAIL sin remediation es invalido (regla Tywin: remediation brief obligatorio)"
+        exit 1
+    }
+
+    $cause = if ($RootCause) { $RootCause.Trim().ToLower() } else { Get-RootCause -SignalsCsv $Signals }
+    if ($isFail -and -not $delta) { $delta = Get-StrategyDeltaForCause $cause }
+
+    $record = [ordered]@{
+        event = "loop_attempt"
+        ts = (Get-Date).ToString("o")
+        quest_id = $QuestId
+        attempt_number = if ($Attempt -gt 0) { $Attempt } else { 1 }
+        verdict = $Verdict
+        failure_signature = if ($isFail) { $FailureSignature } else { "" }
+        signals = if ($isFail) { "$Signals" } else { "" }
+        root_cause = if ($isFail) { $cause } else { "success" }
+        remediation = if ($isFail) { $Remediation } else { "" }
+        strategy_delta = if ($isFail) { $delta } else { "" }
+        strategy_delta_source = if ($isFail -and $StrategyDelta) { "explicit" } else { "classifier" }
+        evidence = $Evidence
+    } | ConvertTo-Json -Compress
+
+    if (-not (Test-Path $ArnesDir)) { New-Item -ItemType Directory -Path $ArnesDir -Force | Out-Null }
+    Add-Content -LiteralPath (Join-Path $ArnesDir "loop-attempts.jsonl") -Value $record -Encoding UTF8
+
+    if ($Json) { $record | ConvertFrom-Json | ConvertTo-Json -Depth 4 }
+    else { Write-Host ("  [ATTEMPT] {0} #{1} {2} | causa={3} | delta={4}" -f $QuestId, $(if ($Attempt -gt 0) { $Attempt } else { 1 }), $Verdict, $(if ($isFail) { $cause } else { "-" }), $(if ($isFail) { $delta } else { "-" })) -ForegroundColor Green }
+    exit 0
+}
+
+# === CAUSES (agregado anti-repeticion para Sam) ===
+if ($Action -eq "causes") {
+    $attemptLog = Join-Path $ArnesDir "loop-attempts.jsonl"
+    $records = @()
+    if (Test-Path -LiteralPath $attemptLog) {
+        foreach ($line in (Get-Content -LiteralPath $attemptLog -Encoding UTF8 | Where-Object { $_.Trim() })) {
+            try { $r = $line | ConvertFrom-Json; if ($r.event -eq "loop_attempt") { $records += $r } } catch {}
+        }
+    }
+    if ($QuestId) { $records = @($records | Where-Object { $_.quest_id -eq $QuestId }) }
+    $fails = @($records | Where-Object { $_.verdict -ne "PASS" })
+
+    $byCause = @{}
+    $bySignature = @{}
+    foreach ($f in $fails) {
+        $c = "$($f.root_cause)"
+        if (-not $byCause.ContainsKey($c)) { $byCause[$c] = @{ count = 0; quests = @(); last_remediation = ""; last_delta = "" } }
+        $byCause[$c].count++
+        if ($f.quest_id -and ($byCause[$c].quests -notcontains $f.quest_id)) { $byCause[$c].quests += $f.quest_id }
+        if ($f.remediation) { $byCause[$c].last_remediation = "$($f.remediation)" }
+        if ($f.strategy_delta) { $byCause[$c].last_delta = "$($f.strategy_delta)" }
+
+        $sig = "$($f.failure_signature)"
+        if ($sig) {
+            if (-not $bySignature.ContainsKey($sig)) { $bySignature[$sig] = @{ count = 0; quests = @() } }
+            $bySignature[$sig].count++
+            if ($f.quest_id -and ($bySignature[$sig].quests -notcontains $f.quest_id)) { $bySignature[$sig].quests += $f.quest_id }
+        }
+    }
+
+    $out = @{
+        total_attempts = @($records).Count
+        fails = @($fails).Count
+        by_cause = @($byCause.GetEnumerator() | Sort-Object { $_.Value.count } -Descending | ForEach-Object {
+            @{ cause = $_.Key; count = $_.Value.count; quests = $_.Value.quests; last_remediation = $_.Value.last_remediation; last_strategy_delta = $_.Value.last_delta }
+        })
+        repeated_signatures = @($bySignature.GetEnumerator() | Where-Object { $_.Value.count -ge 2 } | ForEach-Object {
+            @{ signature = $_.Key; count = $_.Value.count; quests = $_.Value.quests }
+        })
+    }
+
+    if ($Json) { $out | ConvertTo-Json -Depth 6; exit 0 }
+    Write-Host ""
+    Write-Host ("  CAUSAS DE FALLO ({0} intentos, {1} FAIL)" -f $out.total_attempts, $out.fails) -ForegroundColor Cyan
+    Write-Host "  ==================================================" -ForegroundColor Cyan
+    if ($out.fails -eq 0) { Write-Host "  Sin fallos registrados." -ForegroundColor Green; Write-Host ""; exit 0 }
+    foreach ($c in $out.by_cause) {
+        Write-Host ("  {0,-16} x{1}  | delta: {2} | ultima remediacion: {3}" -f $c.cause, $c.count, $c.last_strategy_delta, $c.last_remediation) -ForegroundColor Yellow
+    }
+    if (@($out.repeated_signatures).Count -gt 0) {
+        Write-Host ""
+        Write-Host "  Firmas repetidas (candidatas a regression, F5):" -ForegroundColor DarkYellow
+        foreach ($s in $out.repeated_signatures) { Write-Host ("    '{0}' x{1}" -f $s.signature, $s.count) -ForegroundColor DarkGray }
+    }
+    Write-Host ""
     exit 0
 }

@@ -333,23 +333,41 @@ function Quest-Done($state, $questId, $verdict, $agent, $tokens, $evidencePath, 
     # Prompt Triage: cerrar el outcome PENDING con el veredicto real
     Update-TriageOutcome $questId $verdict $agent
 
-    # FASE 3: registrar loop_attempt (event log .arnes/loop-attempts.jsonl)
+    # FASE 3: registrar loop_attempt con causa clasificada (loop-contract -Action attempt)
     try {
-        $attemptLog = Join-Path $ArnesDir "loop-attempts.jsonl"
-        if (-not (Test-Path $ArnesDir)) { New-Item -ItemType Directory -Path $ArnesDir -Force | Out-Null }
-        $attempt = [ordered]@{
-            event = "loop_attempt"
-            ts = (Get-Date).ToString("o")
-            quest_id = $questId
-            attempt = $state.current_attempt_id
-            attempt_number = [int]$state.attempt_count
-            verdict = $verdict
-            agent = $agent
-            tokens_used = $tokens
-            cause = if ($verdict -eq "PASS") { "success" } else { "failed_verification" }
-            remediation = if ($verdict -eq "PASS") { $null } else { "re-audit_by_tywin (ver remediation brief)" }
-        } | ConvertTo-Json -Compress
-        Add-Content -LiteralPath $attemptLog -Value $attempt -Encoding UTF8
+        $contractScript2 = Join-Path $PSScriptRoot "loop-contract.ps1"
+        if (Test-Path $contractScript2) {
+            $signals = ""
+            $remSummary = ""
+            $sig = ""
+            if ($verdict -ne "PASS") {
+                $signals = "code_defect"
+                $remSummary = if ($remediationPath) { "remediation_brief: $remediationPath" } else { "re-audit_by_tywin" }
+                if ($remediationPath -and (Test-Path -LiteralPath $remediationPath)) {
+                    try {
+                        $rb = Get-Content -LiteralPath $remediationPath -Raw -Encoding UTF8 | ConvertFrom-Json
+                        $item = @($rb.items)[0]
+                        if ($item) {
+                            $sig = if ($item.what) { "$($item.what)" } elseif ($item.issue) { "$($item.issue)" } elseif ($item.description) { "$($item.description)" } else { "$item" }
+                            if ($sig.Length -gt 80) { $sig = $sig.Substring(0, 80) }
+                        }
+                    } catch {}
+                }
+                if (-not $sig) { $sig = "verification_failed" }
+            }
+            $attemptArgs = @(
+                '-Action','attempt',
+                '-QuestId', $questId,
+                '-Attempt', [string][int]$state.attempt_count,
+                '-Verdict', $verdict,
+                '-Evidence', "$verdictPath",
+                '-ArnesDir', $ArnesDir
+            )
+            if ($signals) { $attemptArgs += @('-Signals', $signals) }
+            if ($remSummary) { $attemptArgs += @('-Remediation', $remSummary) }
+            if ($sig) { $attemptArgs += @('-FailureSignature', $sig) }
+            $null = & $contractScript2 @attemptArgs 2>&1
+        }
     } catch {}
 
     # FASE 5: Regression Factory - PASS tras FAIL previo => sugerir guard

@@ -8,13 +8,21 @@
 #
 # Destinos: cada CLI/entorno lee skills de SU directorio global.
 # El stack se mantiene identico en todos para que Vivi cargue lo
-# mismo sin importar desde donde se lance (DSH, claude, codex,
-# opencode, gemini/agy, cmdc, Antigravity y el estandar ~/.agents,
-# que es de donde tambien leen la app de ChatGPT/Codex y freebuff).
+# mismo sin importar desde donde se lance (DSH, claude, opencode,
+# gemini/agy, cmdc, Antigravity y el estandar ~/.agents, que es de
+# donde tambien leen la app de ChatGPT/Codex y freebuff). El legacy
+# ~/.codex/skills NO se sincroniza: el scope oficial de Codex es
+# ~/.agents/skills, y duplicar alli hace que la app liste cada skill
+# dos veces (Codex no fusiona skills homonimas entre scopes).
 #
 # Ademas genera el pack de experiencia completa para la app de
 # ChatGPT en <HomeBase>/.agents/chatgpt-vivi/ (INSTRUCTIONS.md +
 # VIVI-STACK.md + README.md).
+#
+# Y deja el slash command /vivi de Antigravity en
+# <HomeBase>/.gemini/antigravity/workflows/vivi.md (workflow global:
+# se invoca /vivi en el Agent de Antigravity Desktop/Web/CLI; el
+# workspace tambien admite su propio .agent/workflows/vivi.md).
 #
 # Uso (dot-source):
 #   . (Join-Path $PSScriptRoot 'argos-skills-sync.ps1')
@@ -96,6 +104,15 @@ function Sync-SkillBundle {
     Copy-Item -LiteralPath $Source -Destination $Destination -Recurse -Force
 }
 
+# Cuerpo de la skill `vivi` (persona + pipeline) sin frontmatter:
+# fuente unica para INSTRUCTIONS.md (ChatGPT) y el workflow /vivi (Antigravity).
+function Get-ViviPersonaBody {
+    param([Parameter(Mandatory)][string]$Root)
+    $viviSkillPath = Join-Path $Root 'core\skills\v2\vivi\SKILL.md'
+    if (-not (Test-Path -LiteralPath $viviSkillPath)) { return '' }
+    return ([System.IO.File]::ReadAllText($viviSkillPath) -replace '(?s)^---.*?---\s*', '').Trim()
+}
+
 # ============================================================
 # PACK "EXPERIENCIA COMPLETA" PARA LA APP DE CHATGPT
 # Genera <HomeBase>/.agents/chatgpt-vivi/ con:
@@ -149,10 +166,9 @@ function Sync-ChatGPTViviPack {
     }
 
     # INSTRUCTIONS.md se genera desde la skill `vivi` (fuente unica de la persona + pipeline).
-    $viviSkillPath = Join-Path $Root 'core\skills\v2\vivi\SKILL.md'
+    $viviBody = Get-ViviPersonaBody -Root $Root
     $instructions = ''
-    if (Test-Path -LiteralPath $viviSkillPath) {
-        $viviBody = ([System.IO.File]::ReadAllText($viviSkillPath) -replace '(?s)^---.*?---\s*', '').Trim()
+    if ($viviBody) {
         $instructions = @"
 # Vivi — guia para un Project o GPT de ChatGPT
 
@@ -162,7 +178,7 @@ function Sync-ChatGPTViviPack {
 $viviBody
 "@
     } else {
-        Write-Host ("  [!] Skill vivi no encontrada: {0} (el pack queda sin instrucciones)" -f $viviSkillPath) -ForegroundColor Yellow
+        Write-Host ("  [!] Skill vivi no encontrada: {0} (el pack queda sin instrucciones)" -f (Join-Path $Root 'core\skills\v2\vivi\SKILL.md')) -ForegroundColor Yellow
     }
 
     $readme = @'
@@ -192,7 +208,8 @@ Opcional (para que trabaje archivos reales del proyecto):
 
 - Abre un chat DENTRO del proyecto.
 - Pide lo que necesites: "revisa esta landing", "hazme el dashboard", "arregla el mobile".
-- Las skills se cargan solas por su descripción; también puedes forzar con `@visual-qa`.
+- La persona entra sola: escribe `@vivi` (selector de skills) para la experiencia completa,
+  o deja que las skills se carguen solas por su descripción (`@visual-qa` para forzar el QA).
 
 ## Notas
 
@@ -208,6 +225,51 @@ Opcional (para que trabaje archivos reales del proyecto):
     $writes += Write-FileIfChanged -Path (Join-Path $packDir 'README.md') -Content $readme
     if (-not $Quiet -and $writes -gt 0) {
         Write-Host ("  [OK] Pack ChatGPT (experiencia Vivi) -> {0}" -f $packDir) -ForegroundColor Green
+    }
+    return $writes
+}
+
+# ============================================================
+# WORKFLOW /vivi PARA ANTIGRAVITY (slash command global)
+# Antigravity ejecuta workflows escritos como .md con frontmatter
+# `description` e invocados como /nombre en el Agent. El global vive
+# en <HomeBase>/.gemini/antigravity/workflows/ y aplica a todos los
+# workspaces (Desktop, Web y CLI); cada workspace puede ademas tener
+# el suyo en <proyecto>/.agent/workflows/vivi.md.
+# ============================================================
+function Sync-AntigravityViviWorkflow {
+    param(
+        [Parameter(Mandatory)][string]$Root,
+        [string]$HomeBase = '',
+        [switch]$Quiet
+    )
+    if (-not $HomeBase) { $HomeBase = if ($env:USERPROFILE) { $env:USERPROFILE } else { $HOME } }
+
+    $viviBody = Get-ViviPersonaBody -Root $Root
+    if (-not $viviBody) {
+        if (-not $Quiet) { Write-Host '  [!] Skill vivi no encontrada (se omite el workflow /vivi de Antigravity).' -ForegroundColor Yellow }
+        return 0
+    }
+
+    # Frontmatter obligatorio de Antigravity: description (max 250 chars, sin ": " interno).
+    $description = 'Activa a Vivi — persona y pipeline de diseño ARGOS. Carga design-principles + content-copy, motion-design si aplica, implementa de verdad y cierra con visual-qa midiendo evidencia. Para webs, landings, dashboards y componentes.'
+    $content = @"
+---
+description: $description
+---
+
+# /vivi — Vivi (Frontend DPS del party ARGOS)
+
+Workflow generado por ARGOS (`cli/argos-skills-sync.ps1`) desde `core/skills/v2/vivi/SKILL.md`.
+No editar a mano: se regenera en cada `argos`, `argos target <entorno>` y `argos opencode`.
+
+$viviBody
+"@
+
+    $dest = Join-Path $HomeBase '.gemini\antigravity\workflows\vivi.md'
+    $writes = Write-FileIfChanged -Path $dest -Content $content
+    if (-not $Quiet -and $writes -gt 0) {
+        Write-Host ("  [OK] Workflow /vivi de Antigravity -> {0}" -f $dest) -ForegroundColor Green
     }
     return $writes
 }
@@ -233,11 +295,13 @@ function Sync-ViviDesignStack {
     $sources = Get-ViviDesignStackSources -Root $Root -HomeBase $HomeBase
 
     # --- Destinos (directorio global de skills de cada entorno) ---
+    # ~/.codex/skills queda fuera a proposito: es el scope legacy de Codex y la app
+    # de ChatGPT/Codex ya lee ~/.agents/skills; tener ambos duplica cada skill en el
+    # selector (Codex no fusiona skills homonimas entre scopes).
     $destinations = @(
         @{ Label = 'agents';   Path = (Join-Path $HomeBase '.agents\skills') }
         @{ Label = 'dsh';      Path = (Join-Path $HomeBase '.dsh\skills') }
         @{ Label = 'claude';   Path = (Join-Path $HomeBase '.claude\skills') }
-        @{ Label = 'codex';    Path = (Join-Path $HomeBase '.codex\skills') }
         @{ Label = 'opencode'; Path = (Join-Path $HomeBase '.config\opencode\skills') }
         @{ Label = 'gemini';   Path = (Join-Path $HomeBase '.gemini\skills') }
         @{ Label = 'cmdc';     Path = (Join-Path $HomeBase '.commandcode\skills') }
@@ -263,6 +327,9 @@ function Sync-ViviDesignStack {
 
     # --- Pack de experiencia completa para la app de ChatGPT ---
     $packWrites = Sync-ChatGPTViviPack -Root $Root -HomeBase $HomeBase -Quiet:$Quiet
+
+    # --- Slash command /vivi de Antigravity (workflow global) ---
+    $null = Sync-AntigravityViviWorkflow -Root $Root -HomeBase $HomeBase -Quiet:$Quiet
 
     if (-not $Quiet) {
         if ($updated -eq 0) {

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Vivi — Frontend y UI"
+  short_description: "Persona + pipeline de diseño de ARGOS: design-principles + content-copy primero, implementación real, visual-qa con evidencia al final"
+  brand_color: "#0284C7"
+  default_prompt: "Diseña esto con Vivi y su pipeline completo (design-principles + content-copy → implementación → visual-qa)."
+policy:
+  allow_implicit_invocation: true

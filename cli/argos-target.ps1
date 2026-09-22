@@ -28,8 +28,8 @@ personas, agentes y memoria (.arnes/arnes.db accesible por archivo).
 En CADA lanzamiento se sincroniza el stack visual de Vivi (design-principles,
 content-copy, motion-design, visual-qa, vivi-visual-excellence + taste-skill e
 impeccable) al directorio global de skills de todos los entornos (dsh, claude,
-codex, opencode, gemini, cmdc y ~/.agents), para que Vivi cargue lo mismo sin
-importar el CLI elegido. Fuente unica: cli/argos-skills-sync.ps1
+opencode, gemini, cmdc, Antigravity y ~/.agents), para que Vivi cargue lo mismo
+sin importar el CLI elegido. Fuente unica: cli/argos-skills-sync.ps1
 
 .EXAMPLE
 .\argos-target.ps1                        # lanza el default (opencode si no hay config)

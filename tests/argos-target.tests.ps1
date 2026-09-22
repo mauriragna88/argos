@@ -3,7 +3,8 @@
 #
 # Hermetico: usa ConfigDir/TargetDir temporales y -NoLaunch.
 # Verifica: list, set, show, despliegue de AGENTS.md/CLAUDE.md (incluye target freebuff),
-# y el sync del stack visual de Vivi a todos los runners (HOME hermetico).
+# el sync del stack visual de Vivi a todos los runners (HOME hermetico), el pack ChatGPT,
+# el workflow /vivi de Antigravity y la metadata agents/openai.yaml.
 #
 # Uso:  powershell -NoProfile -ExecutionPolicy Bypass -File tests/argos-target.tests.ps1
 # Exit: 0 = PASS | 1 = FAIL
@@ -116,7 +117,7 @@ try {
     $cmdcSkills = Join-Path $work '.commandcode\skills'
     $stackDests = @(
         @{ L = 'agents'; P = $agentsSkills }, @{ L = 'dsh'; P = $dshSkills }, @{ L = 'claude'; P = $claudeSkills }
-        @{ L = 'codex'; P = $codexSkills }, @{ L = 'opencode'; P = $opencodeSkills }, @{ L = 'gemini'; P = $geminiSkills }
+        @{ L = 'opencode'; P = $opencodeSkills }, @{ L = 'gemini'; P = $geminiSkills }
         @{ L = 'cmdc'; P = $cmdcSkills }, @{ L = 'agy-global'; P = $agyGlobalSkills }, @{ L = 'agy-cli'; P = $agyCliSkills }
     )
     foreach ($d in $stackDests) {
@@ -132,8 +133,7 @@ try {
     Assert-That (Test-Path -LiteralPath (Join-Path $cmdcSkills 'design-principles\reference\devogatec.md')) 'stack: cmdc lleva reference/devogatec.md'
     Assert-That (Test-Path -LiteralPath (Join-Path $cmdcSkills 'visual-qa\reference\evidence-tooling.md')) 'stack: cmdc lleva reference/evidence-tooling.md'
     Assert-That (Test-Path -LiteralPath (Join-Path $claudeSkills 'taste-skill\SKILL.md')) 'stack: claude lleva taste-skill'
-    Assert-That (Test-Path -LiteralPath (Join-Path $codexSkills 'impeccable\SKILL.md')) 'stack: codex lleva impeccable (fixture)'
-    Assert-That ((Get-Content -LiteralPath (Join-Path $codexSkills 'impeccable\SKILL.md') -Raw) -eq $impeccableFixture) 'stack: impeccable copiado desde fixture'
+    Assert-That (-not (Test-Path -LiteralPath (Join-Path $codexSkills 'vivi\SKILL.md'))) 'stack: ~/.codex/skills ya no recibe el stack (scope legacy; evita duplicados en la app de ChatGPT/Codex)'
 
     # 7d. Pack "experiencia completa" para la app de ChatGPT (persona + stack en un Source).
     $pack = Join-Path $work '.agents\chatgpt-vivi'
@@ -159,6 +159,25 @@ try {
     Assert-That ($cgContent -match '\.arnes/arnes\.db') 'chatgpt: incluye la memoria OSMA'
     Assert-That (@(Get-ChildItem (Join-Path $work 'AGENTS.md.bak-*') -ErrorAction SilentlyContinue).Count -ge 1) 'chatgpt: respalda el AGENTS.md previo'
 
+    # 7f. Workflow /vivi para Antigravity: slash command global en HOME hermetico.
+    $agyWorkflows = Join-Path $work '.gemini\antigravity\workflows'
+    $agyWorkflow = Join-Path $agyWorkflows 'vivi.md'
+    Assert-That (Test-Path -LiteralPath $agyWorkflow) 'antigravity: workflow /vivi generado'
+    $wf = Get-Content -LiteralPath $agyWorkflow -Raw
+    Assert-That ($wf.StartsWith('---')) 'antigravity: workflow empieza con frontmatter'
+    Assert-That ($wf -match '(?m)^description:\s*\S+') 'antigravity: frontmatter con description'
+    Assert-That ($wf -match '(?m)^description:.{0,250}$') 'antigravity: description <= 250 chars'
+    Assert-That ($wf -match 'Pipeline obligatorio') 'antigravity: workflow lleva el pipeline de Vivi'
+    Assert-That ($wf -match 'visual-qa') 'antigravity: workflow lleva el QA con evidencia'
+    Assert-That (@(Get-ChildItem -LiteralPath $agyWorkflows -File).Count -eq 1) 'antigravity: sync idempotente (un solo workflow)'
+
+    # 7g. Metadata ChatGPT (agents/openai.yaml) de la skill vivi viaja con el bundle.
+    foreach ($d in @(@{ L = 'agents'; P = $agentsSkills }, @{ L = 'agy-global'; P = $agyGlobalSkills }, @{ L = 'cmdc'; P = $cmdcSkills })) {
+        $oai = Join-Path $d.P 'vivi\agents\openai.yaml'
+        Assert-That (Test-Path -LiteralPath $oai) "chatgpt-meta: openai.yaml en $($d.L)"
+        Assert-That ((Get-Content -LiteralPath $oai -Raw) -match 'display_name') "chatgpt-meta: display_name en $($d.L)"
+    }
+
     # 8. scripts parsean en PowerShell 5.1 (dispatch + target DSH).
     foreach ($script in @('cli\argos.ps1', 'cli\argos-target.ps1')) {
         $tokens = $null
@@ -167,7 +186,7 @@ try {
         Assert-That ($errors.Count -eq 0) "$script parsea sin errores"
     }
 
-    Write-Output 'PASS argos-target: list/set/show y despliegue AGENTS.md/CLAUDE.md/Freebuff/DSH skills'
+    Write-Output 'PASS argos-target: list/set/show, AGENTS.md/CLAUDE.md/Freebuff/DSH skills, pack ChatGPT, workflow /vivi de Antigravity y metadata openai.yaml'
     exit 0
 } finally {
     if (Test-Path -LiteralPath $work) {

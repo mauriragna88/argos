@@ -168,7 +168,7 @@ directorio global de skills de TODOS los entornos:
 | ~/.agents/skills | estandar Agent Skills | cmdc, DSH, freebuff, Antigravity IDE, **app de ChatGPT/Codex** y cualquier tool compatible |
 | ~/.dsh/skills | DeepSeek Harness | `argos target dsh` |
 | ~/.claude/skills | Claude Code | `argos target claude` |
-| ~/.codex/skills | Codex CLI | `argos target codex` |
+| ~/.codex/skills | Codex CLI (legacy) | **Fuera del sync (2026-09-22)**: el scope oficial de Codex/ChatGPT es `~/.agents/skills`; duplicar ahí listaba cada skill dos veces en el selector (Codex no fusiona homónimas entre scopes) |
 | ~/.config/opencode/skills | OpenCode | `argos` / `argos opencode` |
 | ~/.gemini/skills | Gemini/agy (fork de Gemini CLI) | `argos target agy` |
 | ~/.commandcode/skills | Command Code (cmdc) | `argos cmdc` / cmdc directo |
@@ -191,8 +191,18 @@ instrucciones del Project), `VIVI-STACK.md` (las 5 skills + `taste-skill` + `imp
 `reference/` en un solo archivo: se adjunta como Source) y `README.md` (pasos de montaje).
 Se regenera en cada `argos`.
 
+**Slash command `/vivi` en Antigravity + invocación en ChatGPT** (2026-09-22): `Sync-ViviDesignStack`
+genera además `~/.gemini/antigravity/workflows/vivi.md` desde la misma fuente que la skill `vivi`
+(`Get-ViviPersonaBody`) — workflow global de Antigravity: `.md` con frontmatter `description`
+(≤250 chars) invocado como `/vivi` en el Agent de Desktop/Web/CLI, aplica a todos los workspaces;
+el workspace admite su propio `.agent/workflows/vivi.md`. En ChatGPT la persona entra con `@vivi`
+(invocación explícita con el selector `@`; la implícita ya opera por `description`) y la skill
+viaja con `core/skills/v2/vivi/agents/openai.yaml` (`display_name`, `short_description`,
+`brand_color`, `default_prompt`, `policy.allow_implicit_invocation: true`) que la app de escritorio
+usa para la UI de skills y que se copia con el bundle a los 8 runners.
+
 **Cero configuracion (la via facil de verdad)**: la skill `vivi` (persona + pipeline)
-viaja con el resto del stack a los 9 destinos, asi que CUALQUIER entorno —incluida la app
+viaja con el resto del stack a los 8 destinos, asi que CUALQUIER entorno —incluida la app
 de ChatGPT sin proyecto ni carpeta— la carga sola por descripcion cuando la tarea es de
 UI/diseno. Basta abrir el entorno y pedir UI: no hay que pegar, subir ni conectar nada.
 `argos chatgpt` (que deja el `AGENTS.md` de Vivi en la carpeta) y el pack `~/.agents/chatgpt-vivi/`

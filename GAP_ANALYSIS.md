@@ -13,7 +13,7 @@
 - Catálogo estático de modelos × plataforma × suscripción: `core/model-router.agent.md`, `.arnes/model-recommendations.json`.
 - Política declarativa de preferencia/fallback: `.arnes/model-routing-policy.json` (v2.0.0, `resolution_mode: catalog_backed_aliases`, `preference_order` por agente, `stuck_agent_rule`, `on_error_429_401_410`).
 - Resolución de modelos en PI: `pi/extensions/argos-model-router.ts` (`loadAgentModels` lee `~/.config/arnes/agent-models.json` + `.arnes/model-assignments.json`).
-- Motor de completions directo: `cli/argos-engine.ps1` (bai/nvidia/opencode-go/openai, retry 429, MaxTokens).
+- Motor de completions directo: `cli/argos-engine.ps1` (nvidia/opencode-go/openai, retry 429, MaxTokens).
 - Fallback chain por agente: `model-routing-policy.json` `agents[*].preference_order`; `model-chain.json` (legacy, read_only).
 - Tabla `skill_executions` en `cli/arnes_brain.py:188-209` **ya captura** `model`, `provider`, `tokens_in`, `tokens_out`, `tool_calls`, `verdict`, `success` — la semilla de telemetría (hoy nadie la lee para routing).
 - Comando `route` en `arnes_brain.py:3372` (clasificación por query+risk).

@@ -121,7 +121,6 @@ Este archivo resume el estado heredado; el plan futuro vive en PLAN-ARNES.md.
     - ~~Eliminar o mover a `legacy/` `activate.ps1` / `evenatan-ui.ps1`, actualmente marcados como deprecados.~~ — Hecho (commit `cef365c`, movidos a `legacy/` con `README.md` explicativo).
 
 12. **Tareas externas del usuario**
-    - Rotar la API key de B.AI.
     - Probar una sesión real.
     - Publicar el paquete en npm.
 
@@ -165,9 +164,8 @@ Este archivo resume el estado heredado; el plan futuro vive en PLAN-ARNES.md.
 ### Pendiente PARA EL USUARIO (externo, no es código)
 1. **Probar la sesión real**: `argos quest "<algo>"`, `argos goal "<objetivo>" -MaxIterations 3`,
    `argos target codex` y `argos target claude` — es el examen de fuego del ciclo con APIs reales.
-2. **Rotar la API key de B.AI** que estaba en el backup local eliminado.
-3. **Publicar en npm**: `npm adduser` (login) → `npm publish` (el paquete ya está listo, v0.1.0).
-4. **F4 del FDD**: publicar Atlas en Smithery y skills.sh (requiere el npm publish antes).
+2. **Publicar en npm**: `npm adduser` (login) → `npm publish` (el paquete ya está listo, v0.1.0).
+3. **F4 del FDD**: publicar Atlas en Smithery y skills.sh (requiere el npm publish antes).
 
 ### Pendiente DE CÓDIGO si el usuario lo pide
 - ~~F2 temas: aplicar el tema elegido (`argos theme set X`) a las UI reales~~ — Hecho (`b55228f`).

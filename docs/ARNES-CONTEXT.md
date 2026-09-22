@@ -27,7 +27,7 @@ Bard, Tidus, Ragnarok). "ARGOS" es el gigante mitológico de los 100 ojos: todo 
 |  16 agentes RPG + skills propias (SDD/FDD/ADR/TDD)            |
 +--------------------------------------------------------------+
 |  Motor nativo (argos-engine.ps1)                              |
-|  habla DIRECTO con las APIs: bai, nvidia, opencode-go, openai |
+|  habla DIRECTO con las APIs: nvidia, opencode-go, openai |
 |  OpenAI-compatible · function calling · reintentos · UTF-8    |
 +--------------------------------------------------------------+
 |  Opcional: OpenCode como entorno de trabajo                   |
@@ -71,7 +71,7 @@ Bard, Tidus, Ragnarok). "ARGOS" es el gigante mitológico de los 100 ojos: todo 
 
 ## 5. Configuración (una vez por máquina)
 
-- `~/.config/arnes/connections.json` — proveedores (bai, nvidia, opencode-go, openai...) con keys.
+- `~/.config/arnes/connections.json` — proveedores (nvidia, opencode-go, openai...) con keys.
 - `~/.config/arnes/agent-models.json` — qué modelo usa cada uno de los 16 agentes.
 - Por proyecto: `.arnes/project.json` (perfil: ruta, git, stack, stats), `.arnes/quests/` (reportes), `.arnes/config.json`.
 

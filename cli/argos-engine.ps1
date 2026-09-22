@@ -5,7 +5,6 @@ ARNES ENGINE - Motor nativo de ARNES ARGOS (habla DIRECTO con las APIs de los mo
 
 .DESCRIPTION
 Ejecuta completions contra los proveedores (OpenAI-compatible) SIN pasar por opencode:
-- bai     -> https://api.b.ai/v1/chat/completions
 - nvidia  -> https://integrate.api.nvidia.com/v1/chat/completions
 - opencode-go -> https://api.opencode.ai/v1/chat/completions
 - openai  -> https://api.openai.com/v1/chat/completions (token OAuth del plan)
@@ -97,7 +96,6 @@ $apiModel = Get-ApiModelId $Model
 
 # === Endpoint nativo por proveedor (OpenAI-compatible) ===
 $baseUrl = switch ($provider) {
-    'bai'         { 'https://api.b.ai/v1' }
     'nvidia'      { 'https://integrate.api.nvidia.com/v1' }
     'opencode-go' { 'https://opencode.ai/zen/go/v1' }   # endpoint real de OpenCode Go
     'openai'      { 'https://api.openai.com/v1' }

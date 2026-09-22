@@ -130,14 +130,14 @@ ARNES ARGOS guarda la configuración **global de la máquina** (no por proyecto)
 
 | Documento | Ruta | Contenido |
 |---|---|---|
-| Conexiones | `~/.config/arnes/connections.json` | Proveedores (OpenCode Go, OpenAI, NVIDIA, B.AI...) con sus keys |
+| Conexiones | `~/.config/arnes/connections.json` | Proveedores (OpenCode Go, OpenAI, NVIDIA...) con sus keys |
 | Modelos por agente | `~/.config/arnes/agent-models.json` | Qué modelo usa cada uno de los 16 agentes |
 
 ```powershell
 argos connect        # 1. Conecta proveedores (API key verificada o OAuth del plan) — UNA vez
 argos configure      # 2. Elige el modelo de cada agente — UNA vez
                      #    Muestra SOLO los modelos de proveedores CONECTADOS (verificados):
-                     #    NVIDIA, OpenAI, opencode-go, B.AI (+ lo que conectes)
+                     #    NVIDIA, OpenAI, opencode-go (+ lo que conectes)
                      #    Escribe directamente en el buscador de arriba para filtrar (como opencode)
 argos recommend      # 3. Alternativa: recomendación inteligente (ahorro/equilibrio/calidad)
 ```
@@ -310,7 +310,6 @@ La suite también corre automáticamente en CI (GitHub Actions) para cada push/P
 - **OpenCode Go** — DeepSeek V4 Flash (workhorse), Qwen3.8 Max (Atlas)
 - **OpenAI** (cuenta ChatGPT vía OAuth) — GPT-5.6 Luna/Terra/Sol
 - **NVIDIA NIM** (gratis) — DeepSeek V4 Flash/Pro
-- **B.AI** — Claude Opus/Fable, GPT-5.6, Qwen3.8
 - **Z.AI / SiliconFlow / MiniMax / TokenRouter** — catálogo ampliable
 
 Mini-guía completa: `docs/PROVIDERS-GUIDE.md`

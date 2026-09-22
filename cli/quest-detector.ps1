@@ -264,7 +264,7 @@ if ($isContinuation) {
 # flash   -> deepseek-v4.1-flash / glm-5.3-flash   (repetitivo, volumen alto, barato)
 # pro     -> gpt-5.6-luna / gpt-5.6-terra          (complejo: multi-archivo, raiz no evidente)
 # highest -> gpt-6-astra / gpt-5.6-sol             (planeacion/arquitectura/boss)
-# Ids canonicos: el prefijo del proveedor (opencode-go/, openai-codex/, bai/, nvidia/)
+# Ids canonicos: el prefijo del proveedor (opencode-go/, openai-codex/, nvidia/)
 # se resuelve en runtime segun las conexiones activas.
 $MODEL_CATALOG = @{
     flash   = @{ primary = 'deepseek-v4.1-flash'; alternatives = @('glm-5.3-flash') }

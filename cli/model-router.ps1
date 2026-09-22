@@ -12,7 +12,7 @@
 #   - pro     -> gpt-5.6-luna / gpt-5.6-terra          (complejo: multi-archivo, bug de raiz no evidente)
 #   - highest -> gpt-6-astra / gpt-5.6-sol             (planeacion, arquitectura, boss)
 # Los ids son canonicos (sin prefijo): el prefijo del proveedor (opencode-go/,
-# openai-codex/, bai/, nvidia/...) se resuelve en runtime segun las conexiones
+# openai-codex/, nvidia/...) se resuelve en runtime segun las conexiones
 # activas (agent-model-resolver.ps1 / model-route-status.ps1).
 #
 # Usage:

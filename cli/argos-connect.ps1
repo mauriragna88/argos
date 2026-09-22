@@ -43,7 +43,6 @@ $KNOWN_PROVIDERS = @{
     'claude' = @{ type = 'oauth'; name = 'Claude (cuenta)'; base_url = 'https://api.anthropic.com/v1'; login_url = 'https://claude.ai/login'; models = @('claude-opus-5', 'claude-sonnet-5', 'claude-fable-5') }
     'opencode-go' = @{ type = 'api'; name = 'OpenCode Go'; base_url = 'https://opencode.ai/zen/go/v1'; key_env = 'OPENCODE_GO_API_KEY'; models = @('deepseek-v4-flash') }
     'nvidia' = @{ type = 'api'; name = 'NVIDIA NIM (gratis)'; base_url = 'https://integrate.api.nvidia.com/v1'; key_env = 'NVIDIA_API_KEY'; models = @('deepseek-ai/deepseek-v4-flash', 'deepseek-ai/deepseek-v4-pro', 'qwen/qwen3-coder-480b') }
-    'bai' = @{ type = 'api'; name = 'B.AI (Claude/GPT/Qwen)'; base_url = 'https://api.b.ai/v1'; key_env = 'BAI_API_KEY'; models = @('claude-opus-5', 'claude-fable-5', 'gpt-5.6-sol', 'qwen3.8-max', 'deepseek-v4-flash') }
     'z-ai' = @{ type = 'api'; name = 'Z.AI (Zhipu GLM)'; base_url = 'https://open.bigmodel.cn/api/paas/v4'; key_env = 'ZHIPU_API_KEY'; models = @('glm-5.2') }
     'siliconflow' = @{ type = 'api'; name = 'SiliconFlow'; base_url = 'https://api.siliconflow.cn/v1'; key_env = 'SILICONFLOW_API_KEY'; models = @() }
     'tokenrouter' = @{ type = 'api'; name = 'TokenRouter'; base_url = 'https://api.tokenrouter.com/v1'; key_env = 'TOKENROUTER_API_KEY'; models = @('kimi-k3-free') }

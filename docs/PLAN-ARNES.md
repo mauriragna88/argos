@@ -51,7 +51,7 @@
 
 - **Recomendación rol-consciente**: `argos-recommend.ps1` ahora tiene `$ROLE_PREF` por agente (alineado a la estrategia 75% DeepSeek + Luna razonamiento + Qwen Atlas). Antes "equilibrio" asignaba `claude-fable-5` a TODOS los agentes (incluido Atlas) — un bug de calidad. Ahora: Atlas→qwen3.8-max, razonamiento→gpt-5.6-luna, volumen→deepseek-v4-flash NVIDIA, Auron→deepseek-v4-pro gratis.
 - **`-Priority` param**: `argos recommend -Priority ahorro|equilibrio|calidad` funciona sin interacción (para automatización). El motor se reutiliza por dot-source desde argos.ps1 (guarda de main con `$MyInvocation.InvocationName`).
-- **Guía Ragnarok**: cuando no hay proveedores conectados, se muestra qué conectar primero (nvidia/opencode-go/openai/bai) en lugar de un callejón sin salida.
+- **Guía Ragnarok**: cuando no hay proveedores conectados, se muestra qué conectar primero (nvidia/opencode-go/openai) en lugar de un callejón sin salida.
 
 ### ✅ ESLABÓN CRÍTICO: modelos por agente APLICADOS (2026-08-06)
 
@@ -65,12 +65,12 @@
 
 ### ✅ MOTOR NATIVO + CICLO COMPLETO (2026-08-06) — sin opencode
 
-- **`cli/argos-engine.ps1`**: motor nativo que habla DIRECTO con las APIs (bai, nvidia, opencode-go, openai) — OpenAI-compatible, con reintentos (429/500/503), uso de tokens por respuesta, y **body UTF-8 explícito** (bug crítico: PS 5.1 mandaba ISO-8859-1 → HTTP 500 con unicode en todo opencode-go).
+- **`cli/argos-engine.ps1`**: motor nativo que habla DIRECTO con las APIs (nvidia, opencode-go, openai) — OpenAI-compatible, con reintentos (429/500/503), uso de tokens por respuesta, y **body UTF-8 explícito** (bug crítico: PS 5.1 mandaba ISO-8859-1 → HTTP 500 con unicode en todo opencode-go).
 - **`cli/argos-cycle.ps1`**: ciclo orquestador completo: ATLAS orquesta (PARTY + plan) → AMARANT plan técnico → BARD mejora continua (FALTA/NO SE MENCIONÓ/AGREGAR) → PARTY ejecuta con SUS modelos → TYWIN verifica (PASS/FAIL + remediation) → ATLAS autoriza (FINALIZAR/RETOQUE). Reporte en `.arnes/quests/` + mejoras/verdict en memoria.
 - **`cli/argos-chat.ps1`**: chat NATIVO (sin opencode), multi-turno, persona RPG completa, uso de tokens por mensaje.
 - **`argos test-model`**: prueba "hola" por modelo con el motor nativo. **`argos quest "<quest>"`**: lanza el ciclo completo.
 - **Economía de tokens (por diseño)**: Atlas (tier, persona completa ~6K tkns) SOLO 2 llamadas/quest (orquesta + autoriza) — estratega caro pero preciso; Amarant planea con NVIDIA gratis; el party ejecuta con DeepSeek Flash/Pro; Tywin verifica gratis.
-- **Endpoints corregidos**: opencode-go → `https://opencode.ai/zen/go/v1` (el `api.opencode.ai/v1` daba 404); bai → `api.b.ai/v1` (catálogo 37 modelos, chat da 403 con la key actual — pendiente validar con el proveedor).
+- **Endpoints corregidos**: opencode-go → `https://opencode.ai/zen/go/v1` (el `api.opencode.ai/v1` daba 404); bai → `api.b.ai/v1` (descartado el 2026-09-22 por decisión del usuario — no se usa).
 
 **Pendiente siguiente**: modo CODING nativo (leer/editar/crear archivos en vivo, como Claude Code/Codex pero ARNES) + delegación del party con herramientas reales.
 

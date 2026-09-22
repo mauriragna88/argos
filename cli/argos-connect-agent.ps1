@@ -69,12 +69,11 @@ $authNotes | ForEach-Object { Write-Host $_ -ForegroundColor Green }
 Write-Host ''
 
 # ============ 2. CATALOGO por proveedor (ids completos, Pi-compatibles) ============
-$piProviderMap = @{ 'openai' = 'openai-codex'; 'opencode-go' = 'opencode-go'; 'nvidia' = 'nvidia'; 'bai' = 'bai' }
+$piProviderMap = @{ 'openai' = 'openai-codex'; 'opencode-go' = 'opencode-go'; 'nvidia' = 'nvidia' }
 $knownModels = @{
     'opencode-go'  = @('deepseek-v4-flash', 'deepseek-v4.1-flash', 'glm-5.3-flash')
     'nvidia'       = @('nvidia/llama-3.3-nemotron-super-49b-v1.5', 'z-ai/glm-5.2', 'google/gemma-3-12b-it')
     'openai-codex' = @('gpt-6-astra', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.6-fast', 'gpt-5.5', 'gpt-5.4')
-    'bai'          = @('claude-opus-5', 'claude-fable-5', 'claude-sonnet-5', 'gpt-6-astra', 'gpt-5.6-sol', 'gpt-5.6-luna', 'deepseek-v4-flash', 'deepseek-v4.1-flash', 'qwen3.8-max', 'kimi-k2.6', 'glm-5.2', 'glm-5.3-flash', 'gemini-3.1-pro')
 }
 # ampliar con los modelos de connections.json si existen
 if (Test-Path $ConnPath) {

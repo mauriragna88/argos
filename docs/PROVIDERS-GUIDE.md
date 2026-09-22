@@ -15,7 +15,7 @@ TÚ → "atlas" en CMD → ARNES ARGOS Shell
 ```
 
 **No necesitas abrir Codex ni Claude por separado.** ARGOS orquesta; OpenCode ejecuta;
-los proveedores (Go/OpenAI/NVIDIA/B.AI) dan los modelos.
+los proveedores (Go/OpenAI/NVIDIA/Z.AI) dan los modelos.
 
 ---
 
@@ -26,7 +26,6 @@ los proveedores (Go/OpenAI/NVIDIA/B.AI) dan los modelos.
 | **OpenCode Go** | api | catálogo: `https://opencode.ai/zen/go/v1/models` | Suscripción $10/mes — IDs tipo `opencode-go/qwen3.8-max` |
 | **OpenAI** | **oauth** (cuenta GPT) | `https://api.openai.com/v1` | Login por CUENTA (no API key) — 13 modelos GPT-5.x |
 | **NVIDIA NIM** | api | `https://integrate.api.nvidia.com/v1` | API key gratis (1000-5000 credits, 40 req/min) |
-| **B.AI** | api key | `https://api.b.ai/v1` | Da acceso a Claude Opus 4.8/5, Fable 5, GPT-5.6, Qwen3.8 |
 | **Z.AI** | api | `https://open.bigmodel.cn/api/paas/v4` | GLM (Zhipu) |
 | **SiliconFlow** | api | `https://api.siliconflow.cn/v1` | Modelos open-source |
 | **TokenRouter** | api | `https://api.tokenrouter.com/v1` | Kimi K3 free, ruteo |
@@ -67,12 +66,6 @@ setx NVIDIA_API_KEY "nvapi-XXXX..."    # PowerShell (persistente)
 # Ya configurado en opencode.json:
 # "nvidia": { "baseURL": "https://integrate.api.nvidia.com/v1", "apiKey": "env:NVIDIA_API_KEY" }
 # Modelos: nvidia/deepseek-ai/deepseek-v4-flash, nvidia/deepseek-ai/deepseek-v4-pro (GRATIS)
-```
-
-### B.AI (Claude sin cuenta de Anthropic)
-```bash
-# Ya configurado con API key en opencode.json
-# Modelos: bai/claude-opus-5, bai/claude-fable-5, bai/gpt-5.6-sol, bai/qwen3.8-max...
 ```
 
 ---

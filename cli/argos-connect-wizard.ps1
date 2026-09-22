@@ -5,7 +5,7 @@ ARGOS CONNECT WIZARD - Asistente interactivo para conectar proveedores
 
 .DESCRIPTION
 Wizard con flechas (estilo /connect de OpenCode pero NUESTRO):
-1. Lista proveedores conocidos (OpenAI OAuth, Claude OAuth, OpenCode Go, NVIDIA, B.AI...)
+1. Lista proveedores conocidos (OpenAI OAuth, Claude OAuth, OpenCode Go, NVIDIA...)
 2. El usuario elige con flechas
 3. Para API: pide la key (o nombre de variable de entorno)
 4. Para OAuth: flujo REAL de autorizacion del plan via `opencode auth login`

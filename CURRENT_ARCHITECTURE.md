@@ -206,7 +206,7 @@ Despliegue multi-entorno: `cli/argos-skills-sync.ps1` (`Sync-ViviDesignStack`) r
 | `.arnes/model-assignments.json` | Recomendación por quest (`quest_type`, `platform`, `assignments`, `tier`) — SOLO se escribe con `model-router -SaveOut` (opt-in; el modelo nunca se cambia en automático) |
 | `.arnes/model-routing-policy.json` | **Política V2 (2026-08-08)**: `resolution_mode: catalog_backed_aliases`, provider tiers (nvidia free → opencode-go fallback, luna 60/40), `preference_order` por agente, `stuck_agent_rule` (5 min / 3 fails / switch), `on_error_429_401_410` |
 | `.arnes/model-chain.json` | Cadena NVIDIA legacy (referencia histórica; policy dice "read_only") |
-| `cli/argos-engine.ps1` | Motor nativo que habla directo con APIs (bai/nvidia/opencode-go/openai), retry 429, MaxTokens |
+| `cli/argos-engine.ps1` | Motor nativo que habla directo con APIs (nvidia/opencode-go/openai), retry 429, MaxTokens |
 | `cli/model-router.ps1`, `model-catalog.ps1`, `model-health.ps1`, `model-route-status.ps1` | Implementaciones PowerShell del routing |
 
 ### 4.5 Protocolos (`core/protocols/`)

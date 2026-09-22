@@ -128,7 +128,7 @@ El gate de nivel 4 NUNCA se salta. El gate L0 (producción/destructivo) NUNCA se
 > por defecto: solo escribe `model-assignments.json` con `-SaveOut` (opt-in).
 
 Catálogo canónico (ids sin prefijo; el prefijo del proveedor —opencode-go/,
-openai-codex/, bai/, nvidia/— se resuelve en runtime según conexiones activas):
+openai-codex/, nvidia/— se resuelve en runtime según conexiones activas):
 
 - **Nivel 1-2** → `flash`: `deepseek-v4.1-flash` (alt: `glm-5.3-flash`). Repetitivo y de volumen: no gastar razonamiento caro.
 - **Nivel 3** → `pro`: `gpt-5.6-luna` (alt: `gpt-5.6-terra`, `glm-5.3-flash`). Multi-archivo, bug de raíz no evidente, trade-offs.

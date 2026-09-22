@@ -90,7 +90,6 @@ function Show-RagnarokGuide {
     Write-Host '    nvidia      -> DeepSeek V4 Flash/Pro GRATIS (ahorro maximo)' -ForegroundColor White
     Write-Host '    opencode-go -> DeepSeek V4 Flash workhorse + Qwen3.8 Max (Atlas)' -ForegroundColor White
     Write-Host '    openai      -> GPT-5.6 Luna/Terra/Sol (cuenta ChatGPT Plus/Pro)' -ForegroundColor White
-    Write-Host '    bai         -> Claude Opus 5 / GPT-5.6 Sol (calidad elite)' -ForegroundColor White
     Write-Host '  Corre: argos connect (una vez por computadora) cuando quieras.' -ForegroundColor DarkGray
     Write-Host ''
 }

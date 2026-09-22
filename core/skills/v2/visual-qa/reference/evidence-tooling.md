@@ -4,6 +4,26 @@
 
 Reading source code does not produce evidence. Only the rendered page does.
 
+## 0. Getting a browser in each environment
+
+Everything below assumes a browser driver. Use the route the current environment provides — all of them produce the same evidence.
+
+| Environment | Route |
+|---|---|
+| **Command Code (cmdc)** | `agent-browser` CLI (bundled skill): `npm i -g agent-browser && agent-browser install`, then `agent-browser open <url>` → `snapshot -i` → interact, and `agent-browser skills get core` for the full workflow. |
+| **ChatGPT desktop / Codex** | Built-in Browser capability; the Chrome extension covers logged-in sessions. Screenshots arrive as image inputs. |
+| **claude / opencode / gemini / agy / DSH** | The project's Playwright (`npx playwright test`) or a browser MCP server (chrome-devtools-mcp, playwright-mcp). |
+| **Native runners (`argos code` / `argos party`)** | `run_command` inside the project: use the project's Playwright if present; otherwise one global `agent-browser` install serves every shell-capable environment. |
+| **Antigravity** | The agent's built-in browser tooling. |
+
+Rules:
+
+- Prefer the project's existing runner and tooling (§1) over installing anything new.
+- `agent-browser` speaks Chrome/Chromium over CDP with no Playwright/Puppeteer dependency; one global install covers every environment that can run shell commands.
+- In non-interactive shells, sequence work with `agent-browser batch "open <url>" "eval <js>" "close"` (or run the CLI through the shell tool's background mode) and **always finish with `close`**: the browser child process can otherwise hold the command open.
+- The measurement primitives map directly: `eval <js>` runs the snippets below (`scrollWidth`, touch-target sizes, focus rings), `screenshot --annotate` produces the labeled capture for the report, `snapshot`/`console`/`network` cover structure, logs and requests.
+- **No browser available?** Say so and mark the criterion **"Not verified"**. A browser is the minimum bar for claiming the visual QA pass was executed; without one, the pass did not happen.
+
 ## 1. Detect what the project already has
 
 Before writing anything, check the repository. Most projects already have the tooling; using it is cheaper and more credible than inventing a new harness.

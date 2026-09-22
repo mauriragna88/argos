@@ -52,6 +52,7 @@ Inventario actual: `pwsh cli/argos-skills.ps1 -Action installed`
 | Skill web | Cuándo la potencia |
 |---|---|
 | investigacion-fuentes | investigación de fuentes (la corre el harness) |
+| agent-browser (CLI local) | Leer páginas VIVAS sin API key: `agent-browser read <url>` o `open` + `snapshot` (CDP real con Chrome; ver `visual-qa/reference/evidence-tooling.md` §0). Crawl masivo multi-página sigue siendo territorio de Firecrawl |
 
 ## Memoria
 - **Antes**: `read .arnes/memory/export/ragnarok-memory.jsonl` (scout-results, comparativas, rechazos)

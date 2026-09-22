@@ -223,4 +223,4 @@ quedan como refuerzos opcionales para proyectos con carpeta.
 - Bard: mejorar DX/docs (parcialmente cubierto — Maestro cubre docs de repos)
 - Performance: query-optimization (Alchemist futuro)
 - Marketing/Ventas: vacante (futuro)
-- Ranger web-search vivo: pendiente API key DEEPSEEK_API_KEY o Firecrawl MCP
+- Ranger web-search vivo: ruta key-free CERRADA con `agent-browser` (read/open + snapshot sobre CDP real; ver `visual-qa/reference/evidence-tooling.md` §0) y `argos skills find` para el scout de skills; Firecrawl MCP / API key DEEPSEEK solo si se quiere crawl masivo multi-página

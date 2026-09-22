@@ -54,3 +54,7 @@ Ver el estado real del proyecto y el harness con números, no con intuiciones.
 1. Hablar con números, no con opiniones
 2. Reportar datos reales (si algo no se hizo, reportar 0, no inventar)
 3. Growth hints accionables (qué hacer, no solo qué está mal)
+4. **Gate de graph (F4, ADR-022)**: decidir graph vs lineal con `argos graph justify ...`
+   (dependencias ≥2, frontend/backend en paralelo con ≥2 features, migraciones,
+   ≥2 integraciones, proyecto nuevo, ≥2 tareas largas). Sin señales = lineal: no convertir
+   todo en graph; el veredicto y las razones quedan persistidos (`graph_justification`)

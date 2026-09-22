@@ -526,6 +526,28 @@ switch ($Command) {
             default { Write-Host '  Uso: argos contract list | get [Q-XXX] | check [Q-XXX] | causes [Q-XXX]' -ForegroundColor Yellow }
         }
     }
+    'graph' {
+        # argos graph justify "<quest>" | status [Q-XXX] | next [Q-XXX] | invalidate Q-XXX nodo
+        $sub = if ($Args -and $Args.Count -gt 0) { $Args[0] } else { 'status' }
+        switch ($sub) {
+            'justify' {
+                $text = if ($Args.Count -gt 1) { $Args[1..($Args.Count - 1)] -join ' ' } else { '' }
+                & (Join-Path $ScriptDir 'quest-graph.ps1') -Action justify -Prompt $text
+            }
+            'status' {
+                $qid = if ($Args.Count -gt 1) { $Args[1] } else { '' }
+                & (Join-Path $ScriptDir 'quest-graph.ps1') -Action status -QuestId $qid
+            }
+            'next' {
+                $qid = if ($Args.Count -gt 1) { $Args[1] } else { '' }
+                & (Join-Path $ScriptDir 'quest-graph.ps1') -Action next -QuestId $qid
+            }
+            'invalidate' {
+                & (Join-Path $ScriptDir 'quest-graph.ps1') -Action invalidate -QuestId ($Args[1]) -Node ($Args[2])
+            }
+            default { Write-Host '  Uso: argos graph justify "<quest>" | status [Q-XXX] | next [Q-XXX] | invalidate <Q-XXX> <nodo>' -ForegroundColor Yellow }
+        }
+    }
     'allocate' {
         # argos allocate "<quest>" | argos allocate -Status
         if ($Model -eq 'status' -or ($Args -and $Args[0] -eq 'status')) {

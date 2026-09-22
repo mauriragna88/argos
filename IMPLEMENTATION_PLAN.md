@@ -249,6 +249,25 @@ Convertir el loop actual en un sistema de contratos por quest (FAIL→causa→re
 ### Objetivo concreto
 Activar quest graph solo cuando Bran lo justifique, evolucionando `autonomous_tasks` (no motor nuevo), e implementar tool discovery con metadata.
 
+> **NOTA DE CIERRE (2026-09-22)**: Fase 4 cerrada en su parte en-repo (el brain OSMA es
+> repo externo; patrón JSON por quest de ADR-012/017/019):
+> - `cli/quest-graph.ps1` + `argos graph ...`: **gate de Bran** (`justify` con señales
+>   persistidas en `graph-justifications.jsonl`; sin señales ⇒ lineal), grafo por quest en
+>   `.arnes/quest-graph/<quest>.json` con estados pending/ready/running/verifying/pass/
+>   fail/blocked/paused + evidence por nodo, `next` (READY por deps), `set`, `pause`
+>   (nodo o `-All`) y `fork` (variante sin colisión). `-TasksFile` para el JSON (el inline
+>   se rompe en la línea de comandos de Windows).
+> - **Invalidación downstream recursiva** (`invalidate`, ADR-023) con guard anti-ciclo:
+>   nodo + dependientes directos/indirectos a pending; nodos independientes intactos.
+> - Gate documentado en `core/auditors/bran.agent.md` y reglas en `bran-vision` y
+>   `atlas-orchestrate`.
+> - ADRs: 022 (quest graph; el plan decía 021, número ya ocupado por cache-prefix),
+>   023 (invalidación downstream) y 027 (tool discovery: diseño decidido, **implementación
+>   diferida al runner PI** — en este repo no hay catálogo que descubrir y crear uno paralelo
+>   violaría ADR-004/012).
+> - Tests herméticos: `tests/quest-graph.tests.ps1` (9 checks) incluido en `run-all`.
+> - Diferido explícito: tool discovery en `pi/extensions` (ADR-027); no bloquea F5/F6.
+
 ### Componentes a tocar
 | Ruta | Cambio |
 |---|---|

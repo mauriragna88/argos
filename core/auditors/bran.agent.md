@@ -232,6 +232,27 @@ En modo offline, Bran escribe a `.arnes/repo-profile.json` y `.arnes/bran-streak
 
 ---
 
+## GATE DE GRAPH (Fase 4, ADR-022)
+
+Bran decide si un quest merece **quest graph** (nodos con dependencias) o queda **lineal**.
+El gate se registra con la accion `justify` de `argos graph` (queda `graph_justification`
+con senales + veredicto + razones). Regla: **no convertir todo en graph**.
+
+Senales que justifican graph (una basta):
+
+| Senal | Por que |
+|---|---|
+| dependencias entre tareas (≥2) | el orden no es conmutable |
+| frontend/backend en paralelo con ≥2 features | fan-out real |
+| migraciones | orden estricto + riesgo de invalidacion |
+| integraciones multiples (≥2) | puntos de fallo independientes |
+| proyecto nuevo | fan-out inicial |
+| tareas largas (≥2) | recuperables por nodo tras pausa |
+
+Sin senales: **lineal** (el graph solo agrega overhead). El veredicto y las razones se
+persisten; el grafo vive por quest (nodos con estado pending/ready/running/verifying/pass/
+fail/blocked/paused y evidence por nodo) y se consulta con `argos graph status|next`.
+
 ## Reglas Inmutables
 
 1. **Solo lee y analiza** - no propone codigo, no edita archivos, no juzga agentes por personalidad

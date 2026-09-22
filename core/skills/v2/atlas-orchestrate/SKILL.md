@@ -51,3 +51,8 @@ El orquestador del arnes: convertir la petición del usuario en una quest ejecut
 4. Pausa solo para: L0, boss fight, circuit breaker, "pause"
 5. Circuit breaker: 3 fallos en 60 min → pausa 30 min
 6. Verificar HP/MP (tokens) antes de cada quest
+7. **Quest graph (F4, ADR-022/023)**: si Bran justificó graph
+   (`argos graph justify`), orquestar por nodos — `argos graph next` para READY,
+   `set` con evidence al cerrar, `invalidate <nodo>` cuando una interfaz pública cambia
+   (propaga a dependientes downstream) y `pause` por nodo para no bloquear ramas
+   independientes. Quests lineales siguen el flujo normal (el graph es opt-in)

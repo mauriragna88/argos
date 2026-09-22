@@ -62,13 +62,13 @@ for file in $STAGED; do
     esac
 
     # Buscar patrones de secret en el diff staged del archivo
-    DIFF_CONTENT=$(git diff --cached -- "$file" 2>/dev/null | grep '^+' | grep -v '^+++')
+    DIFF_CONTENT=$(git diff --cached -- "$file" 2>/dev/null | grep '^+' | grep -v '^+++' || true)
     if [ -n "$DIFF_CONTENT" ]; then
         HITS=$(echo "$DIFF_CONTENT" | grep -iE "$SECRETS_PATTERNS" 2>/dev/null || true)
         TOKEN_HITS=$(echo "$DIFF_CONTENT" | grep -E "$SECRETS_TOKEN_PATTERNS" 2>/dev/null || true)
         if [ -n "$HITS" ]; then
             while IFS= read -r line; do
-                [ -z "$line" ] && continue
+                if [ -z "$line" ]; then continue; fi
                 # Ignorar placeholders y referencias a variables de entorno
                 case "$line" in
                     *xxxx*|*XXXX*|*example*|*YOUR_*|*your_*|*REPLACE_*|*change_me*|*placeholder*) continue ;;
@@ -81,7 +81,7 @@ for file in $STAGED; do
         fi
         if [ -n "$TOKEN_HITS" ]; then
             while IFS= read -r line; do
-                [ -z "$line" ] && continue
+                if [ -z "$line" ]; then continue; fi
                 case "$line" in
                     *xxxx*|*example*|*YOUR_*|*REPLACE_*) continue ;;
                 esac

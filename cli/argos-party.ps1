@@ -98,7 +98,7 @@ function Get-Persona {
 function Get-AgentSkills {
     param([string]$Key)
     $skillMap = @{
-        'vivi'    = @('design-principles', 'content-copy', 'vivi-visual-excellence', 'ui-ux-pro-max', 'taste-skill', 'motion-design', 'visual-qa', 'need-info-escalation')
+        'vivi'    = @('design-principles', 'content-copy', 'vivi-visual-excellence', 'ui-ux-pro-max', 'taste-skill', 'motion-design', 'visual-qa', 'impeccable', 'need-info-escalation')
         'ansem'   = @('postgres-best-practices', 'need-info-escalation')
         'kuja'    = @('verification-before-completion', 'need-info-escalation')
         'tywin'   = @('verification-before-completion')
@@ -116,6 +116,14 @@ function Get-AgentSkills {
         $p = Join-Path $Root ".agents\skills\$s\SKILL.md"
         # Fallback: skills canonicas del arnes que viven en core/skills/v2 (ej. vivi-visual-excellence)
         if (-not (Test-Path $p)) { $p = Join-Path $Root "core\skills\v2\$s\SKILL.md" }
+        # Fallback externo: skills del hogar que mantiene el sync (ej. impeccable, que no se
+        # vendoriza por su bundle de 16 MB). Estandar: ~/.agents/skills; origen: opencode.
+        if (-not (Test-Path $p)) {
+            $userHome = if ($env:USERPROFILE) { $env:USERPROFILE } else { $HOME }
+            foreach ($c in @((Join-Path $userHome ".agents\skills\$s\SKILL.md"), (Join-Path $userHome ".config\opencode\skills\$s\SKILL.md"))) {
+                if (Test-Path $c) { $p = $c; break }
+            }
+        }
         if (Test-Path $p) {
             try {
                 $raw = [System.IO.File]::ReadAllText($p)

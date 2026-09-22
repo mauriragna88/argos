@@ -70,6 +70,8 @@ Invoke-Step 'Tests funcionales PowerShell' {
     if ($LASTEXITCODE -ne 0) { throw 'argos-target.tests fallo' }
     & $PSExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\argos-goal.tests.ps1')
     if ($LASTEXITCODE -ne 0) { throw 'argos-goal.tests fallo' }
+    & $PSExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\agent-skills.tests.ps1')
+    if ($LASTEXITCODE -ne 0) { throw 'agent-skills.tests fallo' }
 }
 
 # 3. Politica read/write

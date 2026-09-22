@@ -128,6 +128,7 @@ Es la experticia de cada rol hecha checklist obligatoria.
 | postgres-best-practices | Ansem (Paladin) | Schemas, RLS, queries, migraciones Supabase/Postgres | supabase docs |
 | ui-ux-pro-max | Vivi (Mage) | Toda UI: jerarquía, spacing, tipografía, componentes | nextlevelbuilder (79K⭐) |
 | taste-skill | Vivi (Mage) | Anti-slop: sin gradientes genéricos ni copy de IA | Leonxln (66K⭐) |
+| impeccable | Vivi (Mage) | Siempre activa en diseño, rediseño, auditoría o refinamiento frontend (tríada visual) | pbakaus/impeccable (oficial; externa, vive en el hogar — no se vendoriza) |
 | vivi | Vivi (Mage) | Persona + pipeline portable: experiencia completa en cualquier entorno (app de ChatGPT, Codex, cmdc, DSH, Claude, Antigravity, opencode) | ARGOS propio (core/skills/v2) |
 | design-principles | Vivi (Mage) | SIEMPRE primero: fundamento de diseño (layering, spacing, restraint, jerarquía, escalas, tokens, anti-template) | ARGOS propio (core/skills/v2) |
 | content-copy | Vivi (Mage) | SIEMPRE junto a design-principles: mensaje, jerarquía de contenido, CTAs, microcopy, estados | ARGOS propio (core/skills/v2) |
@@ -146,7 +147,7 @@ QUE MAESTRO DEFINE (contrato texto→verificación cerrado).
 
 **Mapa de auto-carga** (mantener sincronizado con Get-AgentSkills en argos-code.ps1 / argos-party.ps1):
 ```powershell
-'vivi'     = @('design-principles', 'content-copy', 'vivi-visual-excellence', 'ui-ux-pro-max', 'taste-skill', 'motion-design', 'visual-qa', 'need-info-escalation')
+'vivi'     = @('design-principles', 'content-copy', 'vivi-visual-excellence', 'ui-ux-pro-max', 'taste-skill', 'motion-design', 'visual-qa', 'impeccable', 'need-info-escalation')
 'ansem'    = @('postgres-best-practices', 'need-info-escalation')
 'kuja'     = @('verification-before-completion', 'need-info-escalation')
 'tywin'    = @('verification-before-completion')
@@ -155,8 +156,17 @@ QUE MAESTRO DEFINE (contrato texto→verificación cerrado).
 'maestro'  = @('prompt-refinement', 'need-info-escalation')
 'bard'     = @('taste-skill')
 'atlas'    = @('handoff', 'need-info-escalation')
-'eiko'     = @('handoff', 'need-info-escalation')
+'eiko'    = @('handoff', 'need-info-escalation')
 ```
+
+**Resolución de skills externas** (2026-09-22): `Get-AgentSkills` resuelve en orden repo
+`.agents/skills/<s>/SKILL.md` → `core/skills/v2/<s>/SKILL.md` → hogar
+(`~/.agents/skills/<s>/SKILL.md` y `~/.config/opencode/skills/<s>/SKILL.md`). Así `impeccable`
+—bundle externo de 16 MB con binario, que NO se vendoriza en el repo— entra al prompt de Vivi
+en los runners nativos (`argos code` / `argos party`) como manda `mage.agent.md` (tríada visual
+obligatoria: `vivi-visual-excellence` + `impeccable` + `taste-skill`). Test herméticos:
+`tests/agent-skills.tests.ps1` (extrae la función por AST, corre con HOME/repo temporales y
+verifica mapa, resolución en cascada, frontmatter fuera y omisión silenciosa sin fuente).
 
 **Despliegue multi-entorno del stack de Vivi** (2026-09-21): `cli/argos-skills-sync.ps1`
 (`Sync-ViviDesignStack`) mantiene el stack visual —`vivi-visual-excellence`, `design-principles`,

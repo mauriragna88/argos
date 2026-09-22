@@ -15,7 +15,9 @@ $files = @(& git -C $Root ls-files) | Where-Object {
     $_ -notmatch '(^|/)(\.git|node_modules)/' -and
     $_ -notmatch '\.(png|jpg|jpeg|gif|ico|woff2?|ttf|db)$' -and
     # Excluir los propios scripts de auditoría de secretos (definen los patrones)
-    $_ -notmatch '(^|/)tests/(scan-secrets|repo-audit)\.ps1$'
+    $_ -notmatch '(^|/)tests/(scan-secrets|repo-audit)\.ps1$' -and
+    # El hook de deploy define la misma lista de patrones: se autodetectaria
+    $_ -notmatch '(^|/)deploy/hooks/pre-commit$'
 }
 
 $patterns = @(

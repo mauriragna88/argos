@@ -93,13 +93,37 @@ test("model router: mapea asignación ARNES → provider/model", () => {
   assert.equal(n.modelId, "minimaxai/minimax-m3");
 });
 
-test("model router: lee agent-models.json (o fallback)", async () => {
+test("model router: lee agent-models.json global (fallback: model-assignments.json)", async () => {
   const dir = mkdtempSync(join(tmpdir(), "argos-mm-"));
+  const home = mkdtempSync(join(tmpdir(), "argos-home-"));
   mkdirSync(join(dir, ".arnes"), { recursive: true });
   writeFileSync(
     join(dir, ".arnes", "model-assignments.json"),
     JSON.stringify({ assignments: { vivi: "opencode-go/gpt-5.6-luna" } })
   );
-  const models = await loadAgentModels(dir);
-  assert.equal(models["vivi"], "opencode-go/gpt-5.6-luna");
+
+  // Hermetico: el global vive en homedir(); se aísla por env (USERPROFILE/HOME).
+  const prevUserProfile = process.env.USERPROFILE;
+  const prevHome = process.env.HOME;
+  process.env.USERPROFILE = home;
+  process.env.HOME = home;
+  try {
+    // Fallback: sin agent-models.json global gana el local del proyecto
+    const fallback = await loadAgentModels(dir);
+    assert.equal(fallback["vivi"], "opencode-go/gpt-5.6-luna");
+
+    // El global (fuente de verdad de la maquina) gana sobre el local
+    mkdirSync(join(home, ".config", "arnes"), { recursive: true });
+    writeFileSync(
+      join(home, ".config", "arnes", "agent-models.json"),
+      JSON.stringify({ agents: { vivi: "commandcode/deepseek/deepseek-v4-flash" } })
+    );
+    const global = await loadAgentModels(dir);
+    assert.equal(global["vivi"], "commandcode/deepseek/deepseek-v4-flash");
+  } finally {
+    if (prevUserProfile === undefined) delete process.env.USERPROFILE;
+    else process.env.USERPROFILE = prevUserProfile;
+    if (prevHome === undefined) delete process.env.HOME;
+    else process.env.HOME = prevHome;
+  }
 });

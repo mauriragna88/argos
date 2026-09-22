@@ -16,6 +16,16 @@ Que el harness registre **qué modelo hizo qué, con qué resultado y a qué cos
 |---|---|
 | `cli/arnes_brain.py` | Nueva tabla `model_runs` (o extensión de `skill_executions`) en `_migrate()` (aditivo, idempotente, patrón V4-V7); comandos `osma-model-run` (record) y `osma-model-stats` (agregados) |
 
+> **NOTA DE CIERRE (2026-09-22)**: Fase 1 cerrada como "solo medir". ADRs redactados:
+> ADR-011 (scoring advisory con fórmula y fuentes; implementación diferida a F3+),
+> ADR-012 (esquema `.arnes/model-runs.jsonl` y su relación con `skill_executions`),
+> ADR-013 (perfiles AGENT≠MODEL como extensión aditiva de la policy) y ADR-025 (event log:
+> unión de model-runs + quest-ledger + evidence packs, dueño Varys, separado de OSMA).
+> Tests herméticos: `tests/model-telemetry.tests.ps1` (campos completos, derivaciones
+> provider/route, reward por verdict, append-only en orden, stats por model×route con
+> success_pct/avg_tokens/quest_types, filtro por modelo, tolerancia a línea corrupta y
+> stats vacío) incluido en `run-all`. Ninguna decisión de routing cambió (regla del plan).
+>
 > **NOTA DE IMPLEMENTACIÓN (2026-08-17)**: el brain real vive en el repo OSMA global
 > (`~/.config/arnes/osma/osma_brain.py`, fuera de este repo). La telemetría de Fase 1
 > se implementó **dentro de este repo** sin tocar el brain compartido:

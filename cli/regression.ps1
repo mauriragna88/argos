@@ -70,17 +70,26 @@ if ($Action -eq "suggest") {
     elseif ($lower -match "api|schema|contract|endpoint") { $guardType = "contract" }
     elseif ($lower -match "bug|error|crash|fix|404|500") { $guardType = "unit" }
 
+    $signature = $lower.Substring(0, [Math]::Min(80, $lower.Length))
     $suggestion = [ordered]@{
         event = "regression_suggestion"
         ts = (Get-Date).ToString("o")
         quest_id = $QuestId
         verdict = $Verdict
         guard_type = $guardType
-        failure_signature = $lower.Substring(0, [Math]::Min(80, $lower.Length))
+        failure_signature = $signature
         reason = "PASS tras FAIL: el fallo puede volverse guard permanente"
         status = "suggested"
         created_by = "tywin"
     }
+
+    # persistir la candidata (dedup por quest + firma): trazabilidad completa
+    $existingSuggestions = Read-Regressions
+    $dupe = $existingSuggestions | Where-Object { $_.event -eq "regression_suggestion" -and $_.quest_id -eq $QuestId -and $_.failure_signature -eq $signature }
+    if (-not $dupe) {
+        Add-Content -LiteralPath $logFile -Value ($suggestion | ConvertTo-Json -Compress) -Encoding UTF8
+    }
+
     if ($Json) {
         $suggestion | ConvertTo-Json -Depth 4
     } else {
@@ -135,7 +144,10 @@ if ($Action -eq "create") {
 
 # === LIST ===
 if ($Action -eq "list") {
-    $items = Read-Regressions
+    $all = Read-Regressions
+    # list muestra GUARDS; las candidatas (suggestions) se cuentan aparte
+    $candidates = @($all | Where-Object { $_.event -eq "regression_suggestion" })
+    $items = @($all | Where-Object { $_.event -eq "regression_guard" })
     if ($QuestId) { $items = @($items | Where-Object { $_.quest_id -eq $QuestId }) }
     if ($Json) {
         @($items | ForEach-Object {
@@ -156,6 +168,9 @@ if ($Action -eq "list") {
         $color = if ($r.guard_exists) { "Green" } else { "Red" }
         Write-Host ("  {0} | {1,-8} | {2} | {3}" -f $r.quest_id, $r.guard_type, $r.guard_path, $(if ($r.guard_exists) { "ACTIVO" } else { "FALTA ARCHIVO" })) -ForegroundColor $color
         Write-Host ("      failure: {0} | by {1}" -f $r.failure_signature, $r.created_by) -ForegroundColor DarkGray
+    }
+    if (@($candidates).Count -gt 0) {
+        Write-Host ("  Candidatas pendientes: {0} (regression_suggestion; Kuja las implementa con -Action create)" -f @($candidates).Count) -ForegroundColor DarkYellow
     }
     Write-Host ""
     exit 0

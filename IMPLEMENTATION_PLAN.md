@@ -308,6 +308,20 @@ Activar quest graph solo cuando Bran lo justifique, evolucionando `autonomous_ta
 ### Objetivo concreto
 Cuando FAIL → remediation → PASS, analizar si el fallo puede volverse guard (unit/integration/browser/schema assertion/security rule/lint/static check/contract test/golden principle) y crearlo con trazabilidad.
 
+> **NOTA DE CIERRE (2026-09-22)**: Fase 5 cerrada sobre el CLI existente
+> (`cli/regression.ps1`, ya wired en `loop-engine` para PASS-tras-FAIL). Lo que faltaba:
+> - `suggest` ahora **persiste** la candidata en `.arnes/regressions.jsonl` (antes solo la
+>   imprimía: sin rastro) con dedup por quest+firma; `list` filtra guards reales
+>   (`regression_guard`) y cuenta las candidatas aparte.
+> - Skill `core/skills/arnes-regression-factory/SKILL.md` (flujo candidata→guard, proof
+>   rojo→verde, gate de determinismo, dueños, conexión con L6 de la ladder).
+> - ADR-019 (registro memory→regression→quest, tipos de guard, dueños).
+> - Tests herméticos `tests/regression.tests.ps1` (9 checks: suggest persistida + dedup +
+>   guard_type inferido por prompt, create active/missing_file/duplicado/params, list solo
+>   guards + filtro por quest, check existe/no existe) en `run-all`.
+> - Nota honesta: el criterio "2 guards reales con test que falla al reintroducir el bug"
+>   pertenece a un proyecto real (no es hermético); el mecanismo queda verificado por tests.
+
 ### Componentes a tocar
 | Ruta | Cambio |
 |---|---|

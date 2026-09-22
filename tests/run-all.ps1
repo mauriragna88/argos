@@ -76,6 +76,8 @@ Invoke-Step 'Tests funcionales PowerShell' {
     if ($LASTEXITCODE -ne 0) { throw 'model-telemetry.tests fallo' }
     & $PSExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\loop-contract.tests.ps1')
     if ($LASTEXITCODE -ne 0) { throw 'loop-contract.tests fallo' }
+    & $PSExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\regression.tests.ps1')
+    if ($LASTEXITCODE -ne 0) { throw 'regression.tests fallo' }
 }
 
 # 3. Politica read/write

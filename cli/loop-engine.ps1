@@ -355,17 +355,19 @@ function Quest-Done($state, $questId, $verdict, $agent, $tokens, $evidencePath, 
                 }
                 if (-not $sig) { $sig = "verification_failed" }
             }
-            $attemptArgs = @(
-                '-Action','attempt',
-                '-QuestId', $questId,
-                '-Attempt', [string][int]$state.attempt_count,
-                '-Verdict', $verdict,
-                '-Evidence', "$verdictPath",
-                '-ArnesDir', $ArnesDir
-            )
-            if ($signals) { $attemptArgs += @('-Signals', $signals) }
-            if ($remSummary) { $attemptArgs += @('-Remediation', $remSummary) }
-            if ($sig) { $attemptArgs += @('-FailureSignature', $sig) }
+            # Splatting de HASHTABLE (por nombre): el splat de array pasa los literales
+            # como posicionales y "-Action" terminaria siendo el valor del parametro Action.
+            $attemptArgs = @{
+                Action   = 'attempt'
+                QuestId  = $questId
+                Attempt  = [int]$state.attempt_count
+                Verdict  = $verdict
+                Evidence = "$verdictPath"
+                ArnesDir = $ArnesDir
+            }
+            if ($signals) { $attemptArgs.Signals = $signals }
+            if ($remSummary) { $attemptArgs.Remediation = $remSummary }
+            if ($sig) { $attemptArgs.FailureSignature = $sig }
             $null = & $contractScript2 @attemptArgs 2>&1
         }
     } catch {}

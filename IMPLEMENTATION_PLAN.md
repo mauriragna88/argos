@@ -398,6 +398,24 @@ Cuando FAIL → remediation → PASS, analizar si el fallo puede volverse guard 
 ### Objetivo concreto
 Implementar el router de modo de ejecución (DIRECT_TOOL/CODE_MODE/AGENT/SUBAGENT) con CODE_MODE reducido (script local sin sandbox, con Auron Gate reforzado; sandbox real diferido) y formalizar el benchmark del harness: Modelo X sin ARGOS vs Modelo X + ARGOS.
 
+> **NOTA DE CIERRE (2026-09-22)**: Fase 6 cerrada en su parte en-repo:
+> - `cli/benchmark.ps1` + `argos bench`: corridas del mismo modelo con/sin ARGOS
+>   (`baseline|argos`) con las 9 métricas canónicas (PASS, first-pass, tokens, costo,
+>   latencia, loops, regresiones, hallazgos de seguridad, intervenciones humanas) en
+>   `.arnes/benchmarks.jsonl`, y `report` con stats por modelo + deltas + **veredicto del
+>   criterio central** (modelo + ARGOS ≥ mismo modelo sin ARGOS en PASS rate).
+> - `cli/mode-route.ps1`: router explícito (1-3 llamadas → DIRECT_TOOL; ≥4 secuencial →
+>   CODE_MODE + `code_mode_requires_gate`; juicio multi-paso → AGENT; ≥6 independientes →
+>   SUBAGENT) y **Auron Gate** bloqueante sobre código generado (rm -rf, Remove-Item sobre
+>   raíz/home, rmdir/del masivos, format, DROP/TRUNCATE, git push --force, --no-verify,
+>   curl|bash, Invoke-Expression, .env/.ssh/.git, credenciales, arnes.db).
+> - ADRs: 024 (Code Mode: política de modos + gate; **sandbox real diferido por diseño**),
+>   026 (benchmark: métricas canónicas y criterio de éxito, sin auto-tuning).
+> - Skills: `arnes-benchmark` (procedimiento) + regla de gate para scripts en `auron-bulwark`.
+> - Tests herméticos: `tests/benchmark.tests.ps1` y `tests/mode-route.tests.ps1` en `run-all`.
+> - Diferido por decisión (ADR-024): ejecución con sandbox real de CODE_MODE — el router y
+>   el gate quedan, la ejecución de scripts generados sigue gateada y opt-in.
+
 ### Componentes a tocar
 | Ruta | Cambio |
 |---|---|

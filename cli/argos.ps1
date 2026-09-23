@@ -548,6 +548,15 @@ switch ($Command) {
             default { Write-Host '  Uso: argos graph justify "<quest>" | status [Q-XXX] | next [Q-XXX] | invalidate <Q-XXX> <nodo>' -ForegroundColor Yellow }
         }
     }
+    'bench' {
+        # argos bench [report|list]  (F6: benchmark del harness con/sin ARGOS)
+        $sub = if ($Args -and $Args.Count -gt 0) { $Args[0] } else { 'report' }
+        switch ($sub) {
+            'report' { & (Join-Path $ScriptDir 'benchmark.ps1') -Action report }
+            'list'   { & (Join-Path $ScriptDir 'benchmark.ps1') -Action list }
+            default  { Write-Host '  Uso: argos bench [report|list]' -ForegroundColor Yellow }
+        }
+    }
     'allocate' {
         # argos allocate "<quest>" | argos allocate -Status
         if ($Model -eq 'status' -or ($Args -and $Args[0] -eq 'status')) {

@@ -56,3 +56,5 @@ Ninguna brecha de seguridad atraviesa la guardia de Auron.
 4. Documentar cada permiso emitido/denegado
 5. Contract audit (arnes-contract-audit, ADR-006) es parte del L0 Gate para cambios que tocan DB/API/frontend — no se permite demo/deploy con FAIL del gate
 6. Repo audit (auron-repo-audit) es parte del L0 Gate para cambios que tocan un repo — un repo público de negocio con pagos/BD o un secret real en trackeados BLOQUEA (L0)
+7. Code mode (F6, ADR-024): todo script generado pasa por el Auron Gate antes de ejecutarse — bloquea rm -rf, Remove-Item recursivo sobre raíz/home, rmdir/del masivos, format, DROP/TRUNCATE, git push --force, --no-verify, curl|bash, Invoke-Expression, rutas protegidas (.env/.ssh/.git), credenciales y arnes.db. El gate lee el texto COMPLETO del script: esconder lo destructivo también se bloquea
+8. Sin sandbox real no hay ejecución libre: CODE_MODE es opt-in y el gate es la única defensa — por eso bloquea, no advierte

@@ -80,6 +80,10 @@ Invoke-Step 'Tests funcionales PowerShell' {
     if ($LASTEXITCODE -ne 0) { throw 'regression.tests fallo' }
     & $PSExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\quest-graph.tests.ps1')
     if ($LASTEXITCODE -ne 0) { throw 'quest-graph.tests fallo' }
+    & $PSExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\benchmark.tests.ps1')
+    if ($LASTEXITCODE -ne 0) { throw 'benchmark.tests fallo' }
+    & $PSExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tests\mode-route.tests.ps1')
+    if ($LASTEXITCODE -ne 0) { throw 'mode-route.tests fallo' }
 }
 
 # 3. Politica read/write

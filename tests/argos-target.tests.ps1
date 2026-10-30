@@ -51,10 +51,10 @@ try {
     & $PSExe -NoProfile -ExecutionPolicy Bypass -File $TargetCli -Target claude -NoLaunch -ConfigDir $work -TargetDir $work | Out-Null
     Assert-That (Test-Path (Join-Path $work 'CLAUDE.md')) 'CLAUDE.md desplegado'
     $claudeAgents = @(Get-ChildItem (Join-Path $work 'agents\*.md') -ErrorAction SilentlyContinue)
-    Assert-That ($claudeAgents.Count -eq 2) "claude agents = 2 (obtenido $($claudeAgents.Count))"
+    Assert-That ($claudeAgents.Count -eq 4) "claude agents = 4 (obtenido $($claudeAgents.Count))"; Assert-That ((($claudeAgents.BaseName | Sort-Object) -join ',') -eq 'Ansem,Atlas,Auron,Vivi') 'claude agents = Ansem,Atlas,Auron,Vivi (Vivi=mage, Ansem=paladin)'
     foreach ($ca in $claudeAgents) {
-        $c = Get-Content $ca.FullName -Raw
-        Assert-That ($c -match '^---\r?\nname:') "frontmatter valido en $($ca.Name)"
+        $c = Get-Content $ca.FullName -Encoding UTF8 -Raw
+        Assert-That ($c -match '^---\r?\nname:') "frontmatter valido en $($ca.Name)"; Assert-That ($c -match '(?m)^description: "[^"]{20,}"\r?$') "description entrecomillada y no vacia en $($ca.Name) (Claude Code descarta subagentes sin description)"; $mojibake = ([string][char]0xE2 + [char]0x20AC); Assert-That ((-not $c.Contains($mojibake)) -and ($c -notmatch ([string][char]0xC3 + '[' + [char]0xA1 + '-' + [char]0xBF + ']'))) "sin texto corrupto (mojibake) en $($ca.Name)"
     }
 
     # 6. launch freebuff -NoLaunch despliega el bundle ligero frontend/devops.

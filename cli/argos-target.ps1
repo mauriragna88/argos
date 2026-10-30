@@ -151,7 +151,7 @@ function Write-AtlasPersona {
         Write-Host '  [!] No se encontro core/atlas-player.agent.md' -ForegroundColor Yellow
         return $false
     }
-    $persona = Get-Content $PersonaFile -Raw
+    $persona = Get-Content $PersonaFile -Encoding UTF8 -Raw
     $header = "# ARNES ARGOS - Atlas (entorno generado por 'argos target $Target')`n# Persona del orquestador. La memoria del proyecto vive en .arnes/ (arnes.db).`n`n"
     if ($Target -eq 'codex') {
         $out = Join-Path $TargetDir 'AGENTS.md'
@@ -166,7 +166,7 @@ function Write-AtlasPersona {
 function Get-AgentDisplayName {
     param([string]$Path)
     # Del titulo H1: "# VIVI — Mage (Frontend DPS)" -> "Vivi"
-    $first = (Get-Content $Path -TotalCount 6 | Where-Object { $_ -match '^#' } | Select-Object -First 1)
+    $first = (Get-Content $Path -Encoding UTF8 -TotalCount 6 | Where-Object { $_ -match '^#' } | Select-Object -First 1)
     if ($first -and $first -match '^#\s+([^\s\-—–|]+)') {
         $raw = $Matches[1].Trim()
         # Capitalizar primera letra, resto en minusculas
@@ -177,15 +177,37 @@ function Get-AgentDisplayName {
 
 function Get-AgentDescription {
     param([string]$Path)
-    # Primeras lineas de la blockquote de identidad
+    # Primeras lineas de prosa de la identidad: sin titulos (#), separadores (---) ni marcado markdown.
     $desc = @()
-    foreach ($line in (Get-Content $Path -TotalCount 12)) {
-        $t = $line -replace '^>\s*', ''
-        if ($t -and $t -notmatch '^\s*$') { $desc += $t }
+    foreach ($line in (Get-Content $Path -Encoding UTF8 -TotalCount 14)) {
+        if ($line -match '^\s*(#|---|$)') { continue }
+        $t = (($line -replace '^>\s*', '') -replace '(\*\*|__|`)', '').Trim()
+        if ($t) { $desc += $t }
         if ($desc.Count -ge 2) { break }
     }
     if ($desc.Count -eq 0) { return 'Agente del party ARNES' }
-    return ($desc -join ' ').Substring(0, [Math]::Min(180, ($desc -join ' ').Length))
+    $joined = $desc -join ' '
+    return $joined.Substring(0, [Math]::Min(180, $joined.Length))
+}
+
+function ConvertTo-YamlDoubleQuoted {
+    # El frontmatter de Claude Code es YAML: un valor que empieza por # * : o contiene ": " se rompe sin comillas.
+    param([string]$Text)
+    $clean = ($Text -replace '[\r\n]+', ' ').Trim()
+    return '"' + (($clean -replace '\\', '\\') -replace '"', '\"') + '"'
+}
+
+function Get-ClaudeAgentDescription {
+    # Claude decide a quien delegar por esta descripcion: debe decir CUANDO usar el agente, no contar su personaje.
+    param([string]$Display, [string]$Path)
+    $routing = @{
+        'Atlas' = 'Orquestador ARGOS: detecta la mision, elige agentes del party y define el orden. No escribe codigo. Usalo para planear y coordinar trabajo de varios frentes.'
+        'Vivi'  = 'Frontend, UI/UX y diseno web (React/Next.js, layout, tipografia, color, movimiento, accesibilidad). Usala para disenar o construir interfaces y revisar su calidad visual.'
+        'Ansem' = 'Backend, APIs, Supabase y bases de datos: endpoints, modelos de datos, migraciones y logica de servidor. Usalo para construir o depurar el lado servidor.'
+        'Auron' = 'Guardian de seguridad: RLS, politicas de acceso, migraciones destructivas, secretos, produccion y deploy. Usalo antes de publicar cambios de riesgo.'
+    }
+    if ($routing.ContainsKey($Display)) { return $routing[$Display] }
+    return (Get-AgentDescription $Path)
 }
 
 function Write-ClaudeParty {
@@ -207,8 +229,8 @@ function Write-ClaudeParty {
             $display = [System.IO.Path]::GetFileNameWithoutExtension($src.Name).Replace('.agent', '')
         }
         $used += $display
-        $desc = Get-AgentDescription $src.FullName
-        $body = Get-Content $src.FullName -Raw
+        $desc = ConvertTo-YamlDoubleQuoted (Get-ClaudeAgentDescription $display $src.FullName)
+        $body = Get-Content $src.FullName -Encoding UTF8 -Raw
         $front = "---`nname: $display`ndescription: $desc`n---`n`n"
         $out = Join-Path $agentsDir "$display.md"
         Write-Utf8NoBom -Path $out -Content ($front + $body)
@@ -221,13 +243,13 @@ function Write-ClaudeParty {
 function Write-RosterBundle {
     # Codex/Freebuff: AGENTS.md jerarquico con persona Atlas + roster del party (sin subagentes con modelo)
     param([string]$Target, [string]$Out)
-    $persona = Get-Content $PersonaFile -Raw
+    $persona = Get-Content $PersonaFile -Encoding UTF8 -Raw
     $roster = @()
     $roster += Get-ChildItem (Join-Path $Root 'core\classes\*.agent.md') -ErrorAction SilentlyContinue
     $roster += Get-ChildItem (Join-Path $Root 'core\auditors\*.agent.md') -ErrorAction SilentlyContinue
     $rosterLines = foreach ($r in $roster) {
         $display = Get-AgentDisplayName $r.FullName
-        $roleLine = (Get-Content $r.FullName -TotalCount 1) -replace '^#\s+', ''
+        $roleLine = (Get-Content $r.FullName -Encoding UTF8 -TotalCount 1) -replace '^#\s+', ''
         "  - **$display** - $roleLine"
     }
     $header = "# ARNES ARGOS - Atlas (entorno generado por 'argos target $Target')`n`n"
@@ -275,7 +297,7 @@ function Write-DomainBundle {
         [string]$Out,
         [string[]]$Domains   # ej: @('atlas'), @('atlas','vivi'), @('atlas','ansem','auron')
     )
-    $persona = Get-Content $PersonaFile -Raw
+    $persona = Get-Content $PersonaFile -Encoding UTF8 -Raw
     # Compactar la persona: solo las primeras 30 lineas (identidad + rol) sin secciones largas
     $personaShort = ($persona -split "`n" | Select-Object -First 30) -join "`n"
     $agentBlocks = @()
@@ -292,7 +314,7 @@ function Write-DomainBundle {
         }
         if ($file) {
             $display = Get-AgentDisplayName $file.FullName
-            $roleLine = (Get-Content $file.FullName -TotalCount 1) -replace '^#\s+', ''
+            $roleLine = (Get-Content $file.FullName -Encoding UTF8 -TotalCount 1) -replace '^#\s+', ''
             $agentBlocks += "  - **$display** - $roleLine  (ruta: $($file.FullName.Replace($Root + '\', '')))"
         }
     }
@@ -554,24 +576,17 @@ Otros agentes disponibles en core/classes/ y core/auditors/ (carga bajo demanda)
                 Write-Host '  [2/3] Subagentes del dominio en Claude agents/...' -ForegroundColor Cyan
                 # Solo 4 subagentes (frontend+backend+seguridad+QA) en vez de 17
                 $claudeAgentDomains = @('atlas','vivi','ansem','auron')
+                # El nombre del archivo NO coincide con el del agente (Vivi=mage, Ansem=paladin): mapeo explicito.
+                $claudeAgentFiles = @{ atlas = 'core\atlas-player.agent.md'; vivi = 'core\classes\mage.agent.md'; ansem = 'core\classes\paladin.agent.md'; auron = 'core\auditors\auron.agent.md' }
                 $claudeAgentsDir = Join-Path $TargetDir 'agents'
                 New-Item -ItemType Directory -Path $claudeAgentsDir -Force | Out-Null
                 $claudeCount = 0
                 foreach ($d in $claudeAgentDomains) {
-                    $file = $null
-                    if ($d -eq 'atlas') { $file = Get-Item (Join-Path $Root 'core\atlas-player.agent.md') -ErrorAction SilentlyContinue }
-                    else {
-                        $file = Get-ChildItem (Join-Path $Root "core\classes\*.agent.md") -ErrorAction SilentlyContinue |
-                                Where-Object { $_.BaseName -like "*$d*" } | Select-Object -First 1
-                        if (-not $file) {
-                            $file = Get-ChildItem (Join-Path $Root "core\auditors\*.agent.md") -ErrorAction SilentlyContinue |
-                                    Where-Object { $_.BaseName -like "*$d*" } | Select-Object -First 1
-                        }
-                    }
+                    $file = Get-Item (Join-Path $Root $claudeAgentFiles[$d]) -ErrorAction SilentlyContinue
                     if ($file) {
                         $display = Get-AgentDisplayName $file.FullName
-                        $desc = Get-AgentDescription $file.FullName
-                        $body = Get-Content $file.FullName -Raw
+                        $desc = ConvertTo-YamlDoubleQuoted (Get-ClaudeAgentDescription $display $file.FullName)
+                        $body = Get-Content $file.FullName -Encoding UTF8 -Raw
                         $front = "---`nname: $display`ndescription: $desc`n---`n`n"
                         $out = Join-Path $claudeAgentsDir "$display.md"
                         Write-Utf8NoBom -Path $out -Content ($front + $body)

@@ -145,7 +145,8 @@ for f in $STAGED; do
     [ -f "$f" ] || continue
     case "$f" in
         *.json)
-            if ! node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" 2>/dev/null; then
+            # JSON con BOM (lo escribe Windows PowerShell 5.1) es valido para el consumidor: se quita antes de parsear.
+            if ! node -e "var s=require('fs').readFileSync('$f','utf8'); if(s.charCodeAt(0)===65279)s=s.slice(1); JSON.parse(s)" 2>/dev/null; then
                 if ! python3 -m json.tool "$f" >/dev/null 2>&1 && ! jq empty "$f" 2>/dev/null; then
                     echo -e "  ${YELLOW}[HIGH] $f no es JSON valido${NC}"
                 fi
